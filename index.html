@@ -65,6 +65,8 @@
     #app>.bar #shake{grid-row:2;grid-column:2}
     #app>.bar #shake{width:clamp(96px,30vw,132px);height:clamp(62px,9vh,78px)}   /* 手機：搖一搖放大，好連按 */
     #app>.bar #shake svg{width:46%;height:60%}
+    #app{padding:6px 4px 10px}   /* 箱子是寬度受限：左右留白縮小，箱子就能放大；標題列與按鈕列自己留邊 */
+    #app>header,#app>.bar,#app>.legend.bottom{padding-inline:12px}
     #app>.bar #shake::after{bottom:9px;height:4px}
   }
   .pill{flex:none;font-size:clamp(12px,min(2vh,3.2vw),17px);padding:6px 12px;border-radius:999px;background:var(--line);color:var(--panel);letter-spacing:1px;white-space:nowrap}
@@ -116,7 +118,7 @@
   #achList::-webkit-scrollbar{width:8px}#achList::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}#achList::-webkit-scrollbar-track{background:transparent}
   .ai{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;line-height:1.5}
   .ai{display:flex;gap:10px;align-items:center}
-  .ai .mm{flex:none;width:58px;height:46px}
+  .ai .mm{flex:none;width:76px;height:60px}
   .ai .mm svg{display:block;width:100%;height:100%}
   .ai .tx{flex:1;min-width:0}
   .ai .prog{font-size:12px;color:#a8552b;margin-top:2px}
@@ -787,6 +789,7 @@ function nextToast(){
   if(!it){toastBusy=false;return;}
   toastBusy=true;const gen=it[2];
   const el=document.getElementById('toast');
+  {const r=cv.getBoundingClientRect();el.style.top=Math.round(r.top+r.height*.34)+'px';}   // 提示放在箱子上半部的空地，不遮住標題列的數據
   el.innerHTML=`<small>成就解鎖</small><b>${it[0]}</b>${it[1]}`;
   el.classList.add('show');
   setTimeout(()=>{if(gen!==toastGen)return;el.classList.remove('show');setTimeout(()=>{if(gen===toastGen)nextToast();},420);},2800);   // 舊局的計時器不能動到新局的提示
