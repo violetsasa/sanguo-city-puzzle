@@ -123,16 +123,21 @@
   #toast b{display:block;font-size:17px}
   .legend{font-size:clamp(11px,min(1.9vh,3vw),17px);display:flex;gap:10px;justify-content:center}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
-  .brand .legend{flex:none;margin-left:8px;gap:8px;white-space:nowrap}
+  .brand .legend{flex:none;margin-left:8px;gap:8px;white-space:nowrap;align-items:center}
   .legend .era{opacity:.55;font-size:.88em;letter-spacing:.5px}   /* 勢力分色所依據的年代 */
-  .legend.bottom{display:none}
-  @media (max-width:640px){.legend.inbrand{display:none}.legend.bottom{display:flex}}
+  .legend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25);vertical-align:-1px}
+  .legend .zs{display:flex;gap:3px;align-items:center}
+  .legend .zs span{display:inline-flex;align-items:center;gap:1px;font-size:.82em}
+  .legend .zs i{width:9px;height:9px;margin:0;border:1px solid rgba(0,0,0,.18)}
+  .legend.bottom{flex-wrap:wrap;gap:4px 10px;align-items:center}
+  .legend.bottom .fz{display:none;gap:10px;align-items:center}
+  @media (max-width:640px){.legend.inbrand{display:none}.legend.bottom .fz{display:flex}}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8h3v3h2V8h2v3h2V8h2v3h2V8h3v13z"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></svg><h1>山河輿圖</h1><div class="legend inbrand" title="勢力顏色依西元 240 年前後的疆域劃分（曹魏、蜀漢、東吳三國鼎立期；遼東已屬魏、漢中與南中屬蜀、荊南與交州屬吳）"><span><i style="background:var(--wei)"></i>魏</span><span><i style="background:var(--shu)"></i>蜀</span><span><i style="background:var(--wu)"></i>吳</span><span class="era">240 年</span></div></div>
+    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8h3v3h2V8h2v3h2V8h2v3h2V8h3v13z"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></svg><h1>山河輿圖</h1><div class="legend inbrand" title=""></div></div>
     <div class="stats">
       <div class="chip" title="進度：已放下的城／全部城數"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg><div class="cap"><small>進度</small><b id="prog">0 / 62</b></div></div>
       <div class="chip" title="最大相連：目前連在一起的城裡，最多有幾座"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><div class="cap"><small>最大相連</small><b id="clu">0</b></div></div>
@@ -157,7 +162,7 @@
     <div id="next" title="下一座要放的城"><i id="nextDot"></i><small>下一城</small><span id="nextName">—</span></div>
     <button id="shake" class="ib primary" title="搖一搖（讓城池鬆開）" aria-label="搖一搖"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5h11l-1.5 7.5H8z"/><path d="M8.6 9.4L10 7l1.4 2.4z"/><circle cx="14.2" cy="8" r="1.3"/><path d="M3.6 12.2c-1.1 1.3-1.1 3.6 0 4.9"/><path d="M1.6 10.6c-1.9 2.2-1.9 6.2 0 8.4"/><path d="M20.4 12.2c1.1 1.3 1.1 3.6 0 4.9"/><path d="M22.4 10.6c1.9 2.2 1.9 6.2 0 8.4"/></svg></button>
   </div>
-  <div class="legend bottom" title="勢力顏色依西元 240 年前後的疆域劃分（曹魏、蜀漢、東吳三國鼎立期；遼東已屬魏、漢中與南中屬蜀、荊南與交州屬吳）"><span><i style="background:var(--wei)"></i>魏</span><span><i style="background:var(--shu)"></i>蜀</span><span><i style="background:var(--wu)"></i>吳</span><span class="era">240 年</span></div>
+  <div class="legend bottom" title=""></div>
 </div>
 <script>
 const {Engine,Bodies,Body,Composite,Events,Vertices}=Matter;
@@ -249,7 +254,19 @@ STATES.forEach(s=>{const f=t=>t.split(";").map(q=>q.split(",").map(Number));s.v=
 const ADJ_PAIRS="上庸|夷陵 上庸|房陵 上庸|武關 上庸|涪陵 上庸|漢中 下邳|廣陵 下邳|東海 九原|朔方 五丈原|陳倉 交趾|合浦 北平|昌黎 北平|漁陽 北平|雁門 北平|雲中 北海|東海 北海|泰山 南海|合浦 南海|布山 南海|廬陵 南海|建安 南海|桂林 合浦|布山 壽春|下邳 壽春|合肥 壽春|徐州 壽春|汝南 壽春|江夏 壽春|陳留 大和|邪馬台 天水|武都 天水|祁山 天水|街亭 天水|陳倉 夷州|建安 安定|五丈原 安定|朔方 安定|潼關 安定|街亭 安定|陳倉 官渡|虎牢關 宛|房陵 宛|武關 宛|汝南 宛|許昌 平原|北平 平原|北海 平原|泰山 平原|濮陽 平原|雁門 廣陵|曲阿 廣陵|東海 廬江|合肥 廬江|壽春 廬江|會稽 廬江|江夏 廬陵|建安 建寧|布山 建寧|桂林 建寧|興古 建寧|越雋 建寧|雲南 建業|下邳 建業|合肥 建業|壽春 建業|廣陵 建業|廬江 建業|曲阿 建業|會稽 徐州|下邳 徐州|東海 徐州|泰山 徐州|濮陽 徐州|陳留 成都|江州 成都|綿竹 成都|越雋 房陵|夷陵 新野|夏口 新野|宛 新野|房陵 新野|武關 新野|汝南 新野|襄陽 晉陽|九原 晉陽|安定 晉陽|朔方 晉陽|潼關 晉陽|虎牢關 晉陽|雁門 會稽|建安 會稽|曲阿 柴桑|夏口 柴桑|廬江 柴桑|建安 柴桑|會稽 柴桑|江夏 柴桑|豫章 柴桑|赤壁 桂林|布山 桂林|涪陵 桂陽|南海 桂陽|廬陵 武關|房陵 武陵|夷陵 武陵|涪陵 武陵|赤壁 武陵|長坂坡 武陵|長沙 武陵|零陵 汝南|夏口 汝南|徐州 汝南|陳留 江夏|夏口 江夏|汝南 江州|建寧 江州|桂林 江州|涪陵 江州|漢中 江州|綿竹 江州|越雋 泰山|東海 洛陽|宛 洛陽|武關 洛陽|潼關 洛陽|虎牢關 洛陽|許昌 涪陵|夷陵 涼州|朔方 涼州|祁山 涼州|街亭 涼州|酒泉 漁陽|昌黎 漢中|武都 漢中|涪陵 漢中|綿竹 漢中|陳倉 潼關|武關 濮陽|泰山 祁山|武都 綿竹|武都 興古|合浦 興古|布山 興古|桂林 虎牢關|潼關 街亭|朔方 街亭|祁山 街亭|陳倉 襄陽|夏口 襄陽|夷陵 襄陽|房陵 襄陽|汝南 襄陽|長坂坡 許昌|官渡 許昌|汝南 許昌|虎牢關 許昌|陳留 豫章|廬陵 豫章|建安 豫章|赤壁 赤壁|夏口 遼東|昌黎 邪馬台|大和 邪馬台|會稽 鄴|平原 鄴|晉陽 鄴|濮陽 鄴|虎牢關 鄴|陳留 鄴|雁門 長坂坡|夏口 長坂坡|夷陵 長坂坡|赤壁 長安|上庸 長安|五丈原 長安|安定 長安|武關 長安|漢中 長安|潼關 長安|陳倉 長沙|廬陵 長沙|桂陽 長沙|豫章 長沙|赤壁 陳倉|武都 陳留|官渡 陳留|濮陽 陳留|虎牢關 雁門|九原 雁門|雲中 雲中|九原 雲中|漁陽 雲南|興古 雲南|越雋 零陵|南海 零陵|桂林 零陵|桂陽 零陵|涪陵 零陵|長沙".split(" ");
 const adj=new Set(ADJ_PAIRS.flatMap(t=>{const [x,y]=t.split('|');return [x+'|'+y,y+'|'+x];}));
 const isAdj=(a,b)=>adj.has(a.n+'|'+b.n);
-const COL={W:'#9bb8e3',S:'#a9d6a0',U:'#f0aaa3'};
+const ZCOL={司隸:'#e9c5a5',冀州:'#c3e8b0',荊州:'#a5e9bc',并州:'#e3a5e9',豫州:'#a5abe9',青州:'#b0cce8',幽州:'#e8b0b0',涼州:'#b0e8da',益州:'#c7b0e8',揚州:'#a5dde9',徐州:'#dde9a5',兗州:'#e8b0d1',交州:'#e8ddb0'};   // 漢末十三州各一種淡色（相鄰州已排成色差最大）；海外三城用中性色
+const ZNEUT='#d9d2c0';
+const zcol=s=>ZCOL[s.z]||ZNEUT;
+const FDOT={W:'#3d6fc0',S:'#3f9a45',U:'#d4483c'};   // 勢力標記：畫在城的重心，不受名字顯示與否影響
+(function(){
+  const fl=[['W','魏'],['S','蜀'],['U','吳']].map(([f,n])=>`<span><i class="dot" style="background:${FDOT[f]}"></i>${n}</span>`).join('');
+  const zs=Object.keys(ZCOL).map(z=>`<span title="${z}"><i style="background:${ZCOL[z]}"></i>${z[0]}</span>`).join('');
+  const fz=fl+'<span class="era">240 年</span>',zh='<span class="zs" title="底色是漢末十三州">'+zs+'</span>';
+  const tip='圓點是勢力（依西元 240 年前後的疆域劃分：曹魏、蜀漢、東吳三國鼎立期；遼東已屬魏、漢中與南中屬蜀、荊南與交州屬吳）；底色是漢末十三州';
+  document.querySelector('.legend.inbrand').innerHTML=fz;
+  document.querySelector('.legend.bottom').innerHTML='<span class="fz">'+fz+'</span>'+zh;
+  document.querySelectorAll('.legend').forEach(e=>e.title=tip);
+})();
 
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 const VX=34,VY=40,VW=532,VH=644;   // 可視範圍：只顯示箱子與預覽區，裁掉四周多餘留白，同樣的畫面裡整個遊戲區可以畫得更大（物理座標不變）
@@ -542,7 +559,7 @@ function shakeOffset(now){
 // 相連時：層級依相連數增強（停頓、光環、交界光點、彩紙、金色閃光、震動）
 function mergeBurst(n,cx,cy,pts,T,go){
   const tier=n>=STATES.length?4:n>=12?3:n>=6?2:n>=3?1:0;
-  const col=COL[T.pcs[0].s.f];
+  const col=zcol(T.pcs[0].s);
   addRing(cx,cy,go,70+tier*34,'#ffffff',4);
   addRing(cx,cy,go+90,50+tier*26,GOLD,3);
   if(tier>=1)addRing(cx,cy,go+170,90+tier*40,col,5);
@@ -972,8 +989,7 @@ function hud(){
   }else{
     cap.textContent='下一城';document.getElementById('nextName').textContent=nx;nextBox.classList.remove('urgent');
   }
-  const nf=cur&&cur.pcs[0]?cur.pcs[0].s.f:null;
-  document.getElementById('nextDot').style.background=nf?COL[nf]:'#aaa';
+  document.getElementById('nextDot').style.background=cur&&cur.pcs[0]?zcol(cur.pcs[0].s):'#aaa';
 }
 function best(){
   let b=score;try{const prev=Number(localStorage.getItem('sg_best'));b=Math.max(score,Number.isFinite(prev)?prev:0);   // 存檔壞掉（非數字）時當成 0，不會永遠顯示 NaN
@@ -1096,7 +1112,7 @@ function drawPiece(P,ghost,labelPass){
     return;
   }
   ctx.beginPath();P.rel.forEach((v,i)=>{const q=T(v);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);});ctx.closePath();
-  ctx.fillStyle=COL[P.s.f];ctx.globalAlpha=ghost?.7:1;ctx.fill();ctx.globalAlpha=1;
+  ctx.fillStyle=zcol(P.s);ctx.globalAlpha=ghost?.7:1;ctx.fill();ctx.globalAlpha=1;
   // 細白邊：相連的州在交界處看起來像同一張地圖
   ctx.lineJoin='round';ctx.lineWidth=1.4;ctx.strokeStyle='rgba(255,255,255,.95)';ctx.stroke();
   if(P.glow){   // 成就：相關的城發出金光
@@ -1156,7 +1172,7 @@ function placeLabels(items,now){
   }
 }
 function paintLabel(P,plate,pos){
-  if(!P.shown&&!plate)return;
+  if(!P.shown&&!plate){if(P._pos&&!P._cur)paintDot(P,P._pos.x,P._pos.y,P._lbl.fs*(P._m||1));return;}
   const L=P._lbl,{x,y}=pos||P._pos;
   ctx.font=LABEL_FONT(L.fs);ctx.textAlign='center';ctx.textBaseline='middle';
   if(plate){   // 被略過的名字：滑鼠移上去時用底板顯示
@@ -1167,6 +1183,12 @@ function paintLabel(P,plate,pos){
   const fs=L.fs*(P._m||1);ctx.font=LABEL_FONT(fs);
   ctx.lineJoin='round';ctx.lineWidth=Math.max(2.2,fs*.18);ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText(P.s.n,x,y);
   ctx.fillStyle='#22303f';ctx.fillText(P.s.n,x,y);
+  paintDot(P,x-ctx.measureText(P.s.n).width/2-fs*.28,y,fs);
+}
+function paintDot(P,x,y,fs){   // 勢力圓點：名字顯示時在名字左側，名字被略過時仍畫在重心
+  const r=Math.max(3,fs*.2);
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=FDOT[P.s.f];ctx.fill();
+  ctx.lineWidth=1.5;ctx.strokeStyle='rgba(255,255,255,.95)';ctx.stroke();
 }
 function polyDist(pt,wp){   // 點到多邊形輪廓的最短距離（在形狀裡面算 0）
   if(inPoly(pt,wp))return 0;
