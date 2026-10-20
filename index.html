@@ -182,8 +182,8 @@
     #app>.bar{justify-content:center;gap:14px}#next{flex:0 1 460px}}   /* 寬螢幕：下一城不要拉滿整條，和重來、搖一搖靠在一起 */
   @media (pointer:coarse){.kb{display:none}}   /* 觸控裝置沒有鍵盤，不顯示鍵盤說明 */
   @media (max-width:380px){.chip{padding:3px 7px}.stats{gap:3px}h1{font-size:16px}}   /* 很窄的手機：標題列再收緊一點 */
-  #sndBtn .on{display:none}#sndBtn.is-on .on{display:inline}#sndBtn.is-on .off{display:none}   /* 喇叭圖示：開（有聲波）／關（打叉） */
-  #sndBtn.is-on{background:var(--gold-soft,#fbe3a1)}
+  #sndBtn .snd-on{display:none}#sndBtn.is-on .snd-on{display:inline}#sndBtn.is-on .snd-off{display:none}   /* 喇叭圖示：開（有聲波）／關（打叉） */
+  #sndBtn.is-on{background:#fbe3a1}
   #side{display:none}
   @media (min-width:1540px){
     #side{display:block;position:fixed;top:72px;left:calc(50% + 516px);width:250px;max-height:calc(100vh - 150px);overflow:auto;cursor:pointer}
@@ -202,7 +202,7 @@
       <div class="chip" title="進度：已放下的城／全部城數"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg><div class="cap"><small>進度</small><b id="prog">0 / 62</b></div></div>
       <div class="chip" title="最大相連：目前連在一起的城裡，最多有幾座"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><div class="cap"><small>最大相連</small><b id="clu">0</b></div></div>
       <div class="chip" title="分數"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><div class="cap"><small>分數</small><b id="score">0</b></div></div>
-      <button id="sndBtn" class="ib" title="聲音（目前關閉）" aria-label="聲音開關" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><g class="on"><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></g><g class="off"><path d="M16.5 9.5l4.5 5M21 9.5l-4.5 5"/></g></svg></button>
+      <button id="sndBtn" class="ib" title="聲音（目前關閉）" aria-label="聲音開關" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><g class="snd-on"><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></g><g class="snd-off"><path d="M16.5 9.5l4.5 5M21 9.5l-4.5 5"/></g></svg></button>
       <button id="achBtn" class="ib" title="成就圖鑑" aria-label="成就圖鑑"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5v1A3.5 3.5 0 0 0 7.7 10.5M17 6h2.5v1a3.5 3.5 0 0 1-3.2 3.5"/><path d="M12 13.5V17M8 20h8M9.5 17h5"/></svg></button>
     </div>
   </header>
@@ -427,17 +427,22 @@ const SND=(()=>{
   return {
     get on(){return on;},
     set(v){on=!!v;try{localStorage.setItem('sg_sound',on?'1':'0');}catch(e){}if(on)ensure();},
+    unlock(cb){   // 在使用者手勢裡呼叫：建立並啟動 AudioContext，啟動後才執行 cb（手機上 resume 是非同步的）
+      try{ensure();if(!ac)return;if(ac.state==='running'){if(cb)cb();}else ac.resume().then(()=>{if(cb&&ac.state==='running')cb();}).catch(()=>{});}catch(e){}
+    },
     play(name,arg){
       if(!on)return;
       try{
         if(!ac||ac.state!=='running'){ensure();return;}   // 還沒被使用者手勢解鎖時不排隊，避免一解鎖就爆一串
-        const now=performance.now();if(now-(last[name]||0)<60)return;last[name]=now;   // 同一種音效 60 毫秒內不重複
+        const now=performance.now();
+        if(now-(last[name]||0)<60&&!(name==='merge'&&arg>(last.mergeArg||0)))return;   // 同一種音效 60 毫秒內不重複；但更大片的相連不被小的蓋掉
+        last[name]=now;if(name==='merge')last.mergeArg=arg;
         fx[name](ac.currentTime+.02,arg);
       }catch(e){}
     }
   };
 })();
-const VERSION='2026.10.20-12';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-13';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1008,7 +1013,8 @@ document.getElementById('tabAll').onclick=function(){achTab='all';renderAch();th
 document.getElementById('achBtn').onclick=function(){achTab=achDone.size?'run':'all';renderAch();document.getElementById('ach').style.display='flex';this.blur();};
 document.getElementById('side').onclick=()=>document.getElementById('achBtn').click();
 {const sb=document.getElementById('sndBtn'),upd=()=>{sb.classList.toggle('is-on',SND.on);sb.setAttribute('aria-pressed',SND.on);sb.title=SND.on?'聲音（目前開啟）':'聲音（目前關閉）';};
-  sb.onclick=function(){SND.set(!SND.on);upd();if(SND.on)setTimeout(()=>SND.play('merge',2),60);this.blur();};upd();}
+  sb.onclick=function(){SND.set(!SND.on);upd();if(SND.on)SND.unlock(()=>SND.play('merge',2));this.blur();};upd();
+  ['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(SND.on)SND.unlock();},true));}   // 之前就開著聲音的話，第一次點任何地方就先把音效引擎啟動
 document.getElementById('achClose').onclick=()=>{document.getElementById('ach').style.display='none';};
 renderAch();
 {  // 手機：成就鈕搬到底部右側（和左邊的重來對稱），標題列空出來；寬螢幕放回標題列
@@ -1216,7 +1222,7 @@ function winRound(){
     show('天下一統',`諸城相連，山河重歸一統。\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>startRound(round+1));},1300);
 }
 function gameOver(kind){
-  over=true;SND.play('lose');
+  over=true;if(roundState!=='won')SND.play('lose');   // 剛通關還在收尾時，不播失敗的聲音
   if(kind==='timeup')show('時限已到',`倒數結束，山河仍未一統。\n連成最大的一片有 ${clusterMax()} 座城\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
   else show('國土崩裂',`疆域崩裂，群雄再起，天下重陷戰火。\n連成最大的一片有 ${clusterMax()} 座城\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
 }
