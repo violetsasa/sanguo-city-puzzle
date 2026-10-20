@@ -147,6 +147,7 @@
   .ai .need{font-size:12px;opacity:.8}
   .ai .tag{margin-left:8px;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--line);color:var(--panel);vertical-align:2px}
   .ai .tag.now{background:#d9a521;color:#3a2208}
+  .ai .tag.ro{background:#8d6fb0;color:#fff;margin-left:6px}   /* 演義：和史實區分 */
   .ai.ever{background:rgba(138,106,58,.07)}
   .ai.now{background:rgba(217,165,33,.17);border-color:#d9a521}   /* 本局：淡金色底 */
   .ai.lock{background:rgba(0,0,0,.05)}                              /* 未解鎖：灰底 */
@@ -448,7 +449,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='2026.10.20-22';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.23';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 23 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -880,7 +881,7 @@ const ACH_HIST=[
  {y:208,id:'changban',name:'長坂坡',need:['襄陽','長坂坡'],story:'趙雲單騎救主，張飛據水斷橋，喝退曹軍。'},
  {y:208,id:'chibi',name:'赤壁之戰',need:['赤壁','夏口','柴桑'],story:'孫劉聯軍火燒曹營，三分之勢由此而成。'},
  {y:209,id:'jingnan',name:'荊南四郡',need:['長沙','零陵','桂陽','武陵'],story:'赤壁之後，劉備趁勢平定荊南四郡。'},
- {y:210,id:'tongque',name:'銅雀台',need:['鄴','平原'],story:'曹操築銅雀台於鄴城，與諸子登臺作賦，一時文采風流。'},
+ {y:210,id:'tongque',name:'銅雀台',need:['鄴','許昌'],story:'曹操築銅雀台於鄴城，與諸子登臺作賦，一時文采風流。'},
  {y:210,id:'zhouyu',name:'周郎病逝',need:['長沙','赤壁'],story:'周瑜病逝巴丘，年僅三十六歲；「既生瑜，何生亮」是《三國演義》寫他的臨終之嘆。'},
  {y:210,id:'shixie',name:'士燮歸附',need:['交趾','南海'],story:'交趾太守士燮率交州諸郡歸附孫權，嶺南入吳。'},
  {y:211,id:'xiliang',name:'西涼馬騰',need:['涼州','安定','天水'],story:'馬騰、韓遂雄踞西涼，擁兵自重。'},
@@ -902,7 +903,7 @@ const ACH_HIST=[
  {y:228,id:'qishan',name:'六出祁山',need:['漢中','祁山','天水'],story:'諸葛亮北伐中原，鞠躬盡瘁，死而後已（《三國演義》稱六出祁山，正史記為五次北伐）。'},
  {y:234,id:'wuzhang',name:'五丈原',need:['五丈原','長安'],story:'諸葛亮病逝五丈原；「出師未捷身先死」是杜甫詠諸葛亮的詩句。'},
  {y:234,id:'shanyue',name:'平定山越',need:['會稽','豫章','建業'],story:'吳將諸葛恪平定山越，山民編入戶籍。'},
- {y:255,id:'huainan',name:'淮南三叛',need:['壽春','合肥','廬江'],story:'王淩、毌丘儉、諸葛誕先後於淮南舉兵，皆被司馬氏平定。'},
+ {y:251,yl:'251–257',id:'huainan',name:'淮南三叛',need:['壽春','合肥','廬江'],story:'王淩（251）、毌丘儉（255）、諸葛誕（257）先後於淮南舉兵，皆被司馬氏平定。'},
  {y:263,id:'yinping',name:'偷渡陰平',need:['武都','綿竹','成都'],story:'鄧艾自陰平鑿山通道，奇襲成都，蜀漢滅亡。'},
  {y:230,id:'yizhou',name:'夷州之行',need:['夷州','建安'],story:'孫權遣將軍衛溫、諸葛直率甲士萬人浮海求夷州，帶回數千人；一般認為夷州即今日的臺灣。'},
  {y:238,id:'woguo',name:'倭國入貢',need:['邪馬台','大和'],story:'景初二年，倭女王卑彌呼遣使朝貢，魏明帝封為「親魏倭王」，賜金印紫綬（邪馬台國的位置，學界有北九州與畿內兩說）。'},
@@ -914,6 +915,9 @@ const ACH_HIST=[
  {y:229,id:'wudu',name:'二郡入蜀',need:['武都','漢中'],story:'建興七年，諸葛亮遣陳式攻取武都、陰平二郡，魏將郭淮救援不及。'},
  {y:280,id:'guijin',name:'三國歸晉',need:['成都','建業','長沙'],story:'晉武帝滅吳，王濬樓船下益州，三分終歸一統。'},
 ];
+// 含《三國演義》情節的成就（名稱或內容來自演義，不是正史）：圖鑑與提示會標「演義」，故事文字裡也會寫明哪些是演義
+const RO_IDS=new Set(['taoyuan','hulao','zhujiu','bowang','zhouyu','danfu','qishan']);
+ACH_HIST.forEach(a=>{if(RO_IDS.has(a.id))a.ro=true;});
 const ACH_DEF=ACH_HIST.map((a,i)=>({...a,o:i})).sort((a,b)=>(a.y-b.y)||(a.o-b.o));
 const FNAME={W:'魏',S:'蜀',U:'吳'};
 const ZHOU=[...new Set(STATES.map(s=>s.z))];
@@ -967,7 +971,7 @@ function checkAchievements(T){
     saveAch();hud();
     // 一次解鎖很多個（例如整張地圖連成一片）時不要連續跳幾十個提示：只依序顯示前三個，其餘合併成一則
     const show=fresh.length>3?fresh.slice(-3).reverse():fresh;
-    show.forEach(a=>toast(a.name,a.story));
+    show.forEach(a=>toast(a.ro?a.name+'（演義）':a.name,a.story));
     achievementBurst(show,T);{const gid=gameId;setTimeout(()=>{if(gid===gameId&&!over&&roundState!=='won')SND.play('achievement');},160);}   // 剛通關時不疊成就的聲音
     if(fresh.length>3)toast(`另外還解鎖了 ${fresh.length-3} 個成就`,'到圖鑑裡看看吧');
   }
@@ -1009,13 +1013,13 @@ function renderAch(){
   const list=document.getElementById('achList');
   const progOf=a=>{const p=achProg.get(a.id),t=a.id==='tri'?3:a.need.length;return p&&t?`<div class="prog">本局最多連了 ${p} / ${t}${a.id==='tri'?' 個勢力':' 座'}</div>`:'';};
   const card=a=>{
-    const need=needOf(a),yr=a.y?` <span class="need">${a.y} 年</span>`:'';
-    if(achDone.has(a.id))return `<div class="ai now">${miniMap(a,true)}<div class="tx"><b>★ ${a.name}</b>${yr}<span class="tag now">本局</span><div>${a.story}</div><div class="need">${need}</div></div></div>`;
-    if(achEver.has(a.id))return `<div class="ai ever">${miniMap(a,true)}<div class="tx"><b>☆ ${a.name}</b>${yr}<span class="tag">曾達成</span><div>${a.story}</div><div class="need">${need}</div>${progOf(a)}</div></div>`;
+    const need=needOf(a),yr=a.y?` <span class="need">${a.yl||a.y} 年</span>`:'',ro=a.ro?'<span class="tag ro" title="含《三國演義》情節">演義</span>':'';
+    if(achDone.has(a.id))return `<div class="ai now">${miniMap(a,true)}<div class="tx"><b>★ ${a.name}</b>${yr}${ro}<span class="tag now">本局</span><div>${a.story}</div><div class="need">${need}</div></div></div>`;
+    if(achEver.has(a.id))return `<div class="ai ever">${miniMap(a,true)}<div class="tx"><b>☆ ${a.name}</b>${yr}${ro}<span class="tag">曾達成</span><div>${a.story}</div><div class="need">${need}</div>${progOf(a)}</div></div>`;
     return `<div class="ai lock">${miniMap(a,false)}<div class="tx"><b>？？？${a.auto?'（'+a.name+'）':''}</b><div class="need">${need}</div>${progOf(a)}</div></div>`;
   };
   {const sd=document.getElementById('side'),got=ACH_DEF.filter(a=>achDone.has(a.id));
-   sd.innerHTML=rankHTML()+`<div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
+   sd.innerHTML=rankHTML()+`<div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.yl||a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
   if(achTab==='run'){
     const got=ACH_DEF.filter(a=>achDone.has(a.id));
     list.innerHTML=rankHTML()+(got.length?got.map(card).join(''):'<div class="ach-empty">這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。</div>');
