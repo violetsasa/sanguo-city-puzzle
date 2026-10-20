@@ -68,7 +68,7 @@ for n_, g in new.items():
     near = sorted([(k, round(g.distance(v), 3)) for k, v in exist.items()], key=lambda t: t[1])[:3]
     print(n_, '面積', round(g.area, 2), '重疊現有城', ov, '重疊新城', oth, '最近', near, 'bbox', [round(x, 2) for x in g.bounds])
 
-spec = [('交趾', 'U', '交州'), ('夷州', 'U', '夷洲'), ('邪馬台', 'W', '邪馬台'), ('大和', 'W', '大和')]   # 島上的城各自一個 z（單座不會產生「某某平定」的自動成就）
+spec = [('交趾', 'U', '交州'), ('夷州', 'U', '夷州'), ('邪馬台', 'W', '邪馬台'), ('大和', 'W', '大和')]   # 島上的城各自一個 z（單座不會產生「某某平定」的自動成就）
 out = []
 for n_, f, z in spec:
     g = Polygon(new[n_].exterior)
