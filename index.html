@@ -349,10 +349,10 @@ const SND=(()=>{
     if(ac){if(ac.state==='suspended')ac.resume();return;}
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
     ac=new AC();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ac.destination);
-    dry=ac.createGain();dry.connect(comp);   // 乾聲：城落下
-    bus=ac.createGain();bus.connect(comp);   // 帶迴響：其餘音效
+    dry=ac.createGain();dry.gain.value=.75;dry.connect(comp);   // 乾聲：城落下（整體音量 0.75，避免太吵）
+    bus=ac.createGain();bus.gain.value=.75;bus.connect(comp);   // 帶迴響：其餘音效
     const conv=ac.createConvolver(),wet=ac.createGain();wet.gain.value=.3;
-    {const sr=ac.sampleRate,len=Math.floor(sr*1.8),ib=ac.createBuffer(2,len,sr);for(let c=0;c<2;c++){const d=ib.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);}conv.buffer=ib;}
+    {const sr=ac.sampleRate,len=Math.floor(sr*1.0),ib=ac.createBuffer(2,len,sr);for(let c=0;c<2;c++){const d=ib.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);}conv.buffer=ib;}
     bus.connect(conv);conv.connect(wet);wet.connect(comp);
     noiseBuf=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
   }
@@ -410,10 +410,10 @@ const SND=(()=>{
   const fx={
     // 城落下：輕輕的木頭敲擊（乾聲，不帶迴響）
     drop(t){wood(t,520,.22,dry);drum(t,70,.25,.18,dry);},
-    // 相連：小片兩個撥弦；中片四音刮奏；大片六音刮奏加低磬
+    // 相連：小片兩個撥弦；中片三音刮奏；大片六音刮奏加低磬
     merge(t,n){const tier=Math.min(6,Math.floor(Math.log2(Math.max(2,n))*1.4)),b=2+tier;
       if(tier<2){guzheng(pent(b),t,.24);guzheng(pent(b+2),t+.07,.22);}
-      else if(tier<4)strum([b,b+1,b+2,b+3],t,.05,.22);
+      else if(tier<4)strum([b,b+1,b+2],t,.05,.22);
       else{strum([b-2,b-1,b,b+1,b+2,b+3],t,.045,.2);bowl(147,t+.1,.16,2.2);}},
     // 成就：小鑼一聲，接一串往上飄的高音鈴
     achievement(t){smallGong(t,330,.45,1.4);[8,9,10,11,12,13].forEach((d,i)=>bellTone(pent(d),t+.12+i*.07,.15,1.5));},
@@ -435,14 +435,15 @@ const SND=(()=>{
       try{
         if(!ac||ac.state!=='running'){ensure();return;}   // 還沒被使用者手勢解鎖時不排隊，避免一解鎖就爆一串
         const now=performance.now();
-        if(now-(last[name]||0)<60&&!(name==='merge'&&arg>(last.mergeArg||0)))return;   // 同一種音效 60 毫秒內不重複；但更大片的相連不被小的蓋掉
+        const gap=name==='merge'?250:60;   // 同一種音效的最短間隔：相連 250 毫秒（連續合併時不要一直刮奏），其餘 60 毫秒
+        if(now-(last[name]||0)<gap&&!(name==='merge'&&arg>(last.mergeArg||0)))return;   // 但更大片的相連不被小的蓋掉
         last[name]=now;if(name==='merge')last.mergeArg=arg;
         fx[name](ac.currentTime+.02,arg);
       }catch(e){}
     }
   };
 })();
-const VERSION='2026.10.20-13';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-14';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
