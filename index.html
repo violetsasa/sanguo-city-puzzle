@@ -906,7 +906,7 @@ const area=pts=>Math.abs(pts.reduce((a,[x,y],i)=>{const [x2,y2]=pts[(i+1)%pts.le
 const AREAS=STATES.map(s=>area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}))).sort((a,b)=>a-b);
 // 剛落下的單州畫得大（SINGLE_BASE）；相連成功後整組依總面積重算，縮到 BASE（連得越多越小）
 const AREF=AREAS[AREAS.length>>1],GAMMA=0.32;
-let SINGLE_BASE=0.34,BASE=0.3165;   // 校準（77 座城、箱寬 500、最後 60 秒倒數、整個州連齊才縮小）：依地理位置落點的自動玩家全連 0.29→3／9、0.34→1／6、0.36→1／4、0.40→0／4、0.46→0／9（全在放城階段溢出）。BASE 已不再使用
+let SINGLE_BASE=0.42,BASE=0.3165;   // 校準（77 座城、箱寬 500、最後 60 秒倒數、整個州連齊才縮小）：依地理位置落點的自動玩家全連 0.34→3／8、0.38→1／8、0.42→0／8（另有 4 局溢出）、0.46→0／8（全部溢出）；真人比自動玩家強，0.42 是依遊玩回饋「太容易」所選。BASE 已不再使用
 STATES.forEach(s=>{s.a1=area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}));s.sc=SINGLE_BASE*Math.pow(s.a1/AREF,GAMMA-0.5);});
 let MIN_PART_AREA=10;   // Matter 預設值；調高會削掉細長尖角，繪圖輪廓就會超出碰撞形狀
 
