@@ -20,7 +20,7 @@
   :root{--bg:#efe3c8;--ink:#3a2a18;--panel:#fbf4e2;--line:#8a6a3a;--wei:#9bb8e3;--shu:#a9d6a0;--wu:#f0aaa3}
   @media (prefers-color-scheme:dark){:root{--bg:#1d1913;--ink:#eadfc6;--panel:#2a241b;--line:#a98550}}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Noto Serif TC","PMingLiU",serif;overflow:hidden}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif;overflow:hidden}
   #app{max-width:min(100%,1000px);margin:0 auto;height:100%;display:flex;flex-direction:column;padding:8px 16px 12px;gap:8px}
   header{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .brand{display:flex;align-items:center;gap:8px;min-width:0}
@@ -30,6 +30,9 @@
   .chip{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 12px 4px 8px}
   .chip svg{width:clamp(16px,2.6vh,22px);height:clamp(16px,2.6vh,22px);flex:none;stroke:var(--line);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .chip .cap{display:flex;flex-direction:column;line-height:1.05}
+  @media (max-width:520px){   /* 窄螢幕：數據卡收緊（去掉小圖示），標題才放得下 */
+    .chip>svg,.brand svg{display:none}.chip{padding:3px 10px}.stats{gap:4px}h1{letter-spacing:0}
+  }
   .chip small{font-size:clamp(9px,1.5vh,11px);opacity:.65;letter-spacing:1px;white-space:nowrap}
   .chip b{font-size:clamp(15px,min(2.8vh,4.4vw),24px);white-space:nowrap;font-variant-numeric:tabular-nums}
   #wrap{position:relative;flex:1;min-height:0}
@@ -62,9 +65,11 @@
   #ov .card{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:22px 26px;max-width:min(92%,420px);max-height:96%;display:flex;flex-direction:column}
   #ov h2{margin:0 0 4px;font-size:26px;letter-spacing:6px}
   #ov p{margin:6px 0 14px;font-size:14px;line-height:1.75;overflow:auto;flex:1 1 auto;min-height:0}
+  #ov p{scrollbar-width:thin;scrollbar-color:var(--line) transparent;scrollbar-gutter:stable both-edges;padding:0 12px}   /* 捲軸細一點，並預留左右空位，不蓋到文字 */
+  #ov p::-webkit-scrollbar{width:8px}#ov p::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}#ov p::-webkit-scrollbar-track{background:transparent}
   #ov h2,#ov button{flex:none}
   #ov .sub{font-size:13px;letter-spacing:3px;opacity:.7;margin-bottom:10px}
-  #ov .story{text-align:left;font-size:14.5px;line-height:1.85;margin:8px 0 12px}
+  #ov .story{text-align:center;font-size:14.5px;line-height:1.85;margin:8px 0 12px}
   #ov .rules{text-align:left;font-size:13.5px;line-height:1.7;margin:0 0 14px;padding:8px 12px;border:1px dashed var(--line);border-radius:8px;background:rgba(138,106,58,.08)}
   #ov .rules b{display:block;letter-spacing:2px;margin-bottom:2px}
   #ov .rules div{padding-left:1.1em;text-indent:-1.1em}
@@ -75,23 +80,38 @@
   #ach h2 .grow{flex:1}
   #ach h2 small{font-size:13px;font-weight:normal}
   #achList{overflow:auto;display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}
+  #achList{scrollbar-width:thin;scrollbar-color:var(--line) transparent;padding-right:6px}   /* 捲軸細一點，右側留空位，不蓋到卡片 */
+  #achList::-webkit-scrollbar{width:8px}#achList::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}#achList::-webkit-scrollbar-track{background:transparent}
   .ai{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;line-height:1.5}
   .ai b{font-size:15px}.ai.lock{opacity:.55}.ai.lock b{letter-spacing:1px}
   .ai .need{font-size:12px;opacity:.8}
   .ai .tag{margin-left:8px;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--line);color:var(--panel);vertical-align:2px}
   .ai .tag.now{background:#d9a521;color:#3a2208}
   .ai.ever{background:rgba(138,106,58,.07)}
+  .ai.now{background:rgba(217,165,33,.17);border-color:#d9a521}   /* 本局：淡金色底 */
+  .ai.lock{background:rgba(0,0,0,.05)}                              /* 未解鎖：灰底 */
+  .tabs{display:flex;gap:6px;margin:2px 0 4px}
+  .tabs button{flex:1;border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 10px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
+  .tabs button b{font-variant-numeric:tabular-nums;margin-left:4px}
+  .tabs button.on{background:var(--line);color:var(--panel)}
+  .ach-clear{text-align:center;margin:10px 0 2px}
+  .ach-clear button{border:0;background:none;font:inherit;font-size:12px;color:var(--ink);opacity:.55;text-decoration:underline;cursor:pointer;padding:4px 8px}
+  .ach-clear button:hover{opacity:.9}
+  .ach-empty{text-align:center;opacity:.7;font-size:13px;padding:26px 10px;line-height:1.8}
   #toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-140%);z-index:20;background:#fff8dc;color:#3a2a18;border:2px solid #d9a521;border-radius:12px;padding:8px 16px;font-size:14px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;transition:transform .35s ease,opacity .35s ease;pointer-events:none;max-width:90vw}
   #toast.show{transform:translate(-50%,0);opacity:1}
   #toast b{display:block;font-size:17px}
   .legend{font-size:clamp(11px,min(1.9vh,3vw),17px);display:flex;gap:10px;justify-content:center}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+  .brand .legend{flex:none;margin-left:8px;gap:8px;white-space:nowrap}
+  .legend.bottom{display:none}
+  @media (max-width:640px){.legend.inbrand{display:none}.legend.bottom{display:flex}}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8h3v3h2V8h2v3h2V8h2v3h2V8h3v13z"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></svg><h1>山河輿圖</h1></div>
+    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8h3v3h2V8h2v3h2V8h2v3h2V8h3v13z"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></svg><h1>山河輿圖</h1><div class="legend inbrand"><span><i style="background:var(--wei)"></i>魏</span><span><i style="background:var(--shu)"></i>蜀</span><span><i style="background:var(--wu)"></i>吳</span></div></div>
     <div class="stats">
       <div class="chip" title="進度：已放下的城／全部城數"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg><div class="cap"><small>進度</small><b id="prog">0 / 62</b></div></div>
       <div class="chip" title="最大相連：目前連在一起的城裡，最多有幾座"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><div class="cap"><small>最大相連</small><b id="clu">0</b></div></div>
@@ -102,7 +122,8 @@
   <div id="wrap">
     <canvas id="c"></canvas>
     <div id="ach"><div class="card">
-      <h2><span>成就圖鑑</span><small id="achCount"></small><span class="grow"></span><button id="achClose" class="ib sm" title="關閉" aria-label="關閉"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+      <h2><span>成就圖鑑</span><span class="grow"></span><button id="achClose" class="ib sm" title="關閉" aria-label="關閉"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+      <div class="tabs" role="tablist"><button id="tabRun" role="tab">本局<b id="cntRun"></b></button><button id="tabAll" role="tab">累計圖鑑<b id="cntAll"></b></button></div>
       <div id="achList"></div>
     </div></div>
     <div id="ov"><div class="card">
@@ -116,7 +137,7 @@
     <div id="next" title="下一座要放的城"><i id="nextDot"></i><small>下一城</small><span id="nextName">—</span></div>
     <button id="shake" class="ib primary" title="搖一搖（讓城池鬆開）" aria-label="搖一搖"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5h11l-1.5 7.5H8z"/><path d="M8.6 9.4L10 7l1.4 2.4z"/><circle cx="14.2" cy="8" r="1.3"/><path d="M3.6 12.2c-1.1 1.3-1.1 3.6 0 4.9"/><path d="M1.6 10.6c-1.9 2.2-1.9 6.2 0 8.4"/><path d="M20.4 12.2c1.1 1.3 1.1 3.6 0 4.9"/><path d="M22.4 10.6c1.9 2.2 1.9 6.2 0 8.4"/></svg></button>
   </div>
-  <div class="legend"><span><i style="background:var(--wei)"></i>魏</span><span><i style="background:var(--shu)"></i>蜀</span><span><i style="background:var(--wu)"></i>吳</span></div>
+  <div class="legend bottom"><span><i style="background:var(--wei)"></i>魏</span><span><i style="background:var(--shu)"></i>蜀</span><span><i style="background:var(--wu)"></i>吳</span></div>
 </div>
 <script>
 const {Engine,Bodies,Body,Composite,Events,Vertices}=Matter;
@@ -195,17 +216,18 @@ const isAdj=(a,b)=>adj.has(a.n+'|'+b.n);
 const COL={W:'#9bb8e3',S:'#a9d6a0',U:'#f0aaa3'};
 
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const VX=24,VY=40,VW=552,VH=644;   // 可視範圍：只顯示箱子與預覽區，裁掉四周多餘留白，同樣的畫面裡整個遊戲區可以畫得更大（物理座標不變）
 const W=600,H=700,SC=0.45,WALL=16,BOXL=40,BOXR=W-40,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
 let roundState='play',lastDropStep=0,settleStart=0,settleCalm=0,nextRoundStep=0,shakeReadyStep=0;   // 輪末結算狀態：play 進行中／settle 等待穩定／banner 顯示橫幅後換輪（全部以物理步數計時，面板開著就會一起暫停）
-const SHAKE_COOLDOWN_STEPS=180;   // 搖一搖冷卻 3 秒（比免死寬限 2.5 秒略長；每搖一次扣 5 分，也不能無限連搖）
+const SHAKE_COOLDOWN_STEPS=60;   // 搖一搖冷卻 1 秒（每搖一次扣 5 分；搖完 2.5 秒內不計溢出）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
 const pieceOf=new Map();                                           // 州 → 目前場上（或預覽中）的州物件，重建後永遠指向最新的
 
 function resize(){
-  const w=cv.parentElement,aw=w.clientWidth,ah=w.clientHeight,k=Math.min(aw/W,ah/H),d=devicePixelRatio||1;
-  cv.style.width=W*k+'px';cv.style.height=H*k+'px';cv.style.left=(aw-W*k)/2+'px';cv.style.top='0';
-  cv.width=W*k*d;cv.height=H*k*d;
+  const w=cv.parentElement,aw=w.clientWidth,ah=w.clientHeight,k=Math.min(aw/VW,ah/VH),d=devicePixelRatio||1;
+  cv.style.width=VW*k+'px';cv.style.height=VH*k+'px';cv.style.left=(aw-VW*k)/2+'px';cv.style.top='0';
+  cv.width=VW*k*d;cv.height=VH*k*d;
 }
 addEventListener('resize',resize);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -408,7 +430,7 @@ function startMergeFx(sa,sb,T){
   try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
 }
 function flyScore(pts,x,y,go){
-  const cr=cv.getBoundingClientRect(),from={x:cr.left+x/W*cr.width,y:cr.top+y/H*cr.height};
+  const cr=cv.getBoundingClientRect(),from={x:cr.left+(x-VX)/VW*cr.width,y:cr.top+(y-VY)/VH*cr.height};
   const tg=document.getElementById('score').getBoundingClientRect();
   const dx=tg.left+tg.width/2-from.x,dy=tg.top+tg.height/2-from.y;
   const el=document.createElement('div');el.className='fly';el.textContent='＋'+pts;
@@ -521,8 +543,8 @@ function drawFxFront(now){
     // 獎盃星
     drawStar(x0+34,cy,17);
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.font='bold 13px "Noto Serif TC","PMingLiU",serif';ctx.fillStyle='#7a4a10';ctx.fillText('成就解鎖'+(b.sub?'　'+b.sub:''),x0+bw/2+14,y0+20);
-    ctx.font='bold 28px "Noto Serif TC","PMingLiU",serif';ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,248,220,.9)';ctx.strokeText(b.name,x0+bw/2+14,y0+47);
+    ctx.font='bold 13px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif';ctx.fillStyle='#7a4a10';ctx.fillText('成就解鎖'+(b.sub?'　'+b.sub:''),x0+bw/2+14,y0+20);
+    ctx.font='bold 28px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif';ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,248,220,.9)';ctx.strokeText(b.name,x0+bw/2+14,y0+47);
     ctx.fillStyle='#3a2208';ctx.fillText(b.name,x0+bw/2+14,y0+47);
     ctx.restore();
   }
@@ -556,7 +578,7 @@ function drawFx(){
   for(const p of fx.pops){
     const t=(now-p.t0)/POPUP_MS;if(t<0)continue;
     ctx.globalAlpha=t<.65?1:1-(t-.65)/.35;
-    ctx.font=`bold ${p.size}px "Noto Serif TC","PMingLiU",serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font=`bold ${p.size}px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
     const y=p.y-26*t;ctx.lineJoin='round';ctx.lineWidth=p.size*.28;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText(p.text,p.x,y);
     ctx.fillStyle='#22303f';ctx.fillText(p.text,p.x,y);
   }
@@ -662,22 +684,37 @@ function checkAchievements(T){
   }
   renderAch();
 }
+let achTab='all';
 function renderAch(){
   const n=ACH_DEF.length;
-  document.getElementById('achCount').textContent=`本局 ${achDone.size} / ${n}　累計 ${achEver.size} / ${n}`;
+  document.getElementById('cntRun').textContent=achDone.size;
+  document.getElementById('cntAll').textContent=`${achEver.size} / ${n}`;
+  document.getElementById('tabRun').classList.toggle('on',achTab==='run');
+  document.getElementById('tabAll').classList.toggle('on',achTab==='all');
   document.getElementById('achBadge').textContent=achDone.size;
   document.getElementById('achBtn').title=`成就圖鑑（本局 ${achDone.size}，累計 ${achEver.size} / ${n}）`;
   const rank=a=>achDone.has(a.id)?0:achEver.has(a.id)?1:2;     // 本局已解鎖 → 曾達成 → 未解鎖
+  const needOf=a=>a.hint||('把 '+(a.need.length>12?'整個範圍內的 '+a.need.length+' 座城':a.need.join('、'))+' 連在一起（中間可以夾別的城）');
   const list=document.getElementById('achList');
-  list.innerHTML=[...ACH_DEF].sort((a,b)=>rank(a)-rank(b)).map(a=>{
-    const need=a.hint||('把 '+(a.need.length>12?'整個範圍內的 '+a.need.length+' 座城':a.need.join('、'))+' 連在一起（中間可以夾別的城）');
-    const yr=a.y?` <span class="need">${a.y} 年</span>`:'';
-    if(achDone.has(a.id))return `<div class="ai"><b>★ ${a.name}</b>${yr}<span class="tag now">本局</span><div>${a.story}</div><div class="need">${need}</div></div>`;
+  const card=a=>{
+    const need=needOf(a),yr=a.y?` <span class="need">${a.y} 年</span>`:'';
+    if(achDone.has(a.id))return `<div class="ai now"><b>★ ${a.name}</b>${yr}<span class="tag now">本局</span><div>${a.story}</div><div class="need">${need}</div></div>`;
     if(achEver.has(a.id))return `<div class="ai ever"><b>☆ ${a.name}</b>${yr}<span class="tag">曾達成</span><div>${a.story}</div><div class="need">${need}</div></div>`;
     return `<div class="ai lock"><b>？？？${a.auto?'（'+a.name+'）':''}</b><div class="need">${need}</div></div>`;
-  }).join('');
+  };
+  if(achTab==='run'){
+    const got=ACH_DEF.filter(a=>achDone.has(a.id));
+    list.innerHTML=got.length?got.map(card).join(''):'<div class="ach-empty">這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。</div>';
+  }else list.innerHTML=[...ACH_DEF].sort((a,b)=>rank(a)-rank(b)).map(card).join('')+'<div class="ach-clear"><button id="achClear">清除累計紀錄</button></div>';
 }
-document.getElementById('achBtn').onclick=function(){renderAch();document.getElementById('ach').style.display='flex';this.blur();};
+document.getElementById('achList').addEventListener('click',e=>{
+  if(!e.target.closest||!e.target.closest('#achClear'))return;
+  if(!confirm('清除後，累計圖鑑的歷史紀錄會全部消失，無法復原。\n（本局已解鎖的成就會保留。）\n確定要清除嗎？'))return;
+  achEver=new Set(achDone);saveAch();renderAch();   // 只清歷史收藏；本局已解鎖的仍算累計，數字才不會比本局還少
+});
+document.getElementById('tabRun').onclick=function(){achTab='run';renderAch();this.blur();};
+document.getElementById('tabAll').onclick=function(){achTab='all';renderAch();this.blur();};
+document.getElementById('achBtn').onclick=function(){achTab=achDone.size?'run':'all';renderAch();document.getElementById('ach').style.display='flex';this.blur();};
 document.getElementById('achClose').onclick=()=>{document.getElementById('ach').style.display='none';};
 renderAch();
 
@@ -813,7 +850,7 @@ function nextPiece(){
   const st=STATES[queue.shift()];
   cur=makePiece(st,dropX,0);
   cur.unit=st.n;
-  curY=Math.max(60,(cur.bounds.max.y-cur.bounds.min.y)/2+16);
+  curY=Math.max(VY+20,(cur.bounds.max.y-cur.bounds.min.y)/2+VY+6);   // 預覽的城完整落在可視範圍內（最高的雲南約 129px，底邊仍在箱口之上）
   Body.setPosition(cur,{x:clampX(dropX),y:curY});Body.setStatic(cur,true);hud();
 }
 function clampX(x){
@@ -907,8 +944,8 @@ function shake(){
   score=Math.max(0,score-5);hud();
 }
 
-function toX(e){const r=cv.getBoundingClientRect();return (e.clientX-r.left)/r.width*W;}
-function toY(e){const r=cv.getBoundingClientRect();return (e.clientY-r.top)/r.height*H;}
+function toX(e){const r=cv.getBoundingClientRect();return VX+(e.clientX-r.left)/r.width*VW;}
+function toY(e){const r=cv.getBoundingClientRect();return VY+(e.clientY-r.top)/r.height*VH;}
 let ptrDown=false,ptrId=null;     // 只認「按下去的那一根手指」，其他手指的放開不會誤丟城
 cv.addEventListener('pointerdown',e=>{if(overlayOpen()||ptrDown)return;ptrDown=true;ptrId=e.pointerId;dropX=toX(e);moveCur();try{cv.setPointerCapture(e.pointerId);}catch(_){}});
 cv.addEventListener('pointermove',e=>{if(overlayOpen()||(ptrDown&&e.pointerId!==ptrId))return;dropX=toX(e);moveCur();if(e.pointerType==='mouse')hoverPt={x:toX(e),y:toY(e)};});
@@ -947,13 +984,21 @@ function drawPiece(P,ghost,labelPass){
     // 字級不依單城面積變化；整組相連縮小時，同一組的字一起略為縮小（下限 12），否則縮小後的形狀會被字整個蓋住
     const fs=Math.round(Math.max(12,LABEL_FS*Math.sqrt(Math.min(1,P.k*scA/P.s.sc)))*2)/2;
     const wp=P.rel.map(T);                                   // 形狀的世界座標（也供滑鼠移上去時判斷在哪座城）
-    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,ar=0;
-    for(let i=0;i<wp.length;i++){const q=wp[i],r=wp[(i+1)%wp.length];if(q.x<x0)x0=q.x;if(q.x>x1)x1=q.x;if(q.y<y0)y0=q.y;if(q.y>y1)y1=q.y;ar+=q.x*r.y-r.x*q.y;}
-    ar=Math.abs(ar)/2;                                       // 面積與旋轉角度無關，排序與「是否太小」的判斷才不會隨旋轉跳動
+    let lx0=1e9,lx1=-1e9,ly0=1e9,ar=0;                       // 本地座標（未旋轉）的外框與面積：與旋轉角度無關，排序與「是否太小」的判斷才不會隨旋轉跳動
+    for(let i=0;i<P.rel.length;i++){const q=P.rel[i],r=P.rel[(i+1)%P.rel.length];if(q.x<lx0)lx0=q.x;if(q.x>lx1)lx1=q.x;if(q.y<ly0)ly0=q.y;ar+=q.x*r.y-r.x*q.y;}
+    ar=Math.abs(ar)/2*sc*sc;
     const lw=labelW(P.s.n,fs)+4,lh=fs*1.2;
-    let L=T(P.lab);
-    if(lw*lh>0.6*ar)L={x:(x0+x1)/2,y:y0-lh*0.5-1};            // 太小的城：字改貼在形狀正上方，形狀完整露出來
-    P._lbl={x:L.x,y:L.y,fs,w:lw,h:lh,area:ar};P._wp=wp;
+    const an=labAnchor(P);
+    let L=T(an);
+    if(lw*lh>0.6*ar){   // 太小的城：字改貼在形狀「上方」（隨形狀旋轉），形狀完整露出來；貼的是字所在位置正上方的實際輪廓，不是外框頂端
+      const ax=an.x;let top=1e9;
+      for(let i=0;i<P.rel.length;i++){const q=P.rel[i],r=P.rel[(i+1)%P.rel.length];
+        if((q.x<=ax&&r.x>=ax)||(r.x<=ax&&q.x>=ax)){const t=r.x===q.x?0:(ax-q.x)/(r.x-q.x);top=Math.min(top,q.y+(r.y-q.y)*t);}}
+      if(top>1e8)top=ly0;
+      L=T({x:ax,y:top-(lh*0.5+1)/sc});
+    }
+    const ca=Math.abs(Math.cos(w.a)),sa=Math.abs(Math.sin(w.a));
+    P._lbl={x:L.x,y:L.y,fs,w:lw,h:lh,area:ar,a:readable(w.a),hx:(ca*lw+sa*lh)/2,hy:(sa*lw+ca*lh)/2};P._wp=wp;   // hx／hy：旋轉後外接矩形的半寬半高，用來避讓與限制不出箱子
     return;
   }
   ctx.beginPath();P.rel.forEach((v,i)=>{const q=T(v);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);});ctx.closePath();
@@ -969,13 +1014,26 @@ function drawPiece(P,ghost,labelPass){
 // 標籤位置限制：不可壓到箱壁或箱底（預覽區在箱口以上，只限制不超出畫面）
 function lblPos(L){
   const inBox=L.y>BOX_TOP-4;
-  const x=Math.max((inBox?BOXL:0)+L.w/2+3,Math.min((inBox?BOXR:W)-L.w/2-3,L.x));
-  const y=inBox?Math.min(BOXB-L.h/2-4,L.y):L.y;
+  const x=Math.max((inBox?BOXL:0)+L.hx+3,Math.min((inBox?BOXR:W)-L.hx-3,L.x));
+  const y=inBox?Math.min(BOXB-L.hy-4,L.y):Math.max(VY+L.hy+2,L.y);   // 箱內不壓底；箱口以上（預覽區）不超出畫面上緣
   return {x,y};
 }
 let labelFrame=0;
+// 標籤錨點：優先用形狀的重心（看起來最置中）；重心落在形狀外或離邊界太近（凹形、細長）時，才退回「離邊界最遠的點」
+function labAnchor(P){
+  const r=P.rel,n=r.length;let a=0,cx=0,cy=0;
+  for(let i=0;i<n;i++){const q=r[i],u=r[(i+1)%n],cr=q.x*u.y-u.x*q.y;a+=cr;cx+=(q.x+u.x)*cr;cy+=(q.y+u.y)*cr;}
+  if(Math.abs(a)<1e-6)return P.lab;
+  const c={x:cx/(3*a),y:cy/(3*a)};
+  if(!inPoly(c,r))return P.lab;
+  let d=1e9;
+  for(let i=0;i<n;i++){const q=r[i],u=r[(i+1)%n],dx=u.x-q.x,dy=u.y-q.y,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((c.x-q.x)*dx+(c.y-q.y)*dy)/l2));d=Math.min(d,Math.hypot(c.x-q.x-dx*t,c.y-q.y-dy*t));}
+  return d>=0.7*P.labR?c:P.lab;
+}
+// 文字跟著地圖轉，但轉過 90 度就翻回來（加 180 度），字永遠不會倒著；結果落在 -90 到 90 度之間
+function readable(a){a=Math.atan2(Math.sin(a),Math.cos(a));if(a>Math.PI/2)a-=Math.PI;else if(a<-Math.PI/2)a+=Math.PI;return a;}
 const LABEL_FS=17;   // 標籤字級（canvas 邏輯像素，會隨整體畫面縮放）
-const LABEL_FONT=fs=>`bold ${fs}px "Noto Serif TC","PMingLiU",serif`;
+const LABEL_FONT=fs=>`500 ${fs}px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif`;   // 黑體：筆畫粗細平均，疊在地圖上不會顯得厚重
 const labelWCache=new Map();
 function labelW(text,fs){   // 字寬快取：同樣的字與字級只量一次
   const key=fs+':'+text;let w=labelWCache.get(key);
@@ -986,14 +1044,36 @@ function labelW(text,fs){   // 字寬快取：同樣的字與字級只量一次
 // 被擋住後要空出位置一小段時間才會再出現，避免在邊緣閃爍。滑鼠移到城上時，名字會直接顯示。
 const LABEL_BACK_MS=400;
 function placeLabels(items,now){
-  const sorted=[...items].sort((a,b)=>(b._cur?1:0)-(a._cur?1:0)||b._lbl.area-a._lbl.area||(a.s.n<b.s.n?-1:1));
+  // 還沒相連的單獨城（以及手上那一座）標籤一律顯示，並優先占位；只有相連成組後，組內成員的標籤才會因重疊被略過
+  const single=p=>p._cur||!p._grp;
+  const sorted=[...items].sort((a,b)=>(single(b)?1:0)-(single(a)?1:0)||b._lbl.area-a._lbl.area||(a.s.n<b.s.n?-1:1));
   const placed=[];
+  const hit=(x,y,L)=>placed.some(r=>Math.abs(x-r.x)<L.hx+r.hx+1&&Math.abs(y-r.y)<L.hy+r.hy);
   for(const P of sorted){
-    const L=P._lbl,q=lblPos(L);P._pos=q;
-    const blocked=!P._cur&&placed.some(r=>Math.abs(q.x-r.x)<(L.w+r.w)/2+1&&Math.abs(q.y-r.y)<(L.h+r.h)/2);
+    const L=P._lbl;let q=lblPos(L);
+    if(single(P)){
+      if(hit(q.x,q.y,L)){   // 單獨的城撞到別人的字：往旁邊小幅錯開，找得到空位就用，找不到就維持原位（仍然顯示）
+        // 由近到遠一圈圈找空位（每圈 8 個方向），要求不與別的字重疊，且字心離自己的形狀不超過約 1.8 個字高；找得到最近的就用
+        let best=null,bestD=1e9;
+        for(const r of [1.1,1.6,2.1,2.7]){
+          for(let k=0;k<8;k++){
+            const an=k*Math.PI/4,dx=Math.cos(an)*r*L.hx*1.0,dy=Math.sin(an)*r*L.hy*1.6;
+            const q2=lblPos({...L,x:L.x+dx,y:L.y+dy});
+            if(hit(q2.x,q2.y,L))continue;
+            const pd=polyDist(q2,P._wp);if(pd>L.h*1.8)continue;
+            const dd=Math.hypot(q2.x-q.x,q2.y-q.y);if(dd<bestD){bestD=dd;best=q2;}
+          }
+          if(best)break;
+        }
+        if(best)q=best;   // 找不到就維持原位（仍然顯示）
+      }
+      P._pos=q;P.shown=true;placed.push({x:q.x,y:q.y,hx:L.hx,hy:L.hy});continue;
+    }
+    P._pos=q;
+    const blocked=hit(q.x,q.y,L);
     if(blocked){P.shown=false;P.blockedAt=now;}
     else if(P.shown===undefined||(!P.shown&&now-P.blockedAt>LABEL_BACK_MS))P.shown=true;
-    if(P.shown)placed.push({x:q.x,y:q.y,w:L.w,h:L.h});
+    if(P.shown)placed.push({x:q.x,y:q.y,hx:L.hx,hy:L.hy});
   }
 }
 function paintLabel(P,plate){
@@ -1005,31 +1085,38 @@ function paintLabel(P,plate){
     ctx.beginPath();ctx.roundRect?ctx.roundRect(x-L.w/2-3,y-L.h/2-1,L.w+6,L.h+2,6):ctx.rect(x-L.w/2-3,y-L.h/2-1,L.w+6,L.h+2);ctx.fill();ctx.stroke();
     ctx.fillStyle='#22303f';ctx.fillText(P.s.n,x,y);return;
   }
-  ctx.lineJoin='round';ctx.lineWidth=Math.max(2.5,L.fs*.22);ctx.strokeStyle='rgba(255,255,255,.92)';ctx.strokeText(P.s.n,x,y);
-  ctx.fillStyle='#22303f';ctx.fillText(P.s.n,x,y);
+  ctx.save();ctx.translate(x,y);ctx.rotate(L.a);        // 文字跟著地圖一起旋轉
+  ctx.lineJoin='round';ctx.lineWidth=Math.max(2.2,L.fs*.18);ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText(P.s.n,0,0);
+  ctx.fillStyle='#22303f';ctx.fillText(P.s.n,0,0);ctx.restore();
+}
+function polyDist(pt,wp){   // 點到多邊形輪廓的最短距離（在形狀裡面算 0）
+  if(inPoly(pt,wp))return 0;
+  let d=1e9;
+  for(let i=0;i<wp.length;i++){const a=wp[i],b=wp[(i+1)%wp.length],dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((pt.x-a.x)*dx+(pt.y-a.y)*dy)/l2));d=Math.min(d,Math.hypot(pt.x-a.x-dx*t,pt.y-a.y-dy*t));}
+  return d;
 }
 let hoverPt=null;   // 滑鼠目前在畫布上的位置（畫布座標）
 const inPoly=(pt,pts)=>{let c=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++)if((pts[i].y>pt.y)!==(pts[j].y>pt.y)&&pt.x<(pts[j].x-pts[i].x)*(pt.y-pts[i].y)/(pts[j].y-pts[i].y)+pts[i].x)c=!c;return c;};
 function draw(){
-  const d=cv.width/W;ctx.setTransform(d,0,0,cv.height/H,0,0);
+  const sx=cv.width/VW,sy=cv.height/VH;ctx.setTransform(sx,0,0,sy,-VX*sx,-VY*sy);
   ctx.clearRect(0,0,W,H);
   const _sh=shakeOffset(performance.now());ctx.save();ctx.translate(_sh.x,_sh.y);
   ctx.fillStyle='rgba(120,90,50,.12)';ctx.fillRect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);
   ctx.strokeStyle='#8a6a3a';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(BOXL,BOX_TOP);ctx.lineTo(BOXL,BOXB);ctx.lineTo(BOXR,BOXB);ctx.lineTo(BOXR,BOX_TOP);ctx.stroke();
   ctx.setLineDash([10,8]);ctx.strokeStyle='#c4574f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(BOXL,LINE);ctx.lineTo(BOXR,LINE);ctx.stroke();ctx.setLineDash([]);
+  if(cur){ctx.strokeStyle='rgba(138,106,58,.4)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(dropX,curY+60);ctx.lineTo(dropX,BOXB);ctx.stroke();ctx.setLineDash([]);}   // 落點輔助線先畫，溢出線標籤畫在它上面，兩者不會互相切到
   {
     // 溢出線標籤：實心小標牌 + 較大的粗體字，座標取整數避免字邊緣糊掉
     const txt='溢出線',fs=15;
-    ctx.font=`bold ${fs}px "Noto Serif TC","PMingLiU",serif`;ctx.textAlign='left';ctx.textBaseline='middle';
+    ctx.font=`bold ${fs}px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif`;ctx.textAlign='left';ctx.textBaseline='middle';
     const tw=Math.ceil(ctx.measureText(txt).width),bx=Math.round(BOXL+8),by=Math.round(LINE-fs-6),bw=tw+12,bh=fs+8;
     ctx.fillStyle='#c4574f';ctx.beginPath();ctx.roundRect?ctx.roundRect(bx,by,bw,bh,5):ctx.rect(bx,by,bw,bh);ctx.fill();
     ctx.fillStyle='#fff8e8';ctx.fillText(txt,bx+6,by+bh/2+1);
   }
-  if(cur){ctx.strokeStyle='rgba(138,106,58,.4)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(dropX,curY+60);ctx.lineTo(dropX,BOXB);ctx.stroke();ctx.setLineDash([]);}
   tops.forEach(t=>t.pcs.forEach(p=>drawPiece(p,false,false)));
   if(cur)cur.pcs.forEach(p=>drawPiece(p,true,false));
   const items=[];                                                  // 標籤最後畫，永遠在最上層，並自動錯開
-  tops.forEach(t=>t.pcs.forEach(p=>{p._cur=false;drawPiece(p,false,true);items.push(p);}));
+  tops.forEach(t=>t.pcs.forEach(p=>{p._cur=false;p._grp=t.pcs.length>1;drawPiece(p,false,true);items.push(p);}));
   if(cur)cur.pcs.forEach(p=>{p._cur=true;drawPiece(p,true,true);items.push(p);});
   placeLabels(items,performance.now());
   items.forEach(p=>paintLabel(p,false));
@@ -1092,7 +1179,7 @@ function frame(ts){
   draw();requestAnimationFrame(frame);
 }
 resize();init();
-show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>如今天命握在你手中：把它們一座座請進疆域，讓相鄰的城從對的那一側靠攏，山河便會重新拼合、連成一片。</div><div class="rules"><b>玩法說明</b><div>◆ 移動滑鼠（或手指）選好落點，點擊放下；鍵盤可用 ← → 移動，空白鍵放下。</div><div>◆ 相鄰的城只要在交界處相接，或靠得夠近被磁吸住，就會拼回真實地圖；連得越多，整片疆域越緊實。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就，圖鑑裡看得到每個成就要連哪幾座城。</div><div>◆ 城池堆過紅色溢出線，並靜止超過 1.5 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{});
+show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><div class="rules"><b>玩法說明</b><div>◆ 移動滑鼠（或手指）選好落點，點擊放下；鍵盤可用 ← → 移動，空白鍵放下。</div><div>◆ 相鄰的城只要在交界處相接，或靠得夠近被磁吸住，就會拼回真實地圖；連得越多，整片疆域越緊實。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就，圖鑑裡看得到每個成就要連哪幾座城。</div><div>◆ 城池堆過紅色溢出線，並靜止超過 1.5 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{});
 requestAnimationFrame(frame);
 </script>
 <div id="toast"></div>
