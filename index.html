@@ -333,9 +333,9 @@ let BOXL=50,BOXR=550;   // 箱子左右邊界（箱子置中，寬度可調；�
 const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
 let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單輪流程：play 落城中／final 最後一座落下後的倒數（要把全部連成一片）／won 已通關
-const VERSION='2026.10.20-2';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-3';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
-const SHAKE_COOLDOWN_STEPS=60;   // 搖一搖冷卻 1 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
+const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
 const pieceOf=new Map();                                           // 州 → 目前場上（或預覽中）的州物件，重建後永遠指向最新的
 
@@ -1128,7 +1128,7 @@ const SHAKE_MS=1000,SHAKE_GRACE_STEPS=150;
 let lastShakeStep=-1e9;
 function shake(){
   if(over||overlayOpen()||!tops.length||simStep<shakeReadyStep||roundState==='won')return;
-  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;   // 冷卻 1 秒
+  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;   // 冷卻 0.5 秒
   const btn=document.getElementById('shake');btn.disabled=true;btn.classList.add('on');{const gid=gameId;setTimeout(()=>{if(gid===gameId)btn.classList.remove('on');},950);}
   lastShakeStep=simStep;
   tops.forEach(t=>{
