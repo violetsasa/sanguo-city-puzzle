@@ -59,13 +59,13 @@
   canvas{position:absolute;display:block;touch-action:none;border-radius:10px}
   .bar{display:flex;gap:8px;align-items:center}
   @media (max-width:640px){   /* 手機：下一城獨佔一行；搖一搖放中間、放大，重來在左（兩手都好按） */
-    #app>.bar{display:grid;grid-template-columns:1fr auto 1fr;gap:16px 8px}
-    #app>.bar #next{grid-column:1/-1;grid-row:1;justify-self:center;min-width:min(100%,260px);justify-content:center}   /* 下一城：只要夠放名字，置中，不拉滿整條 */
-    #app>.bar #reset{grid-row:2;grid-column:1;justify-self:start}
-    #app>.bar #shake{grid-row:2;grid-column:2}
+    #app>.bar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px}
+    #app>#next{flex:none;align-self:center;min-width:min(100%,240px);justify-content:center;padding-block:4px}   /* 手機：下一城搬到州色條下方，底部只留三顆按鈕 */
+    #app>.bar #reset{grid-row:1;grid-column:1;justify-self:start}
+    #app>.bar #shake{grid-row:1;grid-column:2}
     #app>.bar #shake{width:clamp(76px,22vw,92px);height:clamp(76px,22vw,92px);border-radius:50%}   /* 手機：搖一搖是一顆大圓鈕，和左右兩顆圓鈕成一排 */
     #app>.bar #shake svg{width:56%;height:56%;transform:translateY(-4%);overflow:visible}
-    #app>.bar #achBtn{grid-row:2;grid-column:3;justify-self:end}   /* 成就鈕搬到右下，和左下的重來左右對稱 */
+    #app>.bar #achBtn{grid-row:1;grid-column:3;justify-self:end}   /* 成就鈕搬到右下，和左下的重來左右對稱 */
     #app>.bar #reset,#app>.bar #achBtn{width:52px;height:52px;opacity:1}
     #app{padding:6px 4px 10px}   /* 箱子是寬度受限：左右留白縮小，箱子就能放大；標題列與按鈕列自己留邊 */
     #app>header,#app>.bar,#app>.legend.bottom{padding-inline:12px}
@@ -901,7 +901,8 @@ document.getElementById('achClose').onclick=()=>{document.getElementById('ach').
 renderAch();
 {  // 手機：成就鈕搬到底部右側（和左邊的重來對稱），標題列空出來；寬螢幕放回標題列
   const mq=matchMedia('(max-width:640px)'),btn=document.getElementById('achBtn'),bar=document.querySelector('#app>.bar'),st=document.querySelector('.stats');
-  const place=()=>{if(mq.matches){if(btn.parentElement!==bar)bar.appendChild(btn);}else if(btn.parentElement!==st)st.appendChild(btn);resize();};
+  const nx=document.getElementById('next'),lg=document.querySelector('.legend.bottom');   // 手機：下一城放在州色條下方；寬螢幕放回按鈕列
+  const place=()=>{if(mq.matches){if(btn.parentElement!==bar)bar.appendChild(btn);if(nx.parentElement!==lg.parentElement)lg.after(nx);}else{if(btn.parentElement!==st)st.appendChild(btn);if(nx.parentElement!==bar)bar.insertBefore(nx,document.getElementById('shake'));}resize();};
   mq.addEventListener('change',place);place();
 }
 
