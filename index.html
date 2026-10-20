@@ -336,7 +336,7 @@ let BOXL=50,BOXR=550;   // 箱子左右邊界（箱子置中，寬度可調；�
 const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
 let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單輪流程：play 落城中／final 最後一座落下後的倒數（要把全部連成一片）／won 已通關
-const VERSION='2026.10.20-7';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-8';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1383,8 +1383,24 @@ function frame(ts){
   }
   draw();requestAnimationFrame(frame);
 }
-// iPhone 的雙擊放大：touch-action 在部分內嵌瀏覽器不一定有效，所以再擋一次——兩次觸控間隔太短時，第二次不讓瀏覽器當成雙擊（畫布用的是 pointer 事件，不受影響）
-{let lastTouchEnd=0,lastEl=null;document.addEventListener('touchend',e=>{const t=Date.now(),el=e.target.closest?e.target.closest('button')||e.target:e.target;if(t-lastTouchEnd<350&&el===lastEl&&e.cancelable)e.preventDefault();lastTouchEnd=t;lastEl=el;},{passive:false});}   // 只擋「同一個元素」的連點；點不同按鈕不受影響
+// iPhone 的雙擊／連點放大：touch-action 在部分內嵌瀏覽器（例如 Discord、LINE）擋不住，所以改在 touchstart 就取消瀏覽器的預設手勢。
+// 取消後瀏覽器不會再補發 click，所以按鈕由 touchend 自己觸發；可捲動的區域（成就清單、說明文字）不取消，照常能捲。畫布用的是 pointer 事件，不受影響。
+{
+  const scrollers='#achList,#ovP,#ov .story,#ov .rules,#side';
+  const inScroller=t=>t.closest&&t.closest(scrollers);
+  const btnAt=t=>t.closest&&t.closest('button');
+  document.addEventListener('touchstart',e=>{
+    if(e.touches.length>1||inScroller(e.target)||!e.cancelable)return;
+    e.preventDefault();
+  },{passive:false});
+  document.addEventListener('touchend',e=>{
+    if(e.touches.length||inScroller(e.target))return;
+    const b=btnAt(e.target),t=e.changedTouches[0];
+    if(!b||b.disabled||!t)return;
+    const under=document.elementFromPoint(t.clientX,t.clientY);   // 手指還在同一顆按鈕上才算點擊
+    if(under&&btnAt(under)===b){if(e.cancelable)e.preventDefault();b.click();}
+  },{passive:false});
+}
 resize();init();
 show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');},true);
 document.body.classList.add('intro');
