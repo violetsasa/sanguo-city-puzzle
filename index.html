@@ -106,6 +106,8 @@
   #ov h2,#ov button,#ov .ovbtns{flex:none}
   #ov .ovbtns{display:flex;gap:10px}
   #ov .ovbtns button{flex:1}
+  #ov #ovB{background:var(--accent);border-color:var(--accent);color:#fff8e8;font-weight:bold;letter-spacing:2px;box-shadow:0 3px 10px rgba(168,85,43,.35)}   /* 主要動作（開始、再次挑戰）用主色，和旁邊的次要按鈕區分 */
+  #ov #ovB:hover{filter:brightness(1.08)}
   #ov .rules{display:none}
   #ov.showrules .rules{display:block}   /* 簡介頁：按「玩法說明」就換成玩法，再按一次回簡介 */
   #ov.showrules .story,#ov.showrules .sub{display:none}
