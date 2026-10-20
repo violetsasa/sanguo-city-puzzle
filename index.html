@@ -435,7 +435,8 @@ const SND=(()=>{
       try{
         if(!ac||ac.state!=='running'){ensure();return;}   // 還沒被使用者手勢解鎖時不排隊，避免一解鎖就爆一串
         const now=performance.now();
-        const gap=name==='merge'?250:60;   // 同一種音效的最短間隔：相連 250 毫秒（連續合併時不要一直刮奏），其餘 60 毫秒
+        const gap=name==='merge'?250:60;
+        if(name==='merge'&&now-(last.merge||0)>=gap)last.mergeArg=0;   // 間隔夠長就重新計，上一局的大片不會讓新局的小片被吃掉   // 同一種音效的最短間隔：相連 250 毫秒（連續合併時不要一直刮奏），其餘 60 毫秒
         if(now-(last[name]||0)<gap&&!(name==='merge'&&arg>(last.mergeArg||0)))return;   // 但更大片的相連不被小的蓋掉
         last[name]=now;if(name==='merge')last.mergeArg=arg;
         fx[name](ac.currentTime+.02,arg);
@@ -443,7 +444,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='2026.10.20-18';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-19';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -694,7 +695,7 @@ function startMergeFx(sa,sb,T){
   fx.pops.push({text:single?`${sa[0].n}＋${sb[0].n}`:`${cnNum(n)}城相連`,x:Math.max(BOXL+60,Math.min(BOXR-60,cx)),y:cy-22,t0:go,size:n===2?17:n<6?19:21});
   const pts2=n*n*10;score+=pts2;pendingFly+=pts2;   // 邏輯分數立刻入帳；畫面上的數字等飛分抵達才更新
   flyScore(pts2,cx,cy,go);
-  mergeBurst(n,cx,cy,pts,T,go);SND.play('merge',n);
+  mergeBurst(n,cx,cy,pts,T,go);if(n<STATES.length)SND.play('merge',n);   // 連成整張地圖那一下由通關的聲音負責，不疊兩個
   try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
 }
 function flyScore(pts,x,y,go){
@@ -963,7 +964,7 @@ function checkAchievements(T){
     // 一次解鎖很多個（例如整張地圖連成一片）時不要連續跳幾十個提示：只依序顯示前三個，其餘合併成一則
     const show=fresh.length>3?fresh.slice(-3).reverse():fresh;
     show.forEach(a=>toast(a.name,a.story));
-    achievementBurst(show,T);setTimeout(()=>SND.play('achievement'),160);
+    achievementBurst(show,T);setTimeout(()=>{if(roundState!=='won')SND.play('achievement');},160);   // 剛通關時不疊成就的聲音
     if(fresh.length>3)toast(`另外還解鎖了 ${fresh.length-3} 個成就`,'到圖鑑裡看看吧');
   }
   renderAch();
@@ -1131,7 +1132,7 @@ const area=pts=>Math.abs(pts.reduce((a,[x,y],i)=>{const [x2,y2]=pts[(i+1)%pts.le
 const AREAS=STATES.map(s=>area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}))).sort((a,b)=>a-b);
 // 剛落下的單州畫得大（SINGLE_BASE）；相連成功後整組依總面積重算，縮到 BASE（連得越多越小）
 const AREF=AREAS[AREAS.length>>1],GAMMA=0.32;
-let SINGLE_BASE=0.46,BASE=0.3165;   // 校準（77 座城、箱寬 500、最後 60 秒倒數、整個州連齊才縮小）：依地理位置落點的自動玩家全連 0.34→3／8、0.38→1／8、0.42→0／10（5 局撐到時間到）、0.44→0／10（4 局放城階段就溢出）、0.46→0／10（7 局放城階段溢出）；真人比自動玩家強，0.46 是依遊玩回饋「太容易」所選（0.34→0.42→0.43→0.46），待實際遊玩再調。BASE 已不再使用
+let SINGLE_BASE=0.46,BASE=0.3165;   // 校準（77 座城、箱寬 500、最後 60 秒倒數、整個州連齊才縮小）：依地理位置落點的自動玩家全連 0.34→3／8、0.38→1／8、0.42→0／10（5 局撐到時間到）、0.44→0／10（4 局放城階段就溢出）、0.46→0／10（7 局放城階段溢出）；真人比自動玩家強，0.46 是依遊玩回饋「太容易」所選（0.34→0.42→0.43→0.46）；0.46＋縮小下限 0.75＋倒數補洞磁吸：自動玩家 14 局通關 0～1，8～9 成在放城階段溢出（真人較強，待實際遊玩再調）。BASE 已不再使用
 STATES.forEach(s=>{s.a1=area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}));s.sc=SINGLE_BASE*Math.pow(s.a1/AREF,GAMMA-0.5);});
 let MIN_PART_AREA=10;   // Matter 預設值；調高會削掉細長尖角，繪圖輪廓就會超出碰撞形狀
 
