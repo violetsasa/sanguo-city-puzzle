@@ -356,19 +356,20 @@ const SND=(()=>{
     bus.connect(conv);conv.connect(wet);wet.connect(comp);
     noiseBuf=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
   }
-  function pluckBuf(f,dur){   // 撥弦（Karplus-Strong）：像古箏
-    const key=Math.round(f*10)+'|'+dur;if(cache.has(key))return cache.get(key);
+  function pluckBuf(f,dur,v){   // 撥弦（Karplus-Strong）：像古箏；每個音有 3 種不同的雜訊起音，輪流用，聽起來不會每次都一模一樣
+    const key=Math.round(f*10)+'|'+dur+'|'+v;if(cache.has(key))return cache.get(key);
     const sr=ac.sampleRate,N=Math.max(2,Math.round(sr/f)),len=Math.floor(sr*dur),b=ac.createBuffer(1,len,sr),d=b.getChannelData(0);
     let prev=0;for(let i=0;i<N;i++){prev=prev*.5+(Math.random()*2-1)*.5;d[i]=prev;}
     const decay=Math.pow(.5,1/(f*.75));for(let i=N;i<len;i++)d[i]=.5*(d[i-N]+d[i-N+1])*decay;
     cache.set(key,b);return b;
   }
   function guzheng(f,t,vel,dest=bus,dur=2){   // 古箏：起音帶一點上滑的音高，再用低通柔化
-    const s=ac.createBufferSource(),lp=ac.createBiquadFilter(),g=ac.createGain();s.buffer=pluckBuf(f,dur);
-    s.playbackRate.setValueAtTime(.982,t);s.playbackRate.linearRampToValueAtTime(1,t+.05);
-    lp.type='lowpass';lp.frequency.value=5200;g.gain.value=vel;s.connect(lp);lp.connect(g);g.connect(dest);s.start(t);
+    const s=ac.createBufferSource(),lp=ac.createBiquadFilter(),g=ac.createGain();s.buffer=pluckBuf(f,dur,(Math.random()*3)|0);
+    const rnd=Math.random;   // 每一下都有一點隨機：音高差幾音分、滑音幅度、音色明暗、力道，像真人撥弦
+    s.playbackRate.setValueAtTime(.979+rnd()*.006,t);s.playbackRate.linearRampToValueAtTime(1+(rnd()-.5)*.004,t+.05);
+    lp.type='lowpass';lp.frequency.value=4600+rnd()*1200;g.gain.value=vel*(.88+rnd()*.24);s.connect(lp);lp.connect(g);g.connect(dest);s.start(t);
   }
-  const strum=(degs,t,step,vel)=>degs.forEach((d,i)=>guzheng(pent(d),t+i*step,vel*(1-i*.02),bus,1.8));   // 刮奏：依序撥過一串音
+  const strum=(degs,t,step,vel)=>degs.forEach((d,i)=>guzheng(pent(d),t+i*step+(Math.random()-.5)*.012,vel*(1-i*.02),bus,1.8));   // 刮奏：依序撥過一串音
   function noise(t,dur,type,freq,q,gain,sweepTo,dest=bus){
     const s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=noiseBuf;f.type=type;f.frequency.setValueAtTime(freq,t);f.Q.value=q;
     if(sweepTo)f.frequency.exponentialRampToValueAtTime(sweepTo,t+dur);
@@ -444,7 +445,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='2026.10.20-19';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-20';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1132,7 +1133,7 @@ const area=pts=>Math.abs(pts.reduce((a,[x,y],i)=>{const [x2,y2]=pts[(i+1)%pts.le
 const AREAS=STATES.map(s=>area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}))).sort((a,b)=>a-b);
 // 剛落下的單州畫得大（SINGLE_BASE）；相連成功後整組依總面積重算，縮到 BASE（連得越多越小）
 const AREF=AREAS[AREAS.length>>1],GAMMA=0.32;
-let SINGLE_BASE=0.46,BASE=0.3165;   // 校準（77 座城、箱寬 500、最後 60 秒倒數、整個州連齊才縮小）：依地理位置落點的自動玩家全連 0.34→3／8、0.38→1／8、0.42→0／10（5 局撐到時間到）、0.44→0／10（4 局放城階段就溢出）、0.46→0／10（7 局放城階段溢出）；真人比自動玩家強，0.46 是依遊玩回饋「太容易」所選（0.34→0.42→0.43→0.46）；0.46＋縮小下限 0.75＋倒數補洞磁吸：自動玩家 14 局通關 0～1，8～9 成在放城階段溢出（真人較強，待實際遊玩再調）。BASE 已不再使用
+let SINGLE_BASE=0.45,BASE=0.3165;   // 校準（77 座城、箱寬 500、最後 60 秒倒數、整個州連齊才縮小）：依地理位置落點的自動玩家全連 0.34→3／8、0.38→1／8、0.42→0／10（5 局撐到時間到）、0.44→0／10（4 局放城階段就溢出）、0.46→0／10（7 局放城階段溢出）；真人比自動玩家強，0.45 是依遊玩回饋「太容易」所選（0.34→0.42→0.43→0.46→0.45）；0.46＋縮小下限 0.75＋倒數補洞磁吸：自動玩家 14 局通關 0～1，8～9 成在放城階段溢出（真人較強，待實際遊玩再調）。BASE 已不再使用
 STATES.forEach(s=>{s.a1=area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}));s.sc=SINGLE_BASE*Math.pow(s.a1/AREF,GAMMA-0.5);});
 let MIN_PART_AREA=10;   // Matter 預設值；調高會削掉細長尖角，繪圖輪廓就會超出碰撞形狀
 
