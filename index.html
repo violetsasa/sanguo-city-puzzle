@@ -6,6 +6,7 @@
 <title>山河輿圖</title>
 <meta name="description" content="把三國名城一座座丟進箱子，讓相鄰的城拼回真實地圖，最後 60 秒連成一整片，天下一統。天下大勢，分久必合，合久必分。">
 <meta name="theme-color" content="#f6eddc">
+<meta name="theme-color" content="#1d1913" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://violetsasa.github.io/sanguo-city-puzzle/">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta property="og:type" content="website">
@@ -273,7 +274,7 @@ const zcol=s=>ZCOL[s.z]||ZNEUT;
   const zbar=bot.querySelector('.zbar');let zt=0;
   const zset=on=>{bot.classList.toggle('open',on);zbar.setAttribute('aria-expanded',on);clearTimeout(zt);if(on)zt=setTimeout(()=>zset(false),6000);};
   zbar.addEventListener('click',()=>zset(!bot.classList.contains('open')));
-  document.addEventListener('pointerdown',e=>{if(bot.classList.contains('open')&&!bot.contains(e.target)){zset(false);e.stopPropagation();e.preventDefault();}},true);   // 展開時，點旁邊只負責收起，不會同時在畫布上放下城
+  document.addEventListener('pointerdown',e=>{if(!bot.classList.contains('open')||bot.contains(e.target))return;zset(false);if(e.target===cv){e.stopPropagation();e.preventDefault();}},true);   // 展開時，點畫布只負責收起（不會同時放下城）；點按鈕等其他地方照常運作，只順便收起
 })();
 
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
