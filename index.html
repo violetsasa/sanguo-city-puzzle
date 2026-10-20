@@ -340,15 +340,20 @@ const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去�
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
 let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單輪流程：play 落城中／final 最後一座落下後的倒數（要把全部連成一片）／won 已通關
 // ---- 音效：全部由 Web Audio 即時合成（沒有音檔、沒有授權問題）；預設關閉，玩家按標題列的喇叭才開 ----
+// 音色分兩類：撥弦類（古箏）用在相連、搖一搖、失敗；成就用小鑼與高音鈴；天下一統用古箏刮奏、磬與長笛。
 const SND=(()=>{
-  let ac=null,bus=null,noiseBuf=null,on=false;const cache=new Map(),last={};
+  let ac=null,dry=null,bus=null,noiseBuf=null,on=false;const cache=new Map(),last={};
   try{on=localStorage.getItem('sg_sound')==='1';}catch(e){}
   const rat=[1,9/8,5/4,3/2,5/3],pent=(d,root=293.66)=>root*rat[((d%5)+5)%5]*Math.pow(2,Math.floor(d/5));   // 五聲音階
   function ensure(){
     if(ac){if(ac.state==='suspended')ac.resume();return;}
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
     ac=new AC();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ac.destination);
-    bus=ac.createGain();bus.gain.value=.8;bus.connect(comp);
+    dry=ac.createGain();dry.connect(comp);   // 乾聲：城落下
+    bus=ac.createGain();bus.connect(comp);   // 帶迴響：其餘音效
+    const conv=ac.createConvolver(),wet=ac.createGain();wet.gain.value=.3;
+    {const sr=ac.sampleRate,len=Math.floor(sr*1.8),ib=ac.createBuffer(2,len,sr);for(let c=0;c<2;c++){const d=ib.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);}conv.buffer=ib;}
+    bus.connect(conv);conv.connect(wet);wet.connect(comp);
     noiseBuf=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
   }
   function pluckBuf(f,dur){   // 撥弦（Karplus-Strong）：像古箏
@@ -358,30 +363,41 @@ const SND=(()=>{
     const decay=Math.pow(.5,1/(f*.75));for(let i=N;i<len;i++)d[i]=.5*(d[i-N]+d[i-N+1])*decay;
     cache.set(key,b);return b;
   }
-  const pluck=(f,t,vel=.4,dur=1.4)=>{const s=ac.createBufferSource(),g=ac.createGain();s.buffer=pluckBuf(f,dur);g.gain.value=vel;s.connect(g);g.connect(bus);s.start(t);};
-  function noise(t,dur,type,freq,q,gain,sweepTo){
+  function guzheng(f,t,vel,dest=bus,dur=2){   // 古箏：起音帶一點上滑的音高，再用低通柔化
+    const s=ac.createBufferSource(),lp=ac.createBiquadFilter(),g=ac.createGain();s.buffer=pluckBuf(f,dur);
+    s.playbackRate.setValueAtTime(.982,t);s.playbackRate.linearRampToValueAtTime(1,t+.05);
+    lp.type='lowpass';lp.frequency.value=5200;g.gain.value=vel;s.connect(lp);lp.connect(g);g.connect(dest);s.start(t);
+  }
+  const strum=(degs,t,step,vel)=>degs.forEach((d,i)=>guzheng(pent(d),t+i*step,vel*(1-i*.02),bus,1.8));   // 刮奏：依序撥過一串音
+  function noise(t,dur,type,freq,q,gain,sweepTo,dest=bus){
     const s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=noiseBuf;f.type=type;f.frequency.setValueAtTime(freq,t);f.Q.value=q;
     if(sweepTo)f.frequency.exponentialRampToValueAtTime(sweepTo,t+dur);
-    g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(g);g.connect(bus);s.start(t);s.stop(t+dur+.05);
+    g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(g);g.connect(dest);s.start(t);s.stop(t+dur+.05);
   }
-  function drum(t,f,vel,len){   // 低沉的一聲
+  function drum(t,f,vel,len,dest=bus){   // 低沉的一聲
     const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(f*2.2,t);o.frequency.exponentialRampToValueAtTime(f,t+.08);
-    g.gain.setValueAtTime(vel,t);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.connect(g);g.connect(bus);o.start(t);o.stop(t+len+.05);
-    noise(t,.08,'lowpass',500,1,vel*.25);
+    g.gain.setValueAtTime(vel,t);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.connect(g);g.connect(dest);o.start(t);o.stop(t+len+.05);
+    noise(t,.08,'lowpass',500,1,vel*.25,null,dest);
   }
-  function wood(t,f,vel){   // 木魚
+  function wood(t,f,vel,dest=bus){   // 木魚
     const o=ac.createOscillator(),o2=ac.createOscillator(),g=ac.createGain();o.type='triangle';o2.type='sine';o.frequency.value=f;o2.frequency.value=f*2.4;
-    g.gain.setValueAtTime(vel,t);g.gain.exponentialRampToValueAtTime(.0001,t+.07);o.connect(g);o2.connect(g);g.connect(bus);o.start(t);o2.start(t);o.stop(t+.1);o2.stop(t+.1);
+    g.gain.setValueAtTime(vel,t);g.gain.exponentialRampToValueAtTime(.0001,t+.07);o.connect(g);o2.connect(g);g.connect(dest);o.start(t);o2.start(t);o.stop(t+.1);o2.stop(t+.1);
   }
-  function gong(t,f,vel,len){   // 鑼：幾個不整數倍的泛音慢慢衰減
-    const r=[1,1.47,2.06,2.76,3.43,4.8],a=[1,.7,.5,.45,.3,.2];
-    r.forEach((x,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f*x;
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(a[i]*vel*.22,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+len/(1+i*.35));o.connect(g);g.connect(bus);o.start(t);o.stop(t+len);});
-    noise(t,.12,'bandpass',1800,.8,.12*vel);
+  function bamboo(t,vel){   // 竹簡相碰：很短的高音木聲
+    const f=1700+Math.random()*900,o=ac.createOscillator(),g=ac.createGain(),hp=ac.createBiquadFilter();o.type='triangle';o.frequency.value=f;hp.type='highpass';hp.frequency.value=900;
+    g.gain.setValueAtTime(vel,t);g.gain.exponentialRampToValueAtTime(.0001,t+.04);o.connect(hp);hp.connect(g);g.connect(bus);o.start(t);o.stop(t+.06);
   }
-  function chime(t,f,vel,len){   // 風鈴般的亮音
-    [[1,1,len],[2.76,.28,len*.5],[5.4,.1,len*.25]].forEach(([x,a,l])=>{const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f*x;
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel*a,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+l);o.connect(g);g.connect(bus);o.start(t);o.stop(t+l+.05);});
+  function bellTone(f,t,vel,len){   // 圓潤的鈴音：正弦加一個很快消失的高泛音
+    [[1,1,len],[4,.22,.22],[2,.12,len*.5]].forEach(([r,a,l])=>{const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f*r;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel*a,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+l);o.connect(g);g.connect(bus);o.start(t);o.stop(t+l+.05);});
+  }
+  function bowl(f,t,vel,len){   // 磬：成對的泛音有輕微差頻，會有柔和的嗡嗡起伏
+    [[1,1],[2.71,.5],[5.15,.25]].forEach(([r,a],i)=>{[0,1].forEach(k=>{const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f*r*(k?1.004:1);
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel*a*.5,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+len/(1+i*.6));o.connect(g);g.connect(bus);o.start(t);o.stop(t+len+.05);});});
+  }
+  function smallGong(t,f,vel,len){   // 小鑼：音高較高、衰減較短，亮而不刺耳
+    [[1,1],[2.3,.5],[3.9,.3],[5.6,.2]].forEach(([r,a],i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f*r;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vel*a*.4,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+len/(1+i*.5));o.connect(g);g.connect(bus);o.start(t);o.stop(t+len+.05);});
   }
   function flute(f,t,dur,vel){   // 竹笛：正弦加一點呼吸聲與顫音
     const o=ac.createOscillator(),o2=ac.createOscillator(),g=ac.createGain(),g2=ac.createGain(),lfo=ac.createOscillator(),lg=ac.createGain();
@@ -392,13 +408,21 @@ const SND=(()=>{
     g.connect(bus);[o,o2,lfo,n].forEach(x=>{x.start(t);x.stop(t+dur+.3);});
   }
   const fx={
-    drop(t){wood(t,520,.22);drum(t,70,.25,.18);},                                           // 城落下：輕輕的木頭敲擊
-    merge(t,n){const tier=Math.min(6,Math.floor(Math.log2(Math.max(2,n))*1.4));           // 相連：一個撥弦，連得越大片音越高
-      pluck(pent(2+tier),t,.42);if(tier>=4)chime(t+.08,pent(7+tier),.14,1.1);},
-    achievement(t){gong(t,147,.55,2.2);chime(t+.12,pent(9),.24,1.6);},                      // 成就：短鑼加風鈴
-    shake(t){for(let i=0;i<5;i++)wood(t+i*(.05+Math.random()*.03),500+Math.random()*900,.15+Math.random()*.08);noise(t,.3,'bandpass',2000,.7,.1);},   // 搖一搖：木魚碰撞
-    win(t){gong(t,110,.6,3.4);for(let i=0;i<5;i++)pluck(pent(i+2),t+.15+i*.12,.34);flute(pent(7),t+.8,1.8,.22);},   // 天下一統：音階上行，笛音收尾
-    lose(t){flute(pent(4),t,.6,.2);flute(pent(1),t+.6,1.2,.2);gong(t+.6,73,.5,2.6);}        // 失敗（時限已到、國土崩裂共用）
+    // 城落下：輕輕的木頭敲擊（乾聲，不帶迴響）
+    drop(t){wood(t,520,.22,dry);drum(t,70,.25,.18,dry);},
+    // 相連：小片兩個撥弦；中片四音刮奏；大片六音刮奏加低磬
+    merge(t,n){const tier=Math.min(6,Math.floor(Math.log2(Math.max(2,n))*1.4)),b=2+tier;
+      if(tier<2){guzheng(pent(b),t,.24);guzheng(pent(b+2),t+.07,.22);}
+      else if(tier<4)strum([b,b+1,b+2,b+3],t,.05,.22);
+      else{strum([b-2,b-1,b,b+1,b+2,b+3],t,.045,.2);bowl(147,t+.1,.16,2.2);}},
+    // 成就：小鑼一聲，接一串往上飄的高音鈴
+    achievement(t){smallGong(t,330,.45,1.4);[8,9,10,11,12,13].forEach((d,i)=>bellTone(pent(d),t+.12+i*.07,.15,1.5));},
+    // 搖一搖：輕輕的沙沙聲加兩下竹簡
+    shake(t){noise(t,.3,'bandpass',700,.8,.13,2200);bamboo(t+.08,.14);bamboo(t+.17,.11);},
+    // 天下一統：古箏刮奏、磬、三個亮音與長笛
+    win(t){strum([0,1,2,3,4,5,6,7,8,9],t,.045,.15);bowl(147,t+.5,.3,3.6);[7,9,12].forEach((d,i)=>bellTone(pent(d),t+.55+i*.09,.14,2));flute(pent(9),t+.7,1.8,.1);},
+    // 失敗（時限已到、國土崩裂共用）：古箏下行刮奏加低鼓與低笛
+    lose(t){strum([7,6,5,4,3,2],t,.09,.2);drum(t+.5,55,.4,.5);flute(pent(0),t+.6,1.4,.13);}
   };
   return {
     get on(){return on;},
@@ -413,7 +437,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='2026.10.20-11';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-12';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
