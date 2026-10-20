@@ -40,6 +40,8 @@
   :root{--bg:#f6eddc;--ink:#3a2a18;--panel:#fffaf0;--line:#8b6f4e}
   @media (prefers-color-scheme:dark){:root{--bg:#1d1913;--ink:#eadfc6;--panel:#2a241b;--line:#a98550}#ov,#ach{background:rgba(20,16,10,.7)}}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body,#app,button{touch-action:manipulation}   /* iPhone：連點不再放大（canvas 本來就是 none） */
+  #app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* 連點／長按不會選到字或跳出選單 */
   html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif;overflow:hidden}
   #app{max-width:min(100%,1000px);margin:0 auto;height:100%;display:flex;flex-direction:column;padding:8px 16px 12px;gap:8px}
   header{display:flex;justify-content:space-between;align-items:center;gap:10px}
