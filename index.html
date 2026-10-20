@@ -105,7 +105,7 @@
   #ov .sub{font-size:13px;letter-spacing:3px;opacity:.7;margin-bottom:6px}
   #ov .story{text-align:center;font-size:14px;line-height:1.7;margin:6px 0 10px}
   #ov .rules{text-align:left;font-size:13px;line-height:1.55;margin:0 0 10px;padding:8px 12px;border:1px dashed var(--line);border-radius:8px;background:rgba(138,106,58,.08)}
-  #ov .rules b{display:block;letter-spacing:2px;margin-bottom:2px}
+  #ov .rules summary{font-weight:bold;letter-spacing:2px;margin-bottom:2px;cursor:pointer}
   #ov .rules div{padding-left:1.1em;text-indent:-1.1em}
   .fly{position:fixed;z-index:10;pointer-events:none;font-weight:bold;font-size:20px;color:#c4574f;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap}
   #ach{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;padding:10px}
@@ -155,12 +155,26 @@
   .legend.bottom{position:relative;height:18px;align-items:center;z-index:5}   /* 較窄的螢幕：平時是一條細細的州色帶，點一下展開對照表 */
   .legend.bottom .zbar{display:flex;gap:2px;width:min(100%,320px);height:18px;padding:5px 0;border:0;border-radius:0;background:none;cursor:pointer}
   .legend.bottom .zbar i{flex:1;height:8px;margin:0;border-radius:4px}
+  .legend.bottom .zbar .zl{flex:none;align-self:center;margin-right:6px;font-size:11px;line-height:1;color:var(--ink);opacity:.6}   /* 色帶左邊的小「州」字，暗示這是州色、可以點開 */
   .legend.bottom .zpanel{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:min(94%,340px);display:none;flex-wrap:wrap;gap:6px 12px;justify-content:center;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 18px rgba(90,70,54,.22)}
   .legend.bottom.open .zpanel{display:flex}
+  .legend.inbrand .zs span{position:relative}
+  .legend.inbrand .zs span:hover::after{content:attr(title);position:absolute;top:26px;left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:6px;background:var(--panel);border:1px solid var(--line);font-size:12px;font-weight:normal;white-space:nowrap;z-index:6;pointer-events:none}   /* 滑鼠移上去立刻顯示州名 */
   .legend.bottom .zpanel span{display:inline-flex;align-items:center;gap:5px;font-size:13px;white-space:nowrap}
   .legend.bottom .zpanel i{width:14px;height:14px;margin:0;border-radius:50%;box-shadow:0 1px 2px rgba(90,70,54,.25)}
   .legend.inbrand{display:none}
-  @media (min-width:960px){.legend.inbrand{display:flex}.legend.bottom{display:none}}   /* 寬螢幕：州色塊放標題旁；較窄時放底部 */
+  @media (min-width:960px){.legend.inbrand{display:flex}.legend.bottom{display:none}
+    #app>.bar{justify-content:center;gap:14px}#next{flex:0 1 460px}}   /* 寬螢幕：下一城不要拉滿整條，和重來、搖一搖靠在一起 */
+  @media (pointer:coarse){.kb{display:none}}   /* 觸控裝置沒有鍵盤，不顯示鍵盤說明 */
+  @media (max-width:380px){.chip{padding:3px 7px}.stats{gap:3px}h1{font-size:16px}}   /* 很窄的手機：標題列再收緊一點 */
+  #side{display:none}
+  @media (min-width:1540px){
+    #side{display:block;position:fixed;top:72px;left:calc(50% + 516px);width:250px;max-height:calc(100vh - 150px);overflow:auto;cursor:pointer}
+    #side .sd-h{font-size:13px;letter-spacing:2px;margin:10px 2px 4px;opacity:.7}
+    #side .sd-i{padding:6px 10px;margin-bottom:5px;border-radius:8px;background:rgba(217,165,33,.17);border:1px solid #d9a521;font-size:13px;line-height:1.45}
+    #side .sd-i small{opacity:.7;margin-left:6px}
+    #side .sd-empty{font-size:12px;opacity:.6;padding:2px}
+  }   /* 寬螢幕：州色塊放標題旁；較窄時放底部 */
 </style>
 </head>
 <body>
@@ -193,6 +207,7 @@
     <button id="shake" class="ib primary" title="搖一搖（讓城池鬆開）" aria-label="搖一搖"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5h11l-1.5 7.5H8z"/><path d="M8.6 9.4L10 7l1.4 2.4z"/><circle cx="14.2" cy="8" r="1.3"/><path d="M3.6 12.2c-1.1 1.3-1.1 3.6 0 4.9"/><path d="M1.6 10.6c-1.9 2.2-1.9 6.2 0 8.4"/><path d="M20.4 12.2c1.1 1.3 1.1 3.6 0 4.9"/><path d="M22.4 10.6c1.9 2.2 1.9 6.2 0 8.4"/></svg></button>
   </div>
 </div>
+<aside id="side" title="點一下開啟成就圖鑑"></aside>
 <script>
 const {Engine,Bodies,Body,Composite,Events,Vertices}=Matter;
 Matter.Common.setDecomp(window.decomp||window.polyDecomp);
@@ -292,7 +307,7 @@ const zcol=s=>ZCOL[s.z]||ZNEUT;
   const tip='底色是漢末十三州';
   const names=Object.keys(ZCOL),bot=document.querySelector('.legend.bottom'),inb=document.querySelector('.legend.inbrand');
   inb.innerHTML=zh;inb.title=tip;
-  bot.innerHTML='<button type="button" class="zbar" aria-label="州色對照" aria-expanded="false">'+names.map(z=>`<i style="background:${ZCOL[z]}"></i>`).join('')+'</button><div class="zpanel">'+names.map(z=>`<span><i style="background:${ZCOL[z]}"></i>${z}</span>`).join('')+'</div>';
+  bot.innerHTML='<button type="button" class="zbar" aria-label="州色對照" aria-expanded="false"><span class="zl">州</span>'+names.map(z=>`<i style="background:${ZCOL[z]}"></i>`).join('')+'</button><div class="zpanel">'+names.map(z=>`<span><i style="background:${ZCOL[z]}"></i>${z}</span>`).join('')+'</div>';
   const zbar=bot.querySelector('.zbar');let zt=0;
   const zset=on=>{bot.classList.toggle('open',on);zbar.setAttribute('aria-expanded',on);clearTimeout(zt);if(on)zt=setTimeout(()=>zset(false),6000);};
   zbar.addEventListener('click',()=>zset(!bot.classList.contains('open')));
@@ -858,6 +873,8 @@ function renderAch(){
     if(achEver.has(a.id))return `<div class="ai ever">${miniMap(a,true)}<div class="tx"><b>☆ ${a.name}</b>${yr}<span class="tag">曾達成</span><div>${a.story}</div><div class="need">${need}</div>${progOf(a)}</div></div>`;
     return `<div class="ai lock">${miniMap(a,false)}<div class="tx"><b>？？？${a.auto?'（'+a.name+'）':''}</b><div class="need">${need}</div>${progOf(a)}</div></div>`;
   };
+  {const sd=document.getElementById('side'),got=ACH_DEF.filter(a=>achDone.has(a.id));
+   sd.innerHTML=rankHTML()+`<div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
   if(achTab==='run'){
     const got=ACH_DEF.filter(a=>achDone.has(a.id));
     list.innerHTML=rankHTML()+(got.length?got.map(card).join(''):'<div class="ach-empty">這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。</div>');
@@ -871,6 +888,7 @@ document.getElementById('achList').addEventListener('click',e=>{
 document.getElementById('tabRun').onclick=function(){achTab='run';renderAch();this.blur();};
 document.getElementById('tabAll').onclick=function(){achTab='all';renderAch();this.blur();};
 document.getElementById('achBtn').onclick=function(){achTab=achDone.size?'run':'all';renderAch();document.getElementById('ach').style.display='flex';this.blur();};
+document.getElementById('side').onclick=()=>document.getElementById('achBtn').click();
 document.getElementById('achClose').onclick=()=>{document.getElementById('ach').style.display='none';};
 renderAch();
 
@@ -1336,7 +1354,8 @@ function frame(ts){
   draw();requestAnimationFrame(frame);
 }
 resize();init();
-show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><div class="rules"><b>玩法說明</b><div>◆ 移動滑鼠（或手指）選落點，點擊放下；鍵盤可用 ← → 移動、空白鍵放下。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{});
+show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><details class="rules"><summary>玩法說明</summary><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></details>','開始遊戲',()=>{});
+document.querySelector('#ov .rules').open=innerWidth>640&&innerHeight>=720;   // 小螢幕預設收起玩法說明，點開才看
 requestAnimationFrame(frame);
 </script>
 <div id="toast"></div>
