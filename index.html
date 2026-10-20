@@ -156,6 +156,7 @@
   .tabs button b{font-variant-numeric:tabular-nums;margin-left:4px}
   .tabs button.on{background:var(--line);color:var(--panel)}
   #next.urgent{border-color:#c4574f;color:#a63a32}   /* 倒數最後 10 秒轉紅 */
+  .ach-note{font-size:12px;opacity:.65;margin:0 2px 4px}
   .ach-clear{text-align:right;margin:0 0 2px}
   .ach-clear button{border:0;background:none;font:inherit;font-size:12px;color:var(--ink);opacity:.55;text-decoration:underline;cursor:pointer;padding:4px 8px}
   .ach-clear button:hover{opacity:.9}
@@ -449,7 +450,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='1.23';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 23 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.24';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 24 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1009,8 +1010,8 @@ function renderAch(){
   
   document.getElementById('achBtn').title=`成就圖鑑（本局 ${achDone.size}，累計 ${achEver.size} / ${n}）`;
   const rank=a=>achDone.has(a.id)?0:achEver.has(a.id)?1:2;     // 本局已解鎖 → 曾達成 → 未解鎖
-  const needOf=a=>a.hint||('把 '+(a.need.length>12?'整個範圍內的 '+a.need.length+' 座城':a.need.join('、'))+' 連在一起（中間可以夾別的城）');
-  const list=document.getElementById('achList');
+  const needOf=a=>a.hint||('把 '+(a.need.length>12?'整個範圍內的 '+a.need.length+' 座城':a.need.join('、'))+' 連在一起');
+  const list=document.getElementById('achList'),note='<div class="ach-note">成就只要這幾座城連在同一片就算，中間夾著別的城也可以。</div>';
   const progOf=a=>{const p=achProg.get(a.id),t=a.id==='tri'?3:a.need.length;return p&&t?`<div class="prog">本局最多連了 ${p} / ${t}${a.id==='tri'?' 個勢力':' 座'}</div>`:'';};
   const card=a=>{
     const need=needOf(a),yr=a.y?` <span class="need">${a.yl||a.y} 年</span>`:'',ro=a.ro?'<span class="tag ro" title="含《三國演義》情節">演義</span>':'';
@@ -1022,8 +1023,8 @@ function renderAch(){
    sd.innerHTML=rankHTML()+`<div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.yl||a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
   if(achTab==='run'){
     const got=ACH_DEF.filter(a=>achDone.has(a.id));
-    list.innerHTML=rankHTML()+(got.length?got.map(card).join(''):'<div class="ach-empty">這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。</div>');
-  }else list.innerHTML=rankHTML()+'<div class="ach-clear"><button id="achClear">清除累計紀錄</button></div>'+[...ACH_DEF].sort((a,b)=>rank(a)-rank(b)).map(card).join('');
+    list.innerHTML=rankHTML()+(got.length?note:'')+(got.length?got.map(card).join(''):'<div class="ach-empty">這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。</div>');
+  }else list.innerHTML=rankHTML()+note+'<div class="ach-clear"><button id="achClear">清除累計紀錄</button></div>'+[...ACH_DEF].sort((a,b)=>rank(a)-rank(b)).map(card).join('');
 }
 document.getElementById('achList').addEventListener('click',e=>{
   if(!e.target.closest||!e.target.closest('#achClear'))return;
