@@ -336,7 +336,7 @@ let BOXL=50,BOXR=550;   // 箱子左右邊界（箱子置中，寬度可調；�
 const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
 let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單輪流程：play 落城中／final 最後一座落下後的倒數（要把全部連成一片）／won 已通關
-const VERSION='2026.10.20-5';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-6';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1118,23 +1118,26 @@ function gameOver(kind){
   else show('國土崩裂',`疆域崩裂，群雄再起，天下重陷戰火。\n連成最大的一片有 ${clusterMax()} 座城\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
 }
 
-function show(t,p,b,fn){
+function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
   document.getElementById('ovT').textContent=t;
   document.getElementById('ovP').innerHTML=p.replace(/\n/g,'<br>');
   const btn=document.getElementById('ovB');btn.textContent=b;
-  resetToasts();   // 結算框出現時，成就提示先收掉，不蓋在結算框上
-  document.getElementById('ov').classList.add('end');
-  document.getElementById('ovV').style.display='none';document.getElementById('ovR').style.display='none';document.getElementById('ov').classList.remove('showrules');   // 玩法說明鈕只在開場簡介出現
+  const ov=document.getElementById('ov'),rb=document.getElementById('ovR'),vl=document.getElementById('ovV');
+  if(!intro)resetToasts();   // 結算框出現時，成就提示先收掉，不蓋在結算框上
+  ov.classList.toggle('end',!intro);ov.classList.remove('showrules');
+  rb.style.display=intro?'':'none';rb.textContent='玩法說明';   // 玩法說明鈕與版本號只在開場簡介出現
+  vl.style.display=intro?'block':'none';vl.textContent='版本 '+VERSION;
   document.getElementById('ov').style.display='flex';
   btn.onclick=()=>{document.getElementById('ov').style.display='none';fn();};
 }
 // 直接給速度（單靠施力對重物不夠），讓整盤真的被搖起來
 const SHAKE_MS=1000,SHAKE_GRACE_STEPS=150;
+let shakeAnimT=0;
 let lastShakeStep=-1e9;
 function shake(){
   if(over||overlayOpen()||!tops.length||simStep<shakeReadyStep||roundState==='won')return;
   shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;   // 冷卻 0.5 秒
-  const btn=document.getElementById('shake');btn.disabled=true;btn.classList.add('on');{const gid=gameId;setTimeout(()=>{if(gid===gameId)btn.classList.remove('on');},950);}
+  const btn=document.getElementById('shake');btn.disabled=true;btn.classList.remove('on');void btn.offsetWidth;btn.classList.add('on');clearTimeout(shakeAnimT);{const gid=gameId;shakeAnimT=setTimeout(()=>{if(gid===gameId)btn.classList.remove('on');},950);}   // 冷卻只有 0.5 秒：連搖時動畫要重新開始
   lastShakeStep=simStep;
   tops.forEach(t=>{
     Body.setVelocity(t,{x:(Math.random()-.5)*6,y:-(5+Math.random()*5)});
@@ -1383,10 +1386,9 @@ function frame(ts){
 // iPhone 的雙擊放大：touch-action 在部分內嵌瀏覽器不一定有效，所以再擋一次——兩次觸控間隔太短時，第二次不讓瀏覽器當成雙擊（畫布用的是 pointer 事件，不受影響）
 {let lastTouchEnd=0,lastEl=null;document.addEventListener('touchend',e=>{const t=Date.now(),el=e.target.closest?e.target.closest('button')||e.target:e.target;if(t-lastTouchEnd<350&&el===lastEl&&e.cancelable)e.preventDefault();lastTouchEnd=t;lastEl=el;},{passive:false});}   // 只擋「同一個元素」的連點；點不同按鈕不受影響
 resize();init();
-show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');});
-document.body.classList.add('intro');document.getElementById('ov').classList.remove('end');
-{const v=document.getElementById('ovV');v.textContent='版本 '+VERSION;v.style.display='block';}
-{const r=document.getElementById('ovR'),ov=document.getElementById('ov');r.style.display='';r.textContent='玩法說明';r.onclick=()=>{const on=ov.classList.toggle('showrules');r.textContent=on?'返回簡介':'玩法說明';};}
+show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');},true);
+document.body.classList.add('intro');
+{const ov=document.getElementById('ov'),r=document.getElementById('ovR');r.onclick=()=>{const on=ov.classList.toggle('showrules');r.textContent=on?'返回簡介':'玩法說明';};}   // 簡介：玩法說明 ⇄ 返回簡介
 requestAnimationFrame(frame);
 </script>
 <div id="toast"></div>
