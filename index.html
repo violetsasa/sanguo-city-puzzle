@@ -336,7 +336,7 @@ let BOXL=50,BOXR=550;   // 箱子左右邊界（箱子置中，寬度可調；�
 const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
 let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單輪流程：play 落城中／final 最後一座落下後的倒數（要把全部連成一片）／won 已通關
-const VERSION='2026.10.20-6';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-7';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1110,12 +1110,12 @@ function winRound(){
   fx.pops.push({text:'天下一統！＋1000',x:W/2,y:H/2-40,t0:performance.now(),size:30});
   const gid=gameId,rid=roundId;
   setTimeout(()=>{if(gid!==gameId||rid!==roundId||over)return;
-    show('天下一統',`諸城相連，山河重歸一統。\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>startRound(round+1));},1300);
+    show('天下一統',`諸城相連，山河重歸一統。\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>startRound(round+1));},1300);
 }
 function gameOver(kind){
   over=true;
-  if(kind==='timeup')show('時限已到',`倒數結束，山河仍未一統。\n連成最大的一片有 ${clusterMax()} 座城\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
-  else show('國土崩裂',`疆域崩裂，群雄再起，天下重陷戰火。\n連成最大的一片有 ${clusterMax()} 座城\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
+  if(kind==='timeup')show('時限已到',`倒數結束，山河仍未一統。\n連成最大的一片有 ${clusterMax()} 座城\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
+  else show('國土崩裂',`疆域崩裂，群雄再起，天下重陷戰火。\n連成最大的一片有 ${clusterMax()} 座城\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
 }
 
 function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
