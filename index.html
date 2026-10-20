@@ -984,21 +984,13 @@ function drawPiece(P,ghost,labelPass){
     // 字級不依單城面積變化；整組相連縮小時，同一組的字一起略為縮小（下限 12），否則縮小後的形狀會被字整個蓋住
     const fs=Math.round(Math.max(12,LABEL_FS*Math.sqrt(Math.min(1,P.k*scA/P.s.sc)))*2)/2;
     const wp=P.rel.map(T);                                   // 形狀的世界座標（也供滑鼠移上去時判斷在哪座城）
-    let lx0=1e9,lx1=-1e9,ly0=1e9,ar=0;                       // 本地座標（未旋轉）的外框與面積：與旋轉角度無關，排序與「是否太小」的判斷才不會隨旋轉跳動
-    for(let i=0;i<P.rel.length;i++){const q=P.rel[i],r=P.rel[(i+1)%P.rel.length];if(q.x<lx0)lx0=q.x;if(q.x>lx1)lx1=q.x;if(q.y<ly0)ly0=q.y;ar+=q.x*r.y-r.x*q.y;}
+    let ar=0;                                                // 形狀面積（與旋轉角度無關），用來排序
+    for(let i=0;i<P.rel.length;i++){const q=P.rel[i],r=P.rel[(i+1)%P.rel.length];ar+=q.x*r.y-r.x*q.y;}
     ar=Math.abs(ar)/2*sc*sc;
     const lw=labelW(P.s.n,fs)+4,lh=fs*1.2;
     const an=labAnchor(P);
     let L=T(an);
-    if(lw*lh>0.6*ar){   // 太小的城：字改貼在形狀「上方」（隨形狀旋轉），形狀完整露出來；貼的是字所在位置正上方的實際輪廓，不是外框頂端
-      const ax=an.x;let top=1e9;
-      for(let i=0;i<P.rel.length;i++){const q=P.rel[i],r=P.rel[(i+1)%P.rel.length];
-        if((q.x<=ax&&r.x>=ax)||(r.x<=ax&&q.x>=ax)){const t=r.x===q.x?0:(ax-q.x)/(r.x-q.x);top=Math.min(top,q.y+(r.y-q.y)*t);}}
-      if(top>1e8)top=ly0;
-      L=T({x:ax,y:top-(lh*0.5+1)/sc});
-    }
-    const ca=Math.abs(Math.cos(w.a)),sa=Math.abs(Math.sin(w.a));
-    P._lbl={x:L.x,y:L.y,fs,w:lw,h:lh,area:ar,a:readable(w.a),hx:(ca*lw+sa*lh)/2,hy:(sa*lw+ca*lh)/2};P._wp=wp;   // hx／hy：旋轉後外接矩形的半寬半高，用來避讓與限制不出箱子
+    P._lbl={x:L.x,y:L.y,fs,w:lw,h:lh,area:ar,hx:lw/2,hy:lh/2};P._wp=wp;   // 字保持水平：錨點跟著形狀轉，文字本身不轉；hx／hy 是字框半寬半高
     return;
   }
   ctx.beginPath();P.rel.forEach((v,i)=>{const q=T(v);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);});ctx.closePath();
@@ -1030,8 +1022,6 @@ function labAnchor(P){
   for(let i=0;i<n;i++){const q=r[i],u=r[(i+1)%n],dx=u.x-q.x,dy=u.y-q.y,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((c.x-q.x)*dx+(c.y-q.y)*dy)/l2));d=Math.min(d,Math.hypot(c.x-q.x-dx*t,c.y-q.y-dy*t));}
   return d>=0.7*P.labR?c:P.lab;
 }
-// 文字跟著地圖轉，但轉過 90 度就翻回來（加 180 度），字永遠不會倒著；結果落在 -90 到 90 度之間
-function readable(a){a=Math.atan2(Math.sin(a),Math.cos(a));if(a>Math.PI/2)a-=Math.PI;else if(a<-Math.PI/2)a+=Math.PI;return a;}
 const LABEL_FS=17;   // 標籤字級（canvas 邏輯像素，會隨整體畫面縮放）
 const LABEL_FONT=fs=>`500 ${fs}px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif`;   // 黑體：筆畫粗細平均，疊在地圖上不會顯得厚重
 const labelWCache=new Map();
@@ -1040,40 +1030,27 @@ function labelW(text,fs){   // 字寬快取：同樣的字與字級只量一次
   if(w===undefined){ctx.font=LABEL_FONT(fs);w=ctx.measureText(text).width;if(labelWCache.size>600)labelWCache.clear();labelWCache.set(key,w);}
   return w;
 }
-// 標籤避讓（參考原版：固定位置、重疊就略過）：城大的先放，與已放標籤重疊的就不畫（形狀與白邊還在）；
-// 被擋住後要空出位置一小段時間才會再出現，避免在邊緣閃爍。滑鼠移到城上時，名字會直接顯示。
-const LABEL_BACK_MS=400;
+// 標籤避讓：字固定在錨點（不位移、不搜尋）。城大的先放；與已放標籤重疊時，先把字縮小（最小約 0.8 倍、不低於 11px），
+// 縮小後還是重疊：相連成組的成員就先隱藏（形狀與白邊還在）；單獨的城一律顯示、留在原位。
+// 縮小與隱藏都要等淨空 400ms 才恢復，避免邊緣閃爍。滑鼠移到城上時，被隱藏的名字會直接顯示。
+const LABEL_BACK_MS=400,LABEL_SHRINK=0.8,LABEL_MIN_FS=11;
 function placeLabels(items,now){
-  // 還沒相連的單獨城（以及手上那一座）標籤一律顯示，並優先占位；只有相連成組後，組內成員的標籤才會因重疊被略過
-  const single=p=>p._cur||!p._grp;
+  const single=p=>p._cur||!p._grp;   // 手上那一座與還沒相連的單獨城
   const sorted=[...items].sort((a,b)=>(single(b)?1:0)-(single(a)?1:0)||b._lbl.area-a._lbl.area||(a.s.n<b.s.n?-1:1));
   const placed=[];
-  const hit=(x,y,L)=>placed.some(r=>Math.abs(x-r.x)<L.hx+r.hx+1&&Math.abs(y-r.y)<L.hy+r.hy);
+  const hit=(x,y,hx,hy)=>placed.some(r=>Math.abs(x-r.x)<hx+r.hx+1&&Math.abs(y-r.y)<hy+r.hy);
   for(const P of sorted){
-    const L=P._lbl;let q=lblPos(L);
-    if(single(P)){
-      if(hit(q.x,q.y,L)){   // 單獨的城撞到別人的字：往旁邊小幅錯開，找得到空位就用，找不到就維持原位（仍然顯示）
-        // 由近到遠一圈圈找空位（每圈 8 個方向），要求不與別的字重疊，且字心離自己的形狀不超過約 1.8 個字高；找得到最近的就用
-        let best=null,bestD=1e9;
-        for(const r of [1.1,1.6,2.1,2.7]){
-          for(let k=0;k<8;k++){
-            const an=k*Math.PI/4,dx=Math.cos(an)*r*L.hx*1.0,dy=Math.sin(an)*r*L.hy*1.6;
-            const q2=lblPos({...L,x:L.x+dx,y:L.y+dy});
-            if(hit(q2.x,q2.y,L))continue;
-            const pd=polyDist(q2,P._wp);if(pd>L.h*1.8)continue;
-            const dd=Math.hypot(q2.x-q.x,q2.y-q.y);if(dd<bestD){bestD=dd;best=q2;}
-          }
-          if(best)break;
-        }
-        if(best)q=best;   // 找不到就維持原位（仍然顯示）
-      }
-      P._pos=q;P.shown=true;placed.push({x:q.x,y:q.y,hx:L.hx,hy:L.hy});continue;
-    }
-    P._pos=q;
-    const blocked=hit(q.x,q.y,L);
-    if(blocked){P.shown=false;P.blockedAt=now;}
+    const L=P._lbl,mul=Math.max(LABEL_SHRINK,LABEL_MIN_FS/L.fs);
+    const q0=lblPos(L);
+    if(hit(q0.x,q0.y,L.hx,L.hy)){P.small=true;P.smallAt=now;}                        // 擋到了：立刻縮小
+    else if(P.small&&now-(P.smallAt||0)>LABEL_BACK_MS)P.small=false;                 // 淨空夠久才恢復原大小
+    const m=P.small?mul:1,hx=L.hx*m,hy=L.hy*m,q=lblPos({...L,hx,hy});
+    P._m=m;P._pos=q;
+    const blocked=hit(q.x,q.y,hx,hy);
+    if(single(P))P.shown=true;
+    else if(blocked){P.shown=false;P.blockedAt=now;}
     else if(P.shown===undefined||(!P.shown&&now-P.blockedAt>LABEL_BACK_MS))P.shown=true;
-    if(P.shown)placed.push({x:q.x,y:q.y,hx:L.hx,hy:L.hy});
+    if(P.shown)placed.push({x:q.x,y:q.y,hx,hy});
   }
 }
 function paintLabel(P,plate){
@@ -1085,9 +1062,9 @@ function paintLabel(P,plate){
     ctx.beginPath();ctx.roundRect?ctx.roundRect(x-L.w/2-3,y-L.h/2-1,L.w+6,L.h+2,6):ctx.rect(x-L.w/2-3,y-L.h/2-1,L.w+6,L.h+2);ctx.fill();ctx.stroke();
     ctx.fillStyle='#22303f';ctx.fillText(P.s.n,x,y);return;
   }
-  ctx.save();ctx.translate(x,y);ctx.rotate(L.a);        // 文字跟著地圖一起旋轉
-  ctx.lineJoin='round';ctx.lineWidth=Math.max(2.2,L.fs*.18);ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText(P.s.n,0,0);
-  ctx.fillStyle='#22303f';ctx.fillText(P.s.n,0,0);ctx.restore();
+  const fs=L.fs*(P._m||1);ctx.font=LABEL_FONT(fs);
+  ctx.lineJoin='round';ctx.lineWidth=Math.max(2.2,fs*.18);ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText(P.s.n,x,y);
+  ctx.fillStyle='#22303f';ctx.fillText(P.s.n,x,y);
 }
 function polyDist(pt,wp){   // 點到多邊形輪廓的最短距離（在形狀裡面算 0）
   if(inPoly(pt,wp))return 0;
