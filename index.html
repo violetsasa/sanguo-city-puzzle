@@ -1079,7 +1079,7 @@ function draw(){
   ctx.clearRect(0,0,W,H);
   const _sh=shakeOffset(performance.now());ctx.save();ctx.translate(_sh.x,_sh.y);
   ctx.fillStyle='rgba(120,90,50,.12)';ctx.fillRect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);
-  ctx.strokeStyle='#8a6a3a';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(BOXL,BOX_TOP);ctx.lineTo(BOXL,BOXB);ctx.lineTo(BOXR,BOXB);ctx.lineTo(BOXR,BOX_TOP);ctx.stroke();
+  ctx.strokeStyle='#8a6a3a';ctx.lineWidth=6;ctx.lineJoin='miter';ctx.beginPath();ctx.moveTo(BOXL-3,BOX_TOP);ctx.lineTo(BOXL-3,BOXB+4);ctx.lineTo(BOXR+3,BOXB+4);ctx.lineTo(BOXR+3,BOX_TOP);ctx.stroke();   // 外框整條畫在碰撞邊界『外側』：城的輪廓（含細尖角）不會壓在框線上，底部不再被切到
   ctx.setLineDash([10,8]);ctx.strokeStyle='#c4574f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(BOXL,LINE);ctx.lineTo(BOXR,LINE);ctx.stroke();ctx.setLineDash([]);
   if(cur){ctx.strokeStyle='rgba(138,106,58,.4)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(dropX,curY+60);ctx.lineTo(dropX,BOXB);ctx.stroke();ctx.setLineDash([]);}   // 落點輔助線先畫，溢出線標籤畫在它上面，兩者不會互相切到
   {
