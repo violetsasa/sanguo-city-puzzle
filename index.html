@@ -908,9 +908,11 @@ function shake(){
 }
 
 function toX(e){const r=cv.getBoundingClientRect();return (e.clientX-r.left)/r.width*W;}
+function toY(e){const r=cv.getBoundingClientRect();return (e.clientY-r.top)/r.height*H;}
 let ptrDown=false,ptrId=null;     // 只認「按下去的那一根手指」，其他手指的放開不會誤丟城
 cv.addEventListener('pointerdown',e=>{if(overlayOpen()||ptrDown)return;ptrDown=true;ptrId=e.pointerId;dropX=toX(e);moveCur();try{cv.setPointerCapture(e.pointerId);}catch(_){}});
-cv.addEventListener('pointermove',e=>{if(overlayOpen()||(ptrDown&&e.pointerId!==ptrId))return;dropX=toX(e);moveCur();});
+cv.addEventListener('pointermove',e=>{if(overlayOpen()||(ptrDown&&e.pointerId!==ptrId))return;dropX=toX(e);moveCur();if(e.pointerType==='mouse')hoverPt={x:toX(e),y:toY(e)};});
+cv.addEventListener('pointerleave',()=>{hoverPt=null;});
 cv.addEventListener('pointerup',e=>{if(!ptrDown||e.pointerId!==ptrId)return;ptrDown=false;ptrId=null;if(overlayOpen())return;dropX=toX(e);moveCur();drop();});   // 放開時才落下
 cv.addEventListener('pointercancel',e=>{if(e.pointerId===ptrId){ptrDown=false;ptrId=null;}});
 cv.addEventListener('lostpointercapture',e=>{if(e.pointerId===ptrId&&ptrDown){ptrDown=false;ptrId=null;}});
@@ -936,21 +938,22 @@ function drawPiece(P,ghost,labelPass){
       sc=P.anim.r+(1-P.anim.r)*e;
     }
   }
+  const scA=sc;
   const ps=popScale(P.top,performance.now());
   if(ps!==1){const tp=P.top.position;w={c:{x:tp.x+(w.c.x-tp.x)*ps,y:tp.y+(w.c.y-tp.y)*ps},a:w.a};sc*=ps;}
   const T=v=>{const q=rot({x:v.x*sc,y:v.y*sc},w.a);return {x:w.c.x+q.x,y:w.c.y+q.y};};
   if(labelPass){
-    // 只做「排版」：算出標籤的自然位置與字級，交給 placeLabels 錯開、再由 paintLabel 畫
-    // 字級不依城的面積變化，只在「相連後整組縮小」時跟著略為縮小（同一組一樣大），否則縮小後的形狀會被字整個蓋住
-    const shrunk=Math.min(1,P.k*sc/P.s.sc);
-    const fs=Math.max(12,LABEL_FS*Math.sqrt(shrunk));
+    // 只算標籤的固定位置、字級與形狀面積，是否畫出由 placeLabels 決定（不位移、不搜尋）
+    // 字級不依單城面積變化；整組相連縮小時，同一組的字一起略為縮小（下限 12），否則縮小後的形狀會被字整個蓋住
+    const fs=Math.round(Math.max(12,LABEL_FS*Math.sqrt(Math.min(1,P.k*scA/P.s.sc)))*2)/2;
+    const wp=P.rel.map(T);                                   // 形狀的世界座標（也供滑鼠移上去時判斷在哪座城）
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,ar=0;
+    for(let i=0;i<wp.length;i++){const q=wp[i],r=wp[(i+1)%wp.length];if(q.x<x0)x0=q.x;if(q.x>x1)x1=q.x;if(q.y<y0)y0=q.y;if(q.y>y1)y1=q.y;ar+=q.x*r.y-r.x*q.y;}
+    ar=Math.abs(ar)/2;                                       // 面積與旋轉角度無關，排序與「是否太小」的判斷才不會隨旋轉跳動
+    const lw=labelW(P.s.n,fs)+4,lh=fs*1.2;
     let L=T(P.lab);
-    // 太小的城：字放在中間會把整個形狀蓋住 → 改把字放在形狀正上方（貼著頂端），形狀完整露出來
-    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
-    for(const v of P.rel){const q=T(v);if(q.x<x0)x0=q.x;if(q.x>x1)x1=q.x;if(q.y<y0)y0=q.y;if(q.y>y1)y1=q.y;}
-    const lw=P.s.n.length*fs+4,lh=fs*1.2;
-    if(lw*lh>0.45*(x1-x0)*(y1-y0))L={x:(x0+x1)/2,y:y0-lh*0.5-1};
-    P._lbl={x:L.x,y:L.y,fs,pri:P.labR*sc};
+    if(lw*lh>0.6*ar)L={x:(x0+x1)/2,y:y0-lh*0.5-1};            // 太小的城：字改貼在形狀正上方，形狀完整露出來
+    P._lbl={x:L.x,y:L.y,fs,w:lw,h:lh,area:ar};P._wp=wp;
     return;
   }
   ctx.beginPath();P.rel.forEach((v,i)=>{const q=T(v);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);});ctx.closePath();
@@ -964,56 +967,49 @@ function drawPiece(P,ghost,labelPass){
   }
 }
 // 標籤位置限制：不可壓到箱壁或箱底（預覽區在箱口以上，只限制不超出畫面）
-function lblPos(L,sx,sy){
+function lblPos(L){
   const inBox=L.y>BOX_TOP-4;
-  const x=Math.max((inBox?BOXL:0)+L.w/2+3,Math.min((inBox?BOXR:W)-L.w/2-3,L.x+sx));
-  const y=inBox?Math.min(BOXB-L.h/2-4,L.y+sy):L.y+sy;
+  const x=Math.max((inBox?BOXL:0)+L.w/2+3,Math.min((inBox?BOXR:W)-L.w/2-3,L.x));
+  const y=inBox?Math.min(BOXB-L.h/2-4,L.y):L.y;
   return {x,y};
 }
 let labelFrame=0;
 const LABEL_FS=17;   // 標籤字級（canvas 邏輯像素，會隨整體畫面縮放）
-// 標籤避讓：貪心法，大的先放；撞到就試著在附近環狀位置找空位，記住上一格的偏移以避免閃動
-function placeLabels(items,decide){
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  items.forEach(P=>{
-    const L=P._lbl;ctx.font=`bold ${L.fs}px "Noto Serif TC","PMingLiU",serif`;
-    L.w=ctx.measureText(P.s.n).width+4;L.h=L.fs*1.2;
-    P.sox=P.sox||0;P.soy=P.soy||0;P.lox=P.lox||0;P.loy=P.loy||0;
-  });
-  items.sort((a,b)=>b._lbl.pri-a._lbl.pri);
+const LABEL_FONT=fs=>`bold ${fs}px "Noto Serif TC","PMingLiU",serif`;
+const labelWCache=new Map();
+function labelW(text,fs){   // 字寬快取：同樣的字與字級只量一次
+  const key=fs+':'+text;let w=labelWCache.get(key);
+  if(w===undefined){ctx.font=LABEL_FONT(fs);w=ctx.measureText(text).width;if(labelWCache.size>600)labelWCache.clear();labelWCache.set(key,w);}
+  return w;
+}
+// 標籤避讓（參考原版：固定位置、重疊就略過）：城大的先放，與已放標籤重疊的就不畫（形狀與白邊還在）；
+// 被擋住後要空出位置一小段時間才會再出現，避免在邊緣閃爍。滑鼠移到城上時，名字會直接顯示。
+const LABEL_BACK_MS=400;
+function placeLabels(items,now){
+  const sorted=[...items].sort((a,b)=>(b._cur?1:0)-(a._cur?1:0)||b._lbl.area-a._lbl.area||(a.s.n<b.s.n?-1:1));
   const placed=[];
-  const SMOOTH=0.14;                         // 每格只往目標移動 14%：慢慢滑過去，不會瞬間跳來跳去
-  const hit=(x,y,L)=>{let m=0;for(const r of placed){const ox=Math.min(x+L.w/2,r.x+r.w/2)-Math.max(x-L.w/2,r.x-r.w/2),oy=Math.min(y+L.h/2,r.y+r.h/2)-Math.max(y-L.h/2,r.y-r.h/2);if(ox>0&&oy>0)m+=ox*oy;}return m;};
-  for(const P of items){
-    const L=P._lbl;
-    if(decide){
-      // 目前選定的位置只要沒撞到別人就維持不動（避免來回切換、繞著城打轉）；撞到才換
-      const cur0=lblPos(L,P.lox,P.loy);
-      if(P.hide||hit(cur0.x,cur0.y,L)>=0.5){   // 被隱藏的也每次重新評估，空出位置就會再出現
-        const cands=[[0,0]];
-        for(const r of [8,14,20,27])for(let k=0;k<8;k++){const an=k*Math.PI/4;cands.push([Math.round(Math.cos(an)*r),Math.round(Math.sin(an)*r)]);}   // 位移上限 27px：標籤不能離開自己的城太遠
-        let best=[P.lox,P.loy],bestM=1e9,bestHit=1e9;
-        for(const [dx,dy] of cands){
-          const {x,y}=lblPos(L,dx,dy);
-          const h=hit(x,y,L),m=h+Math.hypot(x-L.x,y-L.y)*0.02;       // 同樣不重疊時，偏好離原位近的
-          if(m<bestM){bestM=m;bestHit=h;best=[dx,dy];if(m<0.5)break;}
-        }
-        P.lox=best[0];P.loy=best[1];
-        P.hide=bestHit>L.w*L.h*0.35;   // 試過所有位置還是會壓到別人的字：這個標籤先不畫（形狀與白邊仍在），避免一團字蓋住整組
-      }
-    }
-    if(P.hide){P.sox=P.lox;P.soy=P.loy;continue;}   // 被隱藏的標籤不佔位，也不參與後面的避讓
-    P.sox+=(P.lox-P.sox)*SMOOTH;P.soy+=(P.loy-P.soy)*SMOOTH;
-    const q=lblPos(L,P.sox,P.soy);placed.push({x:q.x,y:q.y,w:L.w,h:L.h});
+  for(const P of sorted){
+    const L=P._lbl,q=lblPos(L);P._pos=q;
+    const blocked=!P._cur&&placed.some(r=>Math.abs(q.x-r.x)<(L.w+r.w)/2+1&&Math.abs(q.y-r.y)<(L.h+r.h)/2);
+    if(blocked){P.shown=false;P.blockedAt=now;}
+    else if(P.shown===undefined||(!P.shown&&now-P.blockedAt>LABEL_BACK_MS))P.shown=true;
+    if(P.shown)placed.push({x:q.x,y:q.y,w:L.w,h:L.h});
   }
 }
-function paintLabel(P){
-  if(P.hide)return;
-  const L=P._lbl,{x,y}=lblPos(L,P.sox,P.soy);
-  ctx.font=`bold ${L.fs}px "Noto Serif TC","PMingLiU",serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+function paintLabel(P,plate){
+  if(!P.shown&&!plate)return;
+  const L=P._lbl,{x,y}=P._pos;
+  ctx.font=LABEL_FONT(L.fs);ctx.textAlign='center';ctx.textBaseline='middle';
+  if(plate){   // 被略過的名字：滑鼠移上去時用底板顯示
+    ctx.fillStyle='rgba(255,248,232,.97)';ctx.strokeStyle='#8a6a3a';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.roundRect?ctx.roundRect(x-L.w/2-3,y-L.h/2-1,L.w+6,L.h+2,6):ctx.rect(x-L.w/2-3,y-L.h/2-1,L.w+6,L.h+2);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#22303f';ctx.fillText(P.s.n,x,y);return;
+  }
   ctx.lineJoin='round';ctx.lineWidth=Math.max(2.5,L.fs*.22);ctx.strokeStyle='rgba(255,255,255,.92)';ctx.strokeText(P.s.n,x,y);
   ctx.fillStyle='#22303f';ctx.fillText(P.s.n,x,y);
 }
+let hoverPt=null;   // 滑鼠目前在畫布上的位置（畫布座標）
+const inPoly=(pt,pts)=>{let c=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++)if((pts[i].y>pt.y)!==(pts[j].y>pt.y)&&pt.x<(pts[j].x-pts[i].x)*(pt.y-pts[i].y)/(pts[j].y-pts[i].y)+pts[i].x)c=!c;return c;};
 function draw(){
   const d=cv.width/W;ctx.setTransform(d,0,0,cv.height/H,0,0);
   ctx.clearRect(0,0,W,H);
@@ -1033,10 +1029,11 @@ function draw(){
   tops.forEach(t=>t.pcs.forEach(p=>drawPiece(p,false,false)));
   if(cur)cur.pcs.forEach(p=>drawPiece(p,true,false));
   const items=[];                                                  // 標籤最後畫，永遠在最上層，並自動錯開
-  tops.forEach(t=>t.pcs.forEach(p=>{drawPiece(p,false,true);items.push(p);}));
-  if(cur)cur.pcs.forEach(p=>{drawPiece(p,true,true);items.push(p);});
-  placeLabels(items,(labelFrame++%8)===0);   // 每 8 格才重新決定一次標籤位置
-  items.forEach(paintLabel);
+  tops.forEach(t=>t.pcs.forEach(p=>{p._cur=false;drawPiece(p,false,true);items.push(p);}));
+  if(cur)cur.pcs.forEach(p=>{p._cur=true;drawPiece(p,true,true);items.push(p);});
+  placeLabels(items,performance.now());
+  items.forEach(p=>paintLabel(p,false));
+  if(hoverPt&&!overlayOpen()){const hp=items.find(p=>!p._cur&&p._wp&&inPoly(hoverPt,p._wp));if(hp&&!hp.shown)paintLabel(hp,true);}   // 名字被略過的城：滑鼠移上去就會顯示
   drawFx();
   ctx.restore();
 }
