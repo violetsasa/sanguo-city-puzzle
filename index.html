@@ -443,7 +443,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='2026.10.20-16';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-17';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -591,6 +591,7 @@ function magnetScan(){
   for(const t of tops)for(const P of t.pcs)if(P.dropped)items.push(P);
   // 跨州磁吸上限（只限制磁吸，不限制碰撞；倒數階段不限制）：還沒連齊的州，最多只會「吸」MAGNET_CROSS_CAP 個別的州，
   // 例如荊州還沒排完、已經和揚州相連，就不會再吸交州；但真的碰到的城照樣相連
+  const holeD=fin?HOLE_D+(HOLE_D_MAX-HOLE_D)*Math.max(0,Math.min(1,1-(finalEndStep-simStep)/FINAL_STEPS)):HOLE_D;   // 補洞磁吸的距離：倒數越接近尾聲越寬鬆
   const zlinks=new Map(),zdone=new Set();
   if(!fin){
     for(const t of tops){const zs=new Set(t.pcs.map(P=>P.s.z));for(const z of zs){if(!zlinks.has(z))zlinks.set(z,new Set());zs.forEach(o=>{if(o!==z)zlinks.get(z).add(o);});}}
@@ -610,12 +611,12 @@ function magnetScan(){
       const a=P.top.bounds,b=Q.top.bounds,R=Math.max(D,pullRange);   // 篩選範圍要涵蓋「拉近」的範圍，否則離得遠的兩塊永遠不會被拉近
       if(a.max.x+R<b.min.x||b.max.x+R<a.min.x||a.max.y+R<b.min.y||b.max.y+R<a.min.y)continue;   // 外框都碰不到就不用算
       const A=seamWorld(P,Q,2),B=seamWorld(Q,P,2),D2=D*D;
-      const small=fin&&Math.min(P.top.pcs.length,Q.top.pcs.length)<=SMALL_PIECES,H2=HOLE_D*HOLE_D;   // 倒數階段、小塊的城：放寬磁吸（見下）
+      const small=fin&&Math.min(P.top.pcs.length,Q.top.pcs.length)<=SMALL_PIECES,H2=holeD*holeD;   // 倒數階段、小塊的城：放寬磁吸（見下）
       let best=small?Math.max(D2,H2):D2,ax=0,ay=0,bx=0,by=0;   // 找兩段交界上最近的一對點
       for(let x=0;x<A.length;x+=2)for(let y=0;y<B.length;y+=2){const dx=A[x]-B[y],dy=A[x+1]-B[y+1],d=dx*dx+dy*dy;if(d<best){best=d;ax=A[x];ay=A[x+1];bx=B[y];by=B[y+1];}}
       if(best<D2||(small&&best<H2)){
         // 兩個邊界點之間的連線若被其他城擋住（中間夾著別的城），就不磁吸合併，也不互相拉近：必須是真的靠在一起
-        // 倒數階段的例外：小塊的城（最多 5 座）只要交界點在 HOLE_D 內就合併，不看有沒有被擋住——被其他城圍成的『洞』，城是放不進去的，合併重建時才會依真實位置補進去
+        // 倒數階段的例外：小塊的城（最多 5 座）只要交界點在 HOLE_D 內（倒數越到尾聲範圍越大，最多 HOLE_D_MAX）就合併，不看有沒有被擋住——被其他城圍成的『洞』，城是放不進去的，合併重建時才會依真實位置補進去
         if(!(small&&best<H2)&&segmentBlocked(ax,ay,bx,by,P.top,Q.top))continue;
         pendingKeys.add(key);pending.push([P.s,Q.s]);continue;
       }
@@ -1254,7 +1255,7 @@ function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明�
 // 直接給速度（單靠施力對重物不夠），讓整盤真的被搖起來
 const SHAKE_MS=1000,SHAKE_GRACE_STEPS=150;
 const MAGNET_CROSS_CAP=1;   // 還沒連齊的州，最多吸幾個別的州
-const HOLE_D=140,SMALL_PIECES=5;   // 倒數階段的補洞磁吸：交界點距離上限（像素）與「小塊」的城數上限
+const HOLE_D=140,HOLE_D_MAX=320,SMALL_PIECES=5;   // 倒數階段的補洞磁吸：交界點距離上限（像素）與「小塊」的城數上限
 let shakeAnimT=0;
 let lastShakeStep=-1e9;
 // 倒數階段的搖一搖輔助：不在最大那一片裡的城，找一座鄰居（優先在最大那一片裡）當目標，搖起來時朝目標的方向翻過去
