@@ -1080,6 +1080,7 @@ function hud(){
     cap.textContent='下一城';document.getElementById('nextName').textContent=nx;nextBox.classList.remove('urgent');
   }
   document.getElementById('nextDot').style.background=cur&&cur.pcs[0]?zcol(cur.pcs[0].s):'#aaa';
+  document.getElementById('nextDot').style.display=roundState==='final'?'none':'';   // 倒數時沒有「下一城」，灰色小圓點也不顯示
 }
 function best(){
   let b=score;try{const prev=Number(localStorage.getItem('sg_best'));b=Math.max(score,Number.isFinite(prev)?prev:0);   // 存檔壞掉（非數字）時當成 0，不會永遠顯示 NaN
