@@ -53,6 +53,8 @@
   .ib.primary svg{stroke:#fff8e8;stroke-width:2.1;width:56%;height:56%}
   .ib.primary:hover:not(:disabled){filter:brightness(1.1);box-shadow:0 4px 14px rgba(168,85,43,.6)}
   .ib.primary:disabled{filter:grayscale(.6)}
+  .ib.primary::after{content:"";position:absolute;left:16%;right:16%;bottom:7px;height:3px;border-radius:2px;background:rgba(255,248,232,.85);transform-origin:left;transform:scaleX(var(--cd,0));opacity:0;transition:opacity .2s}
+  .ib.primary.cool::after{opacity:1}   /* 冷卻中：底下的小條慢慢填滿，滿了就能再搖 */
   @keyframes wig{0%,100%{transform:rotate(0)}20%{transform:rotate(-10deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-7deg)}80%{transform:rotate(7deg)}}
   .ib.primary.on svg{animation:wig .45s linear 2}
   #ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,12,4,.6);border-radius:10px;text-align:center;padding:20px}
@@ -195,7 +197,7 @@ const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 const W=600,H=700,SC=0.45,WALL=16,BOXL=40,BOXR=W-40,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
 let roundState='play',lastDropStep=0,settleStart=0,settleCalm=0,nextRoundStep=0,shakeReadyStep=0;   // 輪末結算狀態：play 進行中／settle 等待穩定／banner 顯示橫幅後換輪（全部以物理步數計時，面板開著就會一起暫停）
-const SHAKE_COOLDOWN_STEPS=300;   // 搖一搖冷卻 5 秒（要比免死寬限 2.5 秒＋溢出累積 1.5 秒長，不能靠連搖無限續命）
+const SHAKE_COOLDOWN_STEPS=180;   // 搖一搖冷卻 3 秒（比免死寬限 2.5 秒略長；每搖一次扣 5 分，也不能無限連搖）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
 const pieceOf=new Map();                                           // 州 → 目前場上（或預覽中）的州物件，重建後永遠指向最新的
 
@@ -215,7 +217,7 @@ function init(){
   Composite.add(engine.world,[wall(W/2,BOXB+T/2,W+2*T,T),wall(BOXL-T/2,H/2,T,H*3),wall(BOXR+T/2,H/2,T,H*3)]);
   gameId++;roundId++;simStep=0;pendingFly=0;shakeLockUntil=0;shakeGrace=0;hitstopUntil=0;acc=0;pieceOf.clear();
   tops=[];pending=[];pendingKeys=new Set();score=0;over=false;cur=null;dropX=W/2;lastDrop=0;fxToken++;resetFx();
-  document.getElementById('shake').disabled=false;
+  {const sb=document.getElementById('shake');sb.disabled=false;sb.classList.remove('cool');sb.style.removeProperty('--cd');sb.title='搖一搖';}
   achDone=new Set();noRoomUntil.clear();resetToasts();ptrDown=false;ptrId=null;roundState='play';shakeReadyStep=0;labelFrame=0;   // 每一局重新開始：本局成就、冷卻表、提示、手勢、輪末狀態全部清空
   const onContact=e=>{
     for(const p of e.pairs){
@@ -894,7 +896,7 @@ function show(t,p,b,fn){
 const SHAKE_MS=1000;
 function shake(){
   if(over||overlayOpen()||!tops.length||simStep<shakeReadyStep||roundState==='banner')return;
-  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;   // 冷卻 5 秒，比免死寬限＋溢出累積時間長，無法連搖續命
+  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;   // 冷卻 3 秒
   const btn=document.getElementById('shake');btn.disabled=true;btn.classList.add('on');setTimeout(()=>btn.classList.remove('on'),950);
   tops.forEach(t=>{
     Body.setVelocity(t,{x:(Math.random()-.5)*6,y:-(5+Math.random()*5)});
@@ -938,8 +940,15 @@ function drawPiece(P,ghost,labelPass){
   const T=v=>{const q=rot({x:v.x*sc,y:v.y*sc},w.a);return {x:w.c.x+q.x,y:w.c.y+q.y};};
   if(labelPass){
     // 只做「排版」：算出標籤的自然位置與字級，交給 placeLabels 錯開、再由 paintLabel 畫
-    const fs=LABEL_FS;   // 所有標籤統一大小（大小不再依城的面積變化）
-    const L=T(P.lab);
+    // 字級不依城的面積變化，只在「相連後整組縮小」時跟著略為縮小（同一組一樣大），否則縮小後的形狀會被字整個蓋住
+    const shrunk=Math.min(1,P.k*sc/P.s.sc);
+    const fs=Math.max(12,LABEL_FS*Math.sqrt(shrunk));
+    let L=T(P.lab);
+    // 太小的城：字放在中間會把整個形狀蓋住 → 改把字放在形狀正上方（貼著頂端），形狀完整露出來
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+    for(const v of P.rel){const q=T(v);if(q.x<x0)x0=q.x;if(q.x>x1)x1=q.x;if(q.y<y0)y0=q.y;if(q.y>y1)y1=q.y;}
+    const lw=P.s.n.length*fs+4,lh=fs*1.2;
+    if(lw*lh>0.45*(x1-x0)*(y1-y0))L={x:(x0+x1)/2,y:y0-lh*0.5-1};
     P._lbl={x:L.x,y:L.y,fs,pri:P.labR*sc};
     return;
   }
@@ -979,23 +988,26 @@ function placeLabels(items,decide){
     if(decide){
       // 目前選定的位置只要沒撞到別人就維持不動（避免來回切換、繞著城打轉）；撞到才換
       const cur0=lblPos(L,P.lox,P.loy);
-      if(hit(cur0.x,cur0.y,L)>=0.5){
+      if(P.hide||hit(cur0.x,cur0.y,L)>=0.5){   // 被隱藏的也每次重新評估，空出位置就會再出現
         const cands=[[0,0]];
-        for(const r of [10,18,26,36])for(let k=0;k<8;k++){const an=k*Math.PI/4;cands.push([Math.round(Math.cos(an)*r),Math.round(Math.sin(an)*r)]);}
-        let best=[P.lox,P.loy],bestM=1e9;
+        for(const r of [8,14,20,27])for(let k=0;k<8;k++){const an=k*Math.PI/4;cands.push([Math.round(Math.cos(an)*r),Math.round(Math.sin(an)*r)]);}   // 位移上限 27px：標籤不能離開自己的城太遠
+        let best=[P.lox,P.loy],bestM=1e9,bestHit=1e9;
         for(const [dx,dy] of cands){
           const {x,y}=lblPos(L,dx,dy);
-          const m=hit(x,y,L)+Math.hypot(x-L.x,y-L.y)*0.02;           // 同樣不重疊時，偏好離原位近的
-          if(m<bestM){bestM=m;best=[dx,dy];if(m<0.5)break;}
+          const h=hit(x,y,L),m=h+Math.hypot(x-L.x,y-L.y)*0.02;       // 同樣不重疊時，偏好離原位近的
+          if(m<bestM){bestM=m;bestHit=h;best=[dx,dy];if(m<0.5)break;}
         }
         P.lox=best[0];P.loy=best[1];
+        P.hide=bestHit>L.w*L.h*0.35;   // 試過所有位置還是會壓到別人的字：這個標籤先不畫（形狀與白邊仍在），避免一團字蓋住整組
       }
     }
+    if(P.hide){P.sox=P.lox;P.soy=P.loy;continue;}   // 被隱藏的標籤不佔位，也不參與後面的避讓
     P.sox+=(P.lox-P.sox)*SMOOTH;P.soy+=(P.loy-P.soy)*SMOOTH;
     const q=lblPos(L,P.sox,P.soy);placed.push({x:q.x,y:q.y,w:L.w,h:L.h});
   }
 }
 function paintLabel(P){
+  if(P.hide)return;
   const L=P._lbl,{x,y}=lblPos(L,P.sox,P.soy);
   ctx.font=`bold ${L.fs}px "Noto Serif TC","PMingLiU",serif`;ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.lineJoin='round';ctx.lineWidth=Math.max(2.5,L.fs*.22);ctx.strokeStyle='rgba(255,255,255,.92)';ctx.strokeText(P.s.n,x,y);
@@ -1063,7 +1075,11 @@ function step(){
   simStep++;Engine.update(engine,1000/60);magnetScan();mergePending();keepInside();
   if(!over)checkOverflow();
   if(roundState!=='play')roundTick();
-  if(shakeReadyStep&&simStep>=shakeReadyStep){shakeReadyStep=0;if(!over)document.getElementById('shake').disabled=false;}   // 冷卻結束才解鎖搖一搖按鈕
+  const sb=document.getElementById('shake');
+  if(shakeReadyStep){
+    if(simStep>=shakeReadyStep){shakeReadyStep=0;sb.classList.remove('cool');sb.style.removeProperty('--cd');sb.title='搖一搖';if(!over)sb.disabled=false;}   // 冷卻結束才解鎖搖一搖按鈕
+    else if(simStep%6===0){sb.classList.add('cool');sb.style.setProperty('--cd',1-(shakeReadyStep-simStep)/SHAKE_COOLDOWN_STEPS);sb.title='搖一搖冷卻中（還要 '+Math.ceil((shakeReadyStep-simStep)/60)+' 秒）';}
+  }
 }
 let lastT=0,acc=0;
 function frame(ts){
