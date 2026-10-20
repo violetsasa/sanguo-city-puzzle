@@ -63,6 +63,9 @@
     #app>.bar #next{grid-column:1/-1;grid-row:1}
     #app>.bar #reset{grid-row:2;grid-column:1;justify-self:start}
     #app>.bar #shake{grid-row:2;grid-column:2}
+    #app>.bar #shake{width:clamp(96px,30vw,132px);height:clamp(62px,9vh,78px)}   /* 手機：搖一搖放大，好連按 */
+    #app>.bar #shake svg{width:46%;height:60%}
+    #app>.bar #shake::after{bottom:9px;height:4px}
   }
   .pill{flex:none;font-size:clamp(12px,min(2vh,3.2vw),17px);padding:6px 12px;border-radius:999px;background:var(--line);color:var(--panel);letter-spacing:1px;white-space:nowrap}
   #next{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:clamp(14px,min(2.4vh,3.8vw),21px);font-weight:bold;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;white-space:nowrap;overflow:hidden}
