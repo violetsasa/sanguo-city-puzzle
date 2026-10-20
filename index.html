@@ -713,6 +713,10 @@ const ACH_HIST=[
 const ACH_DEF=ACH_HIST.map((a,i)=>({...a,o:i})).sort((a,b)=>(a.y-b.y)||(a.o-b.o));
 const FNAME={W:'魏',S:'蜀',U:'吳'};
 const ZHOU=[...new Set(STATES.map(s=>s.z))];
+// 縮小規則：兩座城相連不縮小（只有太寬才依箱寬縮，同原版）；整個「州」（漢末十三州，至少兩座城）都連在同一組時，那一組才縮小一次
+const REGION_SHRINK=0.88,MIN_SHRINK=0.55;   // 每完成一個州縮到 88%，最小縮到 55%
+const ZONES=(()=>{const m=new Map();STATES.forEach(st=>{if(!m.has(st.z))m.set(st.z,[]);m.get(st.z).push(st.n);});return [...m.entries()].filter(([z,ns])=>ns.length>=2).map(([z,ns])=>({z,names:ns}));})();
+function regionsDone(states){const have=new Set(states.map(x=>x.n));return ZONES.filter(r=>r.names.every(n=>have.has(n))).length;}
 ZHOU.forEach(z=>{const ns=STATES.filter(s=>s.z===z).map(s=>s.n);if(ns.length<2)return;ACH_DEF.push({id:'z:'+z,name:z+'平定',need:ns,story:'整個'+z+'連成一片，盡入囊中。',auto:true});});
 Object.keys(FNAME).forEach(f=>{const ns=STATES.filter(s=>s.f===f).map(s=>s.n);ACH_DEF.push({id:'f:'+f,name:FNAME[f]+'國基業',need:ns,story:FNAME[f]+'國的疆域全部連在一起。',auto:true});});
 ACH_DEF.push({id:'tri',name:'三分天下',need:[],story:'魏、蜀、吳的城，連成了一整片。',hint:'讓魏、蜀、吳的城連在一起',auto:true});
@@ -808,7 +812,7 @@ function rebuildGroup(olds){
   const av=wavg(o=>o.angularVelocity);
   const big=olds.reduce((m,o)=>o.mass>m.mass?o:m);
   const ang=Math.atan2(Math.sin(big.angle),Math.cos(big.angle));
-  const k=BASE*Math.pow(states.reduce((s,x)=>s+x.a1,0)/AREF,GAMMA-0.5);
+  const k=states.reduce((m,x)=>Math.min(m,x.sc),1e9)*Math.max(MIN_SHRINK,Math.pow(REGION_SHRINK,regionsDone(states)));   // 組內最大的城決定比例尺（小城配合它）；整個州連齊才再縮小
   const bs=states.map(s=>{const raw=s.p.map(q=>proj(q,k)),c=Vertices.centre(raw);return makePiece(s,c.x,c.y,k);});
   const T=fuse(bs);
   T.graceUntil=Math.max(0,...olds.map(o=>o.graceUntil||0));   // 新組沿用舊各塊的搖動免死期與越線累計（合併不能靠重建來重設）
@@ -889,7 +893,7 @@ const area=pts=>Math.abs(pts.reduce((a,[x,y],i)=>{const [x2,y2]=pts[(i+1)%pts.le
 const AREAS=STATES.map(s=>area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}))).sort((a,b)=>a-b);
 // 剛落下的單州畫得大（SINGLE_BASE）；相連成功後整組依總面積重算，縮到 BASE（連得越多越小）
 const AREF=AREAS[AREAS.length>>1],GAMMA=0.32;
-let SINGLE_BASE=0.46,BASE=0.3165;   // 校準（77 座城、箱寬 500、最後 60 秒倒數）：依地理位置落點的自動玩家 0.46 倍率全連約 3／10、0.50 倍率 0／9；隨機落點 0／7。BASE 維持原比例 0.344／0.50
+let SINGLE_BASE=0.34,BASE=0.3165;   // 校準（77 座城、箱寬 500、最後 60 秒倒數、整個州連齊才縮小）：依地理位置落點的自動玩家全連 0.29→3／9、0.34→1／6、0.36→1／4、0.40→0／4、0.46→0／9（全在放城階段溢出）。BASE 已不再使用
 STATES.forEach(s=>{s.a1=area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}));s.sc=SINGLE_BASE*Math.pow(s.a1/AREF,GAMMA-0.5);});
 let MIN_PART_AREA=10;   // Matter 預設值；調高會削掉細長尖角，繪圖輪廓就會超出碰撞形狀
 
