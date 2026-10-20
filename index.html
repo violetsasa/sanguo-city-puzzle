@@ -238,7 +238,7 @@ function init(){
   const wall=(x,y,w,h)=>Bodies.rectangle(x,y,w,h,{isStatic:true,friction:.6});
   const T=300;
   Composite.add(engine.world,[wall(W/2,BOXB+T/2,W+2*T,T),wall(BOXL-T/2,H/2,T,H*3),wall(BOXR+T/2,H/2,T,H*3)]);
-  gameId++;roundId++;simStep=0;pendingFly=0;shakeLockUntil=0;shakeGrace=0;hitstopUntil=0;acc=0;pieceOf.clear();
+  gameId++;roundId++;simStep=0;pendingFly=0;shakeLockUntil=0;lastShakeStep=-1e9;hitstopUntil=0;acc=0;pieceOf.clear();
   tops=[];pending=[];pendingKeys=new Set();score=0;over=false;cur=null;dropX=W/2;lastDrop=0;fxToken++;resetFx();
   {const sb=document.getElementById('shake');sb.disabled=false;sb.classList.remove('cool');sb.style.removeProperty('--cd');sb.title='搖一搖';}
   achDone=new Set();noRoomUntil.clear();resetToasts();ptrDown=false;ptrId=null;roundState='play';shakeReadyStep=0;labelFrame=0;   // 每一局重新開始：本局成就、冷卻表、提示、手勢、輪末狀態全部清空
@@ -281,7 +281,7 @@ function fuse(bodies){
     p.off={x:world[i].c.x-T.position.x,y:world[i].c.y-T.position.y};
     p.da=world[i].a-T.angle;p.top=T;
   });
-  T.pcs=pcs;return T;
+  T.pcs=pcs;T.graceUntil=Math.max(0,...bodies.map(b=>b.graceUntil||0));return T;   // 合併後沿用各部分的搖動免死期
 }
 const noRoomUntil=new Map();   // 找不到容納位置的州對，暫緩到這個步數之後再試
 function mergePending(){
@@ -334,6 +334,28 @@ function seamWorld(P,Q,stride){
   for(let i=0;i<idx.length;i+=stride){const q=rot(P.rel[idx[i]],w.a);out.push(w.c.x+q.x,w.c.y+q.y);}
   return out;
 }
+// 線段 (ax,ay)-(bx,by) 是否穿過 P、Q 以外的任何一座城（逐一比對凸零件，凹陷處不會誤判）
+function segmentBlocked(ax,ay,bx,by,topA,topB){
+  const lo=(u,v)=>Math.min(u,v),hi=(u,v)=>Math.max(u,v);
+  const x0=lo(ax,bx),x1=hi(ax,bx),y0=lo(ay,by),y1=hi(ay,by);
+  const cross=(ux,uy,vx,vy)=>ux*vy-uy*vx;
+  const segHit=(px,py,qx,qy)=>{   // 線段 AB 與線段 PQ 是否相交
+    const d1=cross(bx-ax,by-ay,px-ax,py-ay),d2=cross(bx-ax,by-ay,qx-ax,qy-ay),d3=cross(qx-px,qy-py,ax-px,ay-py),d4=cross(qx-px,qy-py,bx-px,by-py);
+    return ((d1>0&&d2<0)||(d1<0&&d2>0))&&((d3>0&&d4<0)||(d3<0&&d4>0));
+  };
+  for(const t of tops){
+    if(t===topA||t===topB)continue;
+    const bd=t.bounds;if(bd.max.x<x0||bd.min.x>x1||bd.max.y<y0||bd.min.y>y1)continue;
+    for(let i=(t.parts.length>1?1:0);i<t.parts.length;i++){
+      const v=t.parts[i].vertices,n=v.length;
+      let pos=0,neg=0;const mx=(ax+bx)/2,my=(ay+by)/2;   // 線段中點在凸零件內（線段完全落在零件裡）；不管頂點順時針或逆時針都適用
+      for(let k=0;k<n;k++){const u=v[k],w=v[(k+1)%n],c=cross(w.x-u.x,w.y-u.y,mx-u.x,my-u.y);if(c>0)pos++;else if(c<0)neg++;}
+      if(pos===0||neg===0)return true;
+      for(let k=0;k<n;k++){const u=v[k],w=v[(k+1)%n];if(segHit(u.x,u.y,w.x,w.y))return true;}
+    }
+  }
+  return false;
+}
 function magnetScan(){
   if(simStep%MAGNET_EVERY)return;
   const items=[];
@@ -350,9 +372,13 @@ function magnetScan(){
       const a=P.top.bounds,b=Q.top.bounds;
       if(a.max.x+D<b.min.x||b.max.x+D<a.min.x||a.max.y+D<b.min.y||b.max.y+D<a.min.y)continue;   // 外框都碰不到就不用算
       const A=seamWorld(P,Q,2),B=seamWorld(Q,P,2),D2=D*D;
-      let hit=false;
-      for(let x=0;x<A.length&&!hit;x+=2)for(let y=0;y<B.length;y+=2){const dx=A[x]-B[y],dy=A[x+1]-B[y+1];if(dx*dx+dy*dy<D2){hit=true;break;}}
-      if(hit){pendingKeys.add(key);pending.push([P.s,Q.s]);continue;}
+      let best=D2,ax=0,ay=0,bx=0,by=0;   // 找兩段交界上最近的一對點
+      for(let x=0;x<A.length;x+=2)for(let y=0;y<B.length;y+=2){const dx=A[x]-B[y],dy=A[x+1]-B[y+1],d=dx*dx+dy*dy;if(d<best){best=d;ax=A[x];ay=A[x+1];bx=B[y];by=B[y+1];}}
+      if(best<D2){
+        // 兩個邊界點之間的連線若被其他城擋住（中間夾著別的城），就不磁吸合併，也不互相拉近：必須是真的靠在一起
+        if(segmentBlocked(ax,ay,bx,by,P.top,Q.top))continue;
+        pendingKeys.add(key);pending.push([P.s,Q.s]);continue;
+      }
       // 還沒到可以相連的距離：把兩塊的交界中心互相拉近
       const gx=Math.max(0,Math.max(a.min.x-b.max.x,b.min.x-a.max.x)),gy=Math.max(0,Math.max(a.min.y-b.max.y,b.min.y-a.max.y));
       if(Math.hypot(gx,gy)<3)continue;          // 已經貼在一起了還繼續推只會讓兩塊一直抖動、旋轉
@@ -810,7 +836,7 @@ const area=pts=>Math.abs(pts.reduce((a,[x,y],i)=>{const [x2,y2]=pts[(i+1)%pts.le
 const AREAS=STATES.map(s=>area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}))).sort((a,b)=>a-b);
 // 剛落下的單州畫得大（SINGLE_BASE）；相連成功後整組依總面積重算，縮到 BASE（連得越多越小）
 const AREF=AREAS[AREAS.length>>1],GAMMA=0.32;
-let SINGLE_BASE=0.45,BASE=0.31;   // 實測（62 座城）：用「找最低處落下＋必要時搖一搖」的自動玩家，0.45 以下都能放完整輪、0.47 會在最後一塊失敗；純隨機落下約在第 50 塊前後失敗
+let SINGLE_BASE=0.50,BASE=0.344;   // 校準：溢出判定改嚴（同原版，不要求靜止）後，用「隨機落點、偶爾搖」的休閒型自動玩家測第一輪失敗率：0.45→0%、0.47→5%、0.49→40%、0.52→71%、0.58→100%；取 0.50（約五成），BASE 維持原比例 0.31／0.45
 STATES.forEach(s=>{s.a1=area(s.p.map(q=>{const r=proj(q,1);return [r.x,r.y];}));s.sc=SINGLE_BASE*Math.pow(s.a1/AREF,GAMMA-0.5);});
 let MIN_PART_AREA=10;   // Matter 預設值；調高會削掉細長尖角，繪圖輪廓就會超出碰撞形狀
 
@@ -868,6 +894,7 @@ function drop(){
   b.pcs.forEach(P=>{P.dropped=true;P.t0=lastDrop;});
   tops.push(b);Composite.add(engine.world,b);
   b.pcs.forEach(P=>{P.dropStep=simStep;});
+  if(simStep<lastShakeStep+SHAKE_GRACE_STEPS)b.graceUntil=lastShakeStep+SHAKE_GRACE_STEPS;   // 搖動餘波中落下的城，也在那一次搖動的免死期內（同原版）
   cur=null;placed++;score+=10;hud();
   lastDropStep=simStep;
   const gid=gameId,rid=roundId;
@@ -907,8 +934,9 @@ function roundTick(){
     const guardPassed=simStep-lastDropStep>=OVER_STEPS+30;       // 讓最後一座也有機會被溢出判定檢查到
     const waited=simStep-settleStart,stable=settleCalm>=30&&guardPassed;
     if(stable||waited>=600){   // 穩定了就結算；等了 10 秒還沒穩定也進入判定
-      if(!stable&&waited<1200&&isOverflowing(true))return;   // 逾時但仍有越線的城在動（例如剛搖過）：不能當成通關，再多等一會兒（最多再等 10 秒）
-      if(isOverflowing(true)){gameOver();return;}   // 最後判定把還在動的也算進去，不會讓越線的盤面放行
+      // 越線的盤面不在這裡另外判輸，交給平時的溢出判定（同一套保護期、搖動豁免與持續時間）去決定；
+      // 這裡只負責「還越線就先不結算、不通關」。等到上限（20 秒）仍越線才直接判輸，避免卡死。
+      if(isOverflowing(true)){if(waited<1200)return;gameOver();return;}
       roundState='banner';nextRoundStep=simStep+66;checkRound();
     }
   }else if(roundState==='banner'&&simStep>=nextRoundStep){
@@ -934,16 +962,20 @@ function show(t,p,b,fn){
   btn.onclick=()=>{document.getElementById('ov').style.display='none';fn();};
 }
 // 直接給速度（單靠施力對重物不夠），讓整盤真的被搖起來
-const SHAKE_MS=1000;
+const SHAKE_MS=1000,SHAKE_GRACE_STEPS=150;
+let lastShakeStep=-1e9;
 function shake(){
   if(over||overlayOpen()||!tops.length||simStep<shakeReadyStep||roundState==='banner')return;
-  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;   // 冷卻 3 秒
+  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;   // 冷卻 1 秒
   const btn=document.getElementById('shake');btn.disabled=true;btn.classList.add('on');{const gid=gameId;setTimeout(()=>{if(gid===gameId)btn.classList.remove('on');},950);}
+  lastShakeStep=simStep;
   tops.forEach(t=>{
     Body.setVelocity(t,{x:(Math.random()-.5)*6,y:-(5+Math.random()*5)});
     Body.setAngularVelocity(t,(Math.random()-.5)*.06);
+    // 每塊城各自的免死期：搖完 2.5 秒內不計溢出，讓碎片有時間落回箱內。
+    // 但搖動當下已經卡在溢出線上方的城不更新（同原版），所以連續搖動救不了本來就卡在線上的城
+    if(!isHigh(t))t.graceUntil=simStep+SHAKE_GRACE_STEPS;
   });
-  shakeGrace=150;   // 搖完 2.5 秒內不計溢出，讓碎片有時間落回箱內
   score=Math.max(0,score-5);hud();
 }
 
@@ -1124,18 +1156,18 @@ function keepInside(){
 }
 // 溢出判定：只有「靜止堆著、並且一直高過溢出線」才算堆太高。
 // 搖一搖或剛落下時碎片會暫時飛過線，那不算；必須連續靜止超過 OVER_STEPS 步（約 1.5 秒）。
-const OVER_STEPS=90;
-let shakeGrace=0;
+const OVER_STEPS=90,OVER_HOLD_STEPS=72;   // OVER_STEPS：剛落下的保護期（1.5 秒）；OVER_HOLD_STEPS：越線持續多久才算溢出（1.2 秒，同原版）
+// 是否有任何一塊越過溢出線（頂點高於 LINE-4）
+function isHigh(t){for(let i=(t.parts.length>1?1:0);i<t.parts.length;i++)if(t.parts[i].vertices.some(v=>v.y<LINE-4))return true;return false;}
 function checkOverflow(){
-  if(shakeGrace>0)shakeGrace--;
   for(const t of tops){
     if(t.position.y>H+200){gameOver();return;}
     let high=false;
     t.parts.forEach((p,i)=>{if(t.parts.length>1&&i===0)return;if(!high&&p.vertices.some(v=>v.y<LINE-4))high=true;});
-    const calm=t.speed<0.5&&Math.abs(t.angularSpeed)<0.01;
     const fresh=simStep-Math.max(...t.pcs.map(p=>p.dropStep||0))<OVER_STEPS;   // 剛落下 1.5 秒內不檢查
-    t.overSteps=(high&&calm&&shakeGrace===0&&!fresh)?(t.overSteps||0)+1:0;
-    if(t.overSteps>OVER_STEPS){gameOver();return;}
+    // 同原版：不要求靜止；只要這塊城高過溢出線，且不是剛落下（fresh）、也不在搖動免死期內，就開始累計；連續 1.2 秒就算溢出
+    t.overSteps=(high&&simStep>=(t.graceUntil||0)&&!fresh)?(t.overSteps||0)+1:0;
+    if(t.overSteps>OVER_HOLD_STEPS){gameOver();return;}
   }
 }
 function step(){
