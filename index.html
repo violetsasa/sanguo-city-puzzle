@@ -443,7 +443,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='2026.10.20-15';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-16';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -589,11 +589,20 @@ function magnetScan(){
   const fin=roundState==='final',pullRange=fin?FINAL_PULL_RANGE:PULL_RANGE,pullDv=PULL_DV*(fin?FINAL_PULL_MULT:1),pullCap=PULL_SPEED*(fin?FINAL_SPEED_MULT:1);
   const items=[];
   for(const t of tops)for(const P of t.pcs)if(P.dropped)items.push(P);
+  // 跨州磁吸上限（只限制磁吸，不限制碰撞；倒數階段不限制）：還沒連齊的州，最多只會「吸」MAGNET_CROSS_CAP 個別的州，
+  // 例如荊州還沒排完、已經和揚州相連，就不會再吸交州；但真的碰到的城照樣相連
+  const zlinks=new Map(),zdone=new Set();
+  if(!fin){
+    for(const t of tops){const zs=new Set(t.pcs.map(P=>P.s.z));for(const z of zs){if(!zlinks.has(z))zlinks.set(z,new Set());zs.forEach(o=>{if(o!==z)zlinks.get(z).add(o);});}}
+    for(const z of ZHOU){const ns=STATES.filter(s=>s.z===z);const top0=pieceOf.get(ns[0])&&pieceOf.get(ns[0]).top;if(top0&&ns.every(s=>{const q=pieceOf.get(s);return q&&q.top===top0;}))zdone.add(z);}
+  }
+  const capBlocked=(a,b)=>{for(const [z,o] of [[a,b],[b,a]]){if(zdone.has(z))continue;const L=zlinks.get(z);if(L&&L.size>=MAGNET_CROSS_CAP&&!L.has(o))return true;}return false;};
   for(let i=0;i<items.length;i++){
     const P=items[i];
     for(let j=i+1;j<items.length;j++){
       const Q=items[j];
       if(P.top===Q.top||!adj.has(P.s.n+'|'+Q.s.n))continue;
+      if(!fin&&P.s.z!==Q.s.z&&capBlocked(P.s.z,Q.s.z))continue;
       const key=P.s.n+'|'+Q.s.n;
       if(pendingKeys.has(key)||(noRoomUntil.get(key)||0)>simStep)continue;
       if(P.top.speed>MAGNET_SPEED||Q.top.speed>MAGNET_SPEED)continue;       // 兩塊都靜下來才吸，避免在半空中亂吸
@@ -1244,6 +1253,7 @@ function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明�
 }
 // 直接給速度（單靠施力對重物不夠），讓整盤真的被搖起來
 const SHAKE_MS=1000,SHAKE_GRACE_STEPS=150;
+const MAGNET_CROSS_CAP=1;   // 還沒連齊的州，最多吸幾個別的州
 const HOLE_D=140,SMALL_PIECES=5;   // 倒數階段的補洞磁吸：交界點距離上限（像素）與「小塊」的城數上限
 let shakeAnimT=0;
 let lastShakeStep=-1e9;
