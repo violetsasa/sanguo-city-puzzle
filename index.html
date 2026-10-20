@@ -38,7 +38,7 @@
 </script>
 <style>
   :root{--bg:#f6eddc;--ink:#3a2a18;--panel:#fffaf0;--line:#8b6f4e}
-  @media (prefers-color-scheme:dark){:root{--bg:#1d1913;--ink:#eadfc6;--panel:#2a241b;--line:#a98550}#ov,#ach{background:rgba(20,16,10,.7)}}
+  @media (prefers-color-scheme:dark){:root{--bg:#1d1913;--ink:#eadfc6;--panel:#2a241b;--line:#a98550}}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   *{touch-action:manipulation}   /* iPhone：連點不再放大（canvas 自己另外設成 none） */
   #app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* 連點／長按不會選到字或跳出選單 */
@@ -121,6 +121,7 @@
   #ov .rules div{padding-left:1.1em;text-indent:-1.1em}
   .fly{position:fixed;z-index:10;pointer-events:none;font-weight:bold;font-size:20px;color:#c4574f;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap}
   #ach{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;padding:10px}
+  @media (prefers-color-scheme:dark){#ov,#ach{background:rgba(20,16,10,.72)}}   /* 深色模式的遮罩：要放在 #ov／#ach 的淺色底之後才會生效 */
   #ach .card{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:14px 16px;width:100%;max-height:100%;display:flex;flex-direction:column}
   #ach h2{margin:0 0 6px;font-size:20px;display:flex;align-items:center;gap:10px}
   #ach h2 .grow{flex:1}
@@ -333,7 +334,7 @@ let BOXL=50,BOXR=550;   // 箱子左右邊界（箱子置中，寬度可調；�
 const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
 let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單輪流程：play 落城中／final 最後一座落下後的倒數（要把全部連成一片）／won 已通關
-const VERSION='2026.10.20-3';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-4';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
