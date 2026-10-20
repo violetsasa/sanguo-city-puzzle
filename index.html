@@ -94,7 +94,7 @@
   .tabs button{flex:1;border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 10px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
   .tabs button b{font-variant-numeric:tabular-nums;margin-left:4px}
   .tabs button.on{background:var(--line);color:var(--panel)}
-  .ach-clear{text-align:center;margin:10px 0 2px}
+  .ach-clear{text-align:right;margin:0 0 2px}
   .ach-clear button{border:0;background:none;font:inherit;font-size:12px;color:var(--ink);opacity:.55;text-decoration:underline;cursor:pointer;padding:4px 8px}
   .ach-clear button:hover{opacity:.9}
   .ach-empty{text-align:center;opacity:.7;font-size:13px;padding:26px 10px;line-height:1.8}
@@ -116,7 +116,7 @@
       <div class="chip" title="進度：已放下的城／全部城數"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg><div class="cap"><small>進度</small><b id="prog">0 / 62</b></div></div>
       <div class="chip" title="最大相連：目前連在一起的城裡，最多有幾座"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><div class="cap"><small>最大相連</small><b id="clu">0</b></div></div>
       <div class="chip" title="分數"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><div class="cap"><small>分數</small><b id="score">0</b></div></div>
-      <button id="achBtn" class="ib" title="成就圖鑑" aria-label="成就圖鑑"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5v1A3.5 3.5 0 0 0 7.7 10.5M17 6h2.5v1a3.5 3.5 0 0 1-3.2 3.5"/><path d="M12 13.5V17M8 20h8M9.5 17h5"/></svg><span class="badge" id="achBadge">0</span></button>
+      <button id="achBtn" class="ib" title="成就圖鑑" aria-label="成就圖鑑"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5v1A3.5 3.5 0 0 0 7.7 10.5M17 6h2.5v1a3.5 3.5 0 0 1-3.2 3.5"/><path d="M12 13.5V17M8 20h8M9.5 17h5"/></svg></button>
     </div>
   </header>
   <div id="wrap">
@@ -691,7 +691,7 @@ function renderAch(){
   document.getElementById('cntAll').textContent=`${achEver.size} / ${n}`;
   document.getElementById('tabRun').classList.toggle('on',achTab==='run');
   document.getElementById('tabAll').classList.toggle('on',achTab==='all');
-  document.getElementById('achBadge').textContent=achDone.size;
+  
   document.getElementById('achBtn').title=`成就圖鑑（本局 ${achDone.size}，累計 ${achEver.size} / ${n}）`;
   const rank=a=>achDone.has(a.id)?0:achEver.has(a.id)?1:2;     // 本局已解鎖 → 曾達成 → 未解鎖
   const needOf=a=>a.hint||('把 '+(a.need.length>12?'整個範圍內的 '+a.need.length+' 座城':a.need.join('、'))+' 連在一起（中間可以夾別的城）');
@@ -705,7 +705,7 @@ function renderAch(){
   if(achTab==='run'){
     const got=ACH_DEF.filter(a=>achDone.has(a.id));
     list.innerHTML=got.length?got.map(card).join(''):'<div class="ach-empty">這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。</div>';
-  }else list.innerHTML=[...ACH_DEF].sort((a,b)=>rank(a)-rank(b)).map(card).join('')+'<div class="ach-clear"><button id="achClear">清除累計紀錄</button></div>';
+  }else list.innerHTML='<div class="ach-clear"><button id="achClear">清除累計紀錄</button></div>'+[...ACH_DEF].sort((a,b)=>rank(a)-rank(b)).map(card).join('');
 }
 document.getElementById('achList').addEventListener('click',e=>{
   if(!e.target.closest||!e.target.closest('#achClear'))return;
