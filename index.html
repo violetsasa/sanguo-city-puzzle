@@ -661,7 +661,7 @@ function nextToast(){
   const el=document.getElementById('toast');
   el.innerHTML=`<small>成就解鎖</small><b>${it[0]}</b>${it[1]}`;
   el.classList.add('show');
-  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>{if(gen===toastGen)nextToast();},420);},2800);
+  setTimeout(()=>{if(gen!==toastGen)return;el.classList.remove('show');setTimeout(()=>{if(gen===toastGen)nextToast();},420);},2800);   // 舊局的計時器不能動到新局的提示
 }
 function resetToasts(){toastGen++;toastQ.length=0;toastBusy=false;const el=document.getElementById('toast');if(el)el.classList.remove('show');}
 function checkAchievements(T){
@@ -851,7 +851,7 @@ function nextPiece(){
   cur=makePiece(st,dropX,0);
   cur.unit=st.n;
   curY=Math.max(VY+20,(cur.bounds.max.y-cur.bounds.min.y)/2+VY+6);   // 預覽的城完整落在可視範圍內（最高的雲南約 129px，底邊仍在箱口之上）
-  Body.setPosition(cur,{x:clampX(dropX),y:curY});Body.setStatic(cur,true);hud();
+  dropX=clampX(dropX);Body.setPosition(cur,{x:dropX,y:curY});Body.setStatic(cur,true);hud();   // 夾限後的位置同步回 dropX，落點輔助線才不會偏
 }
 function clampX(x){
   // 質心不一定在外框中央，左右分別量測
@@ -886,13 +886,14 @@ function hud(){
   document.getElementById('nextDot').style.background=nf?COL[nf]:'#aaa';
 }
 function best(){
-  let b=score;try{b=Math.max(score,+(localStorage.getItem('sg_best')||0));localStorage.setItem('sg_best',b);}catch(e){}return b;
+  let b=score;try{const prev=Number(localStorage.getItem('sg_best'));b=Math.max(score,Number.isFinite(prev)?prev:0);   // 存檔壞掉（非數字）時當成 0，不會永遠顯示 NaN
+  localStorage.setItem('sg_best',b);}catch(e){}return b;
 }
 // 最後一州落下後：等整盤穩定（且沒有待處理的合併、不在停頓中）才結算，最多等 8 秒；重開時舊的等待會自動失效
 // 是否有靜止的城高過溢出線
-function isOverflowing(){
+function isOverflowing(inclMoving){   // inclMoving：連還在移動的也算（輪末逾時的最後判定用）
   for(const t of tops){
-    if(t.speed>=0.5)continue;
+    if(!inclMoving&&t.speed>=0.5)continue;
     for(let i=(t.parts.length>1?1:0);i<t.parts.length;i++)if(t.parts[i].vertices.some(v=>v.y<LINE-4))return true;
   }
   return false;
@@ -904,8 +905,10 @@ function roundTick(){
     const calm=tops.every(t=>t.speed<0.3&&Math.abs(t.angularSpeed)<0.005)&&!pending.length&&performance.now()>=hitstopUntil&&!tops.some(t=>t.pcs.some(p=>p.anim));
     settleCalm=calm?settleCalm+1:0;
     const guardPassed=simStep-lastDropStep>=OVER_STEPS+30;       // 讓最後一座也有機會被溢出判定檢查到
-    if((settleCalm>=30&&guardPassed)||simStep-settleStart>=600){   // 最多等 10 秒
-      if(isOverflowing()){gameOver();return;}
+    const waited=simStep-settleStart,stable=settleCalm>=30&&guardPassed;
+    if(stable||waited>=600){   // 穩定了就結算；等了 10 秒還沒穩定也進入判定
+      if(!stable&&waited<1200&&isOverflowing(true))return;   // 逾時但仍有越線的城在動（例如剛搖過）：不能當成通關，再多等一會兒（最多再等 10 秒）
+      if(isOverflowing(true)){gameOver();return;}   // 最後判定把還在動的也算進去，不會讓越線的盤面放行
       roundState='banner';nextRoundStep=simStep+66;checkRound();
     }
   }else if(roundState==='banner'&&simStep>=nextRoundStep){
@@ -935,7 +938,7 @@ const SHAKE_MS=1000;
 function shake(){
   if(over||overlayOpen()||!tops.length||simStep<shakeReadyStep||roundState==='banner')return;
   shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;   // 冷卻 3 秒
-  const btn=document.getElementById('shake');btn.disabled=true;btn.classList.add('on');setTimeout(()=>btn.classList.remove('on'),950);
+  const btn=document.getElementById('shake');btn.disabled=true;btn.classList.add('on');{const gid=gameId;setTimeout(()=>{if(gid===gameId)btn.classList.remove('on');},950);}
   tops.forEach(t=>{
     Body.setVelocity(t,{x:(Math.random()-.5)*6,y:-(5+Math.random()*5)});
     Body.setAngularVelocity(t,(Math.random()-.5)*.06);
@@ -947,7 +950,8 @@ function shake(){
 function toX(e){const r=cv.getBoundingClientRect();return VX+(e.clientX-r.left)/r.width*VW;}
 function toY(e){const r=cv.getBoundingClientRect();return VY+(e.clientY-r.top)/r.height*VH;}
 let ptrDown=false,ptrId=null;     // 只認「按下去的那一根手指」，其他手指的放開不會誤丟城
-cv.addEventListener('pointerdown',e=>{if(overlayOpen()||ptrDown)return;ptrDown=true;ptrId=e.pointerId;dropX=toX(e);moveCur();try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+cv.addEventListener('pointerdown',e=>{if(overlayOpen()||ptrDown)return;if(e.pointerType==='mouse'&&e.button!==0)return;   // 滑鼠只認左鍵
+  ptrDown=true;ptrId=e.pointerId;dropX=toX(e);moveCur();try{cv.setPointerCapture(e.pointerId);}catch(_){}});
 cv.addEventListener('pointermove',e=>{if(overlayOpen()||(ptrDown&&e.pointerId!==ptrId))return;dropX=toX(e);moveCur();if(e.pointerType==='mouse')hoverPt={x:toX(e),y:toY(e)};});
 cv.addEventListener('pointerleave',()=>{hoverPt=null;});
 cv.addEventListener('pointerup',e=>{if(!ptrDown||e.pointerId!==ptrId)return;ptrDown=false;ptrId=null;if(overlayOpen())return;dropX=toX(e);moveCur();drop();});   // 放開時才落下
@@ -955,8 +959,9 @@ cv.addEventListener('pointercancel',e=>{if(e.pointerId===ptrId){ptrDown=false;pt
 cv.addEventListener('lostpointercapture',e=>{if(e.pointerId===ptrId&&ptrDown){ptrDown=false;ptrId=null;}});
 addEventListener('keydown',e=>{
   if(overlayOpen())return;
-  if(e.key==='ArrowLeft')dropX-=20;else if(e.key==='ArrowRight')dropX+=20;
-  else if(e.key===' '){drop();e.preventDefault();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();}else return;
+  if(e.key==='ArrowLeft'){dropX-=20;e.preventDefault();}else if(e.key==='ArrowRight'){dropX+=20;e.preventDefault();}   // 擋掉方向鍵順便捲動頁面
+  else if(e.key===' '){if(e.repeat){e.preventDefault();return;}drop();e.preventDefault();   // 按住空白鍵不連續丟城（repeat 事件直接忽略）
+if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();}else return;
   moveCur();
 });
 // 按完按鈕就把焦點放開，避免之後按空白鍵（丟城）又順便觸發那顆按鈕
