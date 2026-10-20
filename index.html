@@ -109,6 +109,7 @@
   #ov #ovB{background:var(--accent);border-color:var(--accent);color:#fff8e8;font-weight:bold;letter-spacing:2px;box-shadow:0 3px 10px rgba(168,85,43,.35)}   /* 主要動作（開始、再次挑戰）用主色，和旁邊的次要按鈕區分 */
   #ov #ovB:hover{filter:brightness(1.08)}
   #ov .rules{display:none}
+  body.intro #next,body.intro #app>.bar button,body.intro #achBtn{visibility:hidden}   /* 開場簡介還在時，下一城與底部操作先不出現（位置保留，開始後才顯示） */
   #ov.showrules .rules{display:block}   /* 簡介頁：按「玩法說明」就換成玩法，再按一次回簡介 */
   #ov.showrules .story,#ov.showrules .sub{display:none}
   #ov .sub{font-size:13px;letter-spacing:3px;opacity:.7;margin-bottom:6px}
@@ -1370,7 +1371,8 @@ function frame(ts){
   draw();requestAnimationFrame(frame);
 }
 resize();init();
-show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{});
+show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');});
+document.body.classList.add('intro');
 {const r=document.getElementById('ovR'),ov=document.getElementById('ov');r.style.display='';r.textContent='玩法說明';r.onclick=()=>{const on=ov.classList.toggle('showrules');r.textContent=on?'返回簡介':'玩法說明';};}
 requestAnimationFrame(frame);
 </script>
