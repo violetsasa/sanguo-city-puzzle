@@ -101,11 +101,15 @@
   #ov p{margin:4px 0 10px;font-size:14px;line-height:1.75;overflow:auto;flex:1 1 auto;min-height:0}
   #ov p{scrollbar-width:thin;scrollbar-color:var(--line) transparent;scrollbar-gutter:stable both-edges;padding:0 12px}   /* 捲軸細一點，並預留左右空位，不蓋到文字 */
   #ov p::-webkit-scrollbar{width:8px}#ov p::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}#ov p::-webkit-scrollbar-track{background:transparent}
-  #ov h2,#ov button{flex:none}
+  #ov h2,#ov button,#ov .ovbtns{flex:none}
+  #ov .ovbtns{display:flex;gap:10px}
+  #ov .ovbtns button{flex:1}
+  #ov .rules{display:none}
+  #ov.showrules .rules{display:block}   /* 簡介頁：按「玩法說明」就換成玩法，再按一次回簡介 */
+  #ov.showrules .story,#ov.showrules .sub{display:none}
   #ov .sub{font-size:13px;letter-spacing:3px;opacity:.7;margin-bottom:6px}
   #ov .story{text-align:center;font-size:14px;line-height:1.7;margin:6px 0 10px}
   #ov .rules{text-align:left;font-size:13px;line-height:1.55;margin:0 0 10px;padding:8px 12px;border:1px dashed var(--line);border-radius:8px;background:rgba(138,106,58,.08)}
-  #ov .rules summary{font-weight:bold;letter-spacing:2px;margin-bottom:2px;cursor:pointer}
   #ov .rules div{padding-left:1.1em;text-indent:-1.1em}
   .fly{position:fixed;z-index:10;pointer-events:none;font-weight:bold;font-size:20px;color:#c4574f;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap}
   #ach{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;padding:10px}
@@ -198,7 +202,7 @@
     </div></div>
     <div id="ov"><div class="card">
       <h2 id="ovT"></h2><p id="ovP"></p>
-      <button id="ovB">開始</button>
+      <div class="ovbtns"><button id="ovR" style="display:none"></button><button id="ovB">開始</button></div>
     </div></div>
   </div>
   <div class="bar">
@@ -1098,6 +1102,7 @@ function show(t,p,b,fn){
   document.getElementById('ovT').textContent=t;
   document.getElementById('ovP').innerHTML=p.replace(/\n/g,'<br>');
   const btn=document.getElementById('ovB');btn.textContent=b;
+  document.getElementById('ovR').style.display='none';document.getElementById('ov').classList.remove('showrules');   // 玩法說明鈕只在開場簡介出現
   document.getElementById('ov').style.display='flex';
   btn.onclick=()=>{document.getElementById('ov').style.display='none';fn();};
 }
@@ -1354,8 +1359,8 @@ function frame(ts){
   draw();requestAnimationFrame(frame);
 }
 resize();init();
-show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><details class="rules"><summary>玩法說明</summary><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></details>','開始遊戲',()=>{});
-document.querySelector('#ov .rules').open=innerWidth>640&&innerHeight>=720;   // 小螢幕預設收起玩法說明，點開才看
+show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落在神州大地，各據一方，互不相讓。<br>烽火連年，山河破碎。唯有一座座名城，靜靜守著各自的故土，等候重歸一統的那一天。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{});
+{const r=document.getElementById('ovR'),ov=document.getElementById('ov');r.style.display='';r.textContent='玩法說明';r.onclick=()=>{const on=ov.classList.toggle('showrules');r.textContent=on?'返回簡介':'玩法說明';};}
 requestAnimationFrame(frame);
 </script>
 <div id="toast"></div>
