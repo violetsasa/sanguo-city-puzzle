@@ -413,7 +413,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='2026.10.20-10';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='2026.10.20-11';   // 每次發佈前更新（日期-序號），開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -871,7 +871,7 @@ const ACH_DEF=ACH_HIST.map((a,i)=>({...a,o:i})).sort((a,b)=>(a.y-b.y)||(a.o-b.o)
 const FNAME={W:'魏',S:'蜀',U:'吳'};
 const ZHOU=[...new Set(STATES.map(s=>s.z))];
 // 縮小規則：兩座城相連不縮小（只有太寬才依箱寬縮，同原版）；整個「州」（漢末十三州，至少兩座城）都連在同一組時，那一組才縮小一次
-const REGION_SHRINK=0.88,MIN_SHRINK=0.55;   // 每完成一個州縮到 88%，最小縮到 55%
+const REGION_SHRINK=0.88,MIN_SHRINK=0.75;   // 每完成一個州縮到 88%，最小縮到 75%（原本 55%：77 座全連時地圖只佔箱寬 40%，看起來太小；0.75 約佔 54%）
 const ZONES=(()=>{const m=new Map();STATES.forEach(st=>{if(!m.has(st.z))m.set(st.z,[]);m.get(st.z).push(st.n);});return [...m.entries()].filter(([z,ns])=>ns.length>=2).map(([z,ns])=>({z,names:ns}));})();
 function regionsDone(states){const have=new Set(states.map(x=>x.n));return ZONES.filter(r=>r.names.every(n=>have.has(n))).length;}
 ZHOU.forEach(z=>{const ns=STATES.filter(s=>s.z===z).map(s=>s.n);if(ns.length<2)return;ACH_DEF.push({id:'z:'+z,name:z+'平定',need:ns,story:'整個'+z+'連成一片，盡入囊中。',auto:true});});
