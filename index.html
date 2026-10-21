@@ -450,7 +450,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='1.25';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 25 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.26';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 26 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1559,7 +1559,7 @@ function frame(ts){
   },{passive:false});
 }
 resize();init();
-show('山河輿圖','<div class="sub">三國名城拼圖</div><div class="story">漢末亂世，群雄並起。<br>洛陽、許昌、成都、建業……一座座名城散落四方，各自守著自己的土地。<br>把它們一座座放進箱子，看它們拼回原本的位置。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算完成。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');},true);
+show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>有人據城而守，有人火燒赤壁。<br>你不必打仗，<br>只要讓每座名城各歸其位。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');},true);
 document.body.classList.add('intro');
 {const ov=document.getElementById('ov'),r=document.getElementById('ovR');r.onclick=()=>{const on=ov.classList.toggle('showrules');r.textContent=on?'返回簡介':'玩法說明';};}   // 簡介：玩法說明 ⇄ 返回簡介
 requestAnimationFrame(frame);
