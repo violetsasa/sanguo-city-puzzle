@@ -513,7 +513,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='十三州顯示各州進度';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.56';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 56 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.57';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 57 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1302,8 +1302,11 @@ function drop(){
 const clusterMax=()=>Math.max(0,...tops.map(t=>t.pcs.length));
 // 電腦版左側各州進度：該州目前連成最大一片的城數 / 該州全部城數（整州連成一片＝完成，和縮小規則、「某某平定」成就同一標準）
 const ZSIZE=new Map();STATES.forEach(st=>ZSIZE.set(st.z,(ZSIZE.get(st.z)||0)+1));
-let zpKey='';
+let zpKey='',zLegend=null;
+addEventListener('resize',()=>{zpKey='';if(typeof tops!=='undefined')updateZoneProg();});   // 視窗變大、圖例才出現時，補算一次
 function updateZoneProg(){
+  if(!zLegend)zLegend=document.querySelector('.legend.inbrand');
+  if(zLegend&&!zLegend.getClientRects().length)return;   // 手機或矮螢幕看不到這欄，就不用算
   const best=new Map();
   for(const t of tops){const c=new Map();t.pcs.forEach(p=>c.set(p.s.z,(c.get(p.s.z)||0)+1));c.forEach((n,z)=>{if(n>(best.get(z)||0))best.set(z,n);});}
   const key=[...ZSIZE.keys()].map(z=>best.get(z)||0).join(',');
@@ -1318,8 +1321,8 @@ function hud(){
   document.getElementById('prog').textContent=`${placed} / ${STATES.length}`;
   document.getElementById('clu').textContent=clusterMax();
   const shown=Math.max(0,score-pendingFly);
-  document.getElementById('score').textContent=shown;
-  updateZoneProg();   // 飛分還沒抵達時扣分，顯示也不會變負
+  document.getElementById('score').textContent=shown;   // 飛分還沒抵達時扣分，顯示也不會變負
+  updateZoneProg();
   if(chipTitleFor!==bestAtStart){chipTitleFor=bestAtStart;const sc=document.getElementById('score').closest('.chip');if(sc)sc.title=bestAtStart>0?'分數（歷史最高 '+bestAtStart+'）':'分數';}
   if(recShown&&shown>recVal){recVal=shown;const sb=document.getElementById('sideBest');if(sb)sb.textContent=shown.toLocaleString('en-US');}   // 破紀錄後，側欄的最高分跟著分數走
   if(!recShown&&bestAtStart>0&&shown>bestAtStart){recShown=true;recVal=shown;fx.pops.push({text:'新紀錄！',x:W/2,y:H/2-110,t0:performance.now(),size:30});renderAch();}   // 以畫面上看到的分數為準
