@@ -552,8 +552,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='成就橫幅依序出現、圖例標示落完待連';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.65';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 65 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='倒數階段磁力改為漸進';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.66';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 66 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -668,7 +668,7 @@ function seamHit(P,Q,pt,tol){
 }
 // 磁吸：兩座相鄰的城各自靜止、而且面向對方的交界邊靠得很近時，不必真的碰到，也會自動相連
 // 最後倒數階段（要把全部連成一片）的「收攏」加成：吸力更大、範圍更廣、合併距離放寬
-let FINAL_PULL_MULT=2.5,FINAL_PULL_RANGE=420,FINAL_D_MULT=1.6,FINAL_SPEED_MULT=2;
+let FINAL_PULL_MULT=2,FINAL_PULL_RANGE=370,FINAL_D_MULT=1.6,FINAL_SPEED_MULT=2,FINAL_RAMP=1;   // 倒數階段的加成上限；FINAL_RAMP：加成隨倒數時間漸進（0＝一開始全開，1＝線性，越大越晚才到最大）
 let MAGNET_FRAC=1.6,MAGNET_MIN=30,MAGNET_MAX=140,MAGNET_EVERY=6,MAGNET_SPEED=5;   // 合併的速度門檻要比「拉近」的速度上限（PULL_SPEED）高，否則被拉著的兩塊永遠湊不到可以合併的速度
 let PULL_RANGE=260,PULL_DV=0.45,PULL_SPEED=1.6;   // 相鄰但離得遠的兩塊：每次掃描朝彼此輕推一點點速度（範圍 px、推力、速度上限）
 function seamWorld(P,Q,stride){
@@ -701,7 +701,9 @@ function segmentBlocked(ax,ay,bx,by,topA,topB){
 }
 function magnetScan(){
   if(simStep%MAGNET_EVERY)return;
-  const fin=roundState==='final',pullRange=fin?FINAL_PULL_RANGE:PULL_RANGE,pullDv=PULL_DV*(fin?FINAL_PULL_MULT:1),pullCap=PULL_SPEED*(fin?FINAL_SPEED_MULT:1);
+  const fin=roundState==='final';
+  const bprog=fin?Math.max(0,Math.min(1,1-(finalEndStep-simStep)/FINAL_STEPS)):0,bb=(fin&&FINAL_RAMP)?Math.pow(bprog,FINAL_RAMP):1;   // 倒數加成的強度 0～1：剛開始是普通強度，越接近尾聲越強（以前一開始就全開，玩家太快拼完）
+  const pullRange=fin?PULL_RANGE+(FINAL_PULL_RANGE-PULL_RANGE)*bb:PULL_RANGE,pullDv=PULL_DV*(fin?1+(FINAL_PULL_MULT-1)*bb:1),pullCap=PULL_SPEED*(fin?1+(FINAL_SPEED_MULT-1)*bb:1);
   const items=[],pulls=new Map();   // pulls：每塊（整組）這一輪被拉的方向先累加，掃完才推一次（見下）
   for(const t of tops)for(const P of t.pcs)if(P.dropped)items.push(P);
   const addPull=(top,dx,dy)=>{const e=pulls.get(top);if(e){e.dx+=dx;e.dy+=dy;}else pulls.set(top,{dx,dy});};
@@ -723,7 +725,7 @@ function magnetScan(){
       const key=P.s.n+'|'+Q.s.n;
       if(pendingKeys.has(key)||(noRoomUntil.get(key)||0)>simStep)continue;
       if(P.top.speed>MAGNET_SPEED||Q.top.speed>MAGNET_SPEED)continue;       // 兩塊都靜下來才吸，避免在半空中亂吸
-      const D=Math.max(MAGNET_MIN,Math.min(MAGNET_MAX,MAGNET_FRAC*Math.min(unitSize(P),unitSize(Q))))*(fin?FINAL_D_MULT:1);
+      const D=Math.max(MAGNET_MIN,Math.min(MAGNET_MAX,MAGNET_FRAC*Math.min(unitSize(P),unitSize(Q))))*(fin?1+(FINAL_D_MULT-1)*bb:1);
       const a=P.top.bounds,b=Q.top.bounds,R=Math.max(D,pullRange);   // 篩選範圍要涵蓋「拉近」的範圍，否則離得遠的兩塊永遠不會被拉近
       if(a.max.x+R<b.min.x||b.max.x+R<a.min.x||a.max.y+R<b.min.y||b.max.y+R<a.min.y)continue;   // 外框都碰不到就不用算
       const A=seamWorld(P,Q,2),B=seamWorld(Q,P,2),D2=D*D;
@@ -1447,7 +1449,7 @@ function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明�
 // 直接給速度（單靠施力對重物不夠），讓整盤真的被搖起來
 const SHAKE_MS=1000,SHAKE_GRACE_STEPS=150;
 const MAGNET_CROSS_CAP=1;   // 還沒連齊的州，最多吸幾個別的州
-const HOLE_D=140,HOLE_D_MAX=320,SMALL_PIECES=5;   // 倒數階段的補洞磁吸：交界點距離上限（像素）與「小塊」的城數上限
+const HOLE_D=120,HOLE_D_MAX=260,SMALL_PIECES=5;   // 倒數階段的補洞磁吸：交界點距離上限（像素）與「小塊」的城數上限
 let shakeAnimT=0;
 let lastShakeStep=-1e9;
 // 倒數階段的搖一搖輔助：不在最大那一片裡的城，找一座鄰居（優先在最大那一片裡）當目標，搖起來時朝目標的方向翻過去
