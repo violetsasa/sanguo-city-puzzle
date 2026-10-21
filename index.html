@@ -186,7 +186,7 @@
   .brand .legend{flex:none;margin-left:8px;gap:8px;white-space:nowrap;align-items:center}
   .legend .zs{display:flex;gap:4px;align-items:center}
   .legend .zs span{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:bold;color:var(--ink);line-height:1}   /* 州色：左邊一小條色帶，右邊獨立寫州名首字 */
-  .legend .zs span i{display:block;width:22px;height:10px;margin:0;border-radius:5px;box-shadow:0 1px 2px rgba(90,70,54,.25)}
+  .legend .zs span i{display:block;width:8px;height:20px;margin:0;border-radius:3px;box-shadow:0 1px 2px rgba(90,70,54,.25)}
   .legend.bottom{position:relative;height:18px;align-items:center;z-index:5}   /* 較窄的螢幕：平時是一條細細的州色帶，點一下展開對照表 */
   .legend.bottom .zbar{display:flex;gap:2px;width:min(100%,320px);height:18px;padding:5px 0;border:0;border-radius:0;background:none;cursor:pointer}
   .legend.bottom .zbar{position:relative}
@@ -233,8 +233,8 @@
   @media (min-width:900px) and (min-height:521px){
     .legend.bottom{display:none}
     .legend.inbrand{display:flex;position:fixed;top:84px;left:max(16px,calc(50% - 484px));flex-direction:column;align-items:flex-start;gap:8px;margin:0}   /* 電腦：十三州直排在左邊，最左和標題圖示對齊 */
-    .legend.inbrand .zs{flex-direction:column;align-items:flex-start;gap:7px}
-    .legend.inbrand .zl2{margin:0 0 2px;font-size:12px}
+    .legend.inbrand .zs{flex-direction:column;align-items:flex-start;gap:6px}
+    .legend.inbrand .zl2{display:none}   /* 直排時不放「十三州」三個字（滑鼠移上去仍有提示） */
     .legend.inbrand .zs span:hover::after{top:50%;left:calc(100% + 8px);transform:translateY(-50%)}
   }
   @media (pointer:coarse){.kb{display:none}}   /* 觸控裝置沒有鍵盤，不顯示鍵盤說明 */
@@ -511,7 +511,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='優化手機橫放與寬螢幕排版';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.53';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 53 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.54';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 54 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
