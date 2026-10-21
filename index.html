@@ -110,11 +110,14 @@
   #ov .ovbtns button{flex:1}
   #ov #ovB{background:var(--accent);border-color:var(--accent);color:#fff8e8;font-weight:bold;letter-spacing:2px;box-shadow:0 3px 10px rgba(168,85,43,.35)}   /* 主要動作（開始、再次挑戰）用主色，和旁邊的次要按鈕區分 */
   #ov #ovB:hover{filter:brightness(1.08)}
+  #ov.intro-card .card{width:min(94%,480px)}   /* 簡介與玩法說明共用同一個板子大小（高度由 fitIntro 量測後設定） */
   #ov .rules{display:none}
   #ovS{display:none;flex:none;margin-top:12px;text-align:center;color:var(--accent)}   /* 歷史最高分（只在開場簡介顯示）：兩側細線夾著小標，下面放大數字 */
-  #ovS .lb{display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;letter-spacing:3px;opacity:.85}
-  #ovS .lb::before,#ovS .lb::after{content:"";width:28px;height:1px;background:currentColor;opacity:.45}
-  #ovS .nm{display:block;margin-top:2px;font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;font-size:30px;font-weight:700;line-height:1.15;letter-spacing:2px;font-variant-numeric:tabular-nums}
+  #ovS .lb,.hs .lb{display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;letter-spacing:3px;opacity:.85}
+  #ovS .lb::before,#ovS .lb::after,.hs .lb::before,.hs .lb::after{content:"";width:28px;height:1px;background:currentColor;opacity:.45}
+  .hs{text-align:center;color:var(--accent);margin:10px 0 6px}
+  #ovS .nm,.hs .nm{display:block;margin-top:2px;font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;font-size:30px;font-weight:700;line-height:1.15;letter-spacing:2px;font-variant-numeric:tabular-nums}
+  .hs .nm{font-size:24px}
   #ovV{display:none;flex:none;margin-top:8px;white-space:pre-line;text-align:center;padding-left:1px;line-height:1.6;font-size:11px;letter-spacing:1px;opacity:.45}   /* 版本號：只在開場簡介顯示，用來確認有沒有更新 */
   body.intro #sndBtn,body.intro #next,body.intro #app>.bar button,body.intro #achBtn,body.intro .stats .chip,body.intro .legend,body.intro #side,body.intro .brand h1,body.intro .brand svg{visibility:hidden}   /* 開場簡介還在時，下一城與底部操作先不出現（位置保留，開始後才顯示） */
   #ov.showrules .rules{display:block}   /* 簡介頁：按「玩法說明」就換成玩法，再按一次回簡介 */
@@ -467,7 +470,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='倒數階段防卡死';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.36';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 36 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.37';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 37 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1052,7 +1055,7 @@ function renderAch(){
     return `<div class="ai lock">${miniMap(a,false)}<div class="tx"><b>？？？${a.auto?'（'+a.name+'）':''}</b><div class="need">${need}</div>${progOf(a)}</div></div>`;
   };
   {const sd=document.getElementById('side'),got=ACH_DEF.filter(a=>achDone.has(a.id));
-   sd.innerHTML=rankHTML()+`<div class="sd-h">歷史最高分　${Math.max(bestAtStart||bestRead(),recShown?Math.max(0,(score||0)-(pendingFly||0)):0)||'—'}</div><div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.yl||a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
+   sd.innerHTML=rankHTML()+`<div class="hs"><span class="lb">歷史最高分</span><span class="nm">${(v=>v?v.toLocaleString('en-US'):'—')(Math.max(bestAtStart||bestRead(),recShown?Math.max(0,(score||0)-(pendingFly||0)):0))}</span></div><div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.yl||a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
   if(achTab==='run'){
     const got=ACH_DEF.filter(a=>achDone.has(a.id));
     list.innerHTML=rankHTML()+(got.length?note:'')+(got.length?got.map(card).join(''):'<div class="ach-empty">這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。</div>');
@@ -1296,6 +1299,16 @@ function gameOver(kind){
   else show('國土崩裂',`疆域崩裂，群雄再起，天下重陷戰火。\n連成最大的一片有 ${clusterMax()} 座城\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
 }
 
+// 簡介與玩法說明兩個畫面的板子要一樣大：兩種內容各量一次高度，取較高者當最小高度
+function fitIntro(){
+  const ov=document.getElementById('ov'),card=ov.querySelector('.card');if(!card)return;
+  card.style.minHeight='';
+  if(!ov.classList.contains('intro-card')||ov.style.display==='none')return;
+  const was=ov.classList.contains('showrules');let h=0;
+  for(const on of [false,true]){ov.classList.toggle('showrules',on);h=Math.max(h,card.getBoundingClientRect().height);}
+  ov.classList.toggle('showrules',was);card.style.minHeight=Math.ceil(h)+'px';
+}
+window.addEventListener('resize',fitIntro);try{document.fonts.ready.then(fitIntro);}catch(e){}
 function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
   document.getElementById('ovT').textContent=t;
   document.getElementById('ovP').innerHTML=p.replace(/\n/g,'<br>');
@@ -1307,6 +1320,7 @@ function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明�
   vl.style.display=intro?'block':'none';vl.textContent='版本 '+VERSION+'（'+VERSION_NOTE+'）';
   {const sl=document.getElementById('ovS'),bs=intro?bestRead():0;sl.style.display=bs>0?'block':'none';sl.innerHTML=bs>0?'<span class="lb">歷史最高分</span><span class="nm">'+bs.toLocaleString('en-US')+'</span>':'';}
   document.getElementById('ov').style.display='flex';
+  ov.classList.toggle('intro-card',!!intro);fitIntro();
   btn.onclick=()=>{document.getElementById('ov').style.display='none';fn();};
 }
 // 直接給速度（單靠施力對重物不夠），讓整盤真的被搖起來
