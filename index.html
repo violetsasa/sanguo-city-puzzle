@@ -122,7 +122,7 @@
   #ov .rules div{padding-left:1.1em;text-indent:-1.1em}
   .fly{position:fixed;z-index:10;pointer-events:none;font-weight:bold;font-size:20px;color:#c4574f;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap}
   #ach{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;padding:10px}
-  #alert{position:absolute;left:50%;top:24%;z-index:6;pointer-events:none;opacity:0;transform:translate(-50%,-50%);text-align:center;background:var(--accent);color:#fff8e8;border:3px solid #fff8e8;border-radius:18px;padding:12px 26px;box-shadow:0 10px 30px rgba(90,40,10,.4);white-space:nowrap}
+  #alert{position:absolute;left:50%;top:24%;z-index:6;pointer-events:none;opacity:0;transform:translate(-50%,-50%);text-align:center;background:var(--accent);color:#fff8e8;border:3px solid #fff8e8;border-radius:18px;padding:12px 26px;box-shadow:0 10px 30px rgba(90,40,10,.4);max-width:90%;width:max-content}
   #alert b{display:block;font-size:clamp(24px,7vw,38px);letter-spacing:4px}
   #alert small{display:block;font-size:clamp(13px,3.4vw,16px);margin-top:2px;opacity:.95}
   #alert.show{animation:alertPop var(--ad,2.4s) ease both}
@@ -350,7 +350,7 @@ const VX=34,VY=40,VW=532,VH=644;   // 可視範圍：只顯示箱子與預覽區
 let BOXL=50,BOXR=550;   // 箱子左右邊界（箱子置中，寬度可調；改寬度要連同 VX／VW 一起改）
 const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
-let bestAtStart=0,recShown=false;   // 這一局開始時的歷史最高分；超過它時跳一次「新紀錄！」
+let bestAtStart=0,recShown=false,chipTitleFor=-1;   // 這一局開始時的歷史最高分；超過它時跳一次「新紀錄！」
 let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單輪流程：play 落城中／final 最後一座落下後的倒數（要把全部連成一片）／won 已通關
 // ---- 音效：全部由 Web Audio 即時合成（沒有音檔、沒有授權問題）；預設關閉，玩家按標題列的喇叭才開 ----
 // 音色分兩類：撥弦類（古箏）用在相連、搖一搖、失敗；成就用小鑼與高音鈴；天下一統用古箏刮奏、磬與長笛。
@@ -463,7 +463,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='1.32';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 32 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.33';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 33 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -659,9 +659,9 @@ function magnetScan(){
   // 一塊（一整組）有很多個鄰居時，各方向的拉力先相加、只推一次：以前是逐一推，方向互相抵銷又被擋住推不動，整片就會一直微微抖動
   // 另外，連續拉了好幾輪、位置卻幾乎沒動（被擋住了），就先暫停拉它幾秒，不要一直推
   for(const [top,e] of pulls){
-    if((top._pcool||0)>simStep)continue;
+    if(!fin&&(top._pcool||0)>simStep)continue;   // 倒數階段不暫停（那時最需要把城拉在一起）
     top._pn=(top._pn||0)+1;
-    if(top._pn>=8){
+    if(!fin&&top._pn>=8){
       const moved=top._px===undefined?99:Math.hypot(top.position.x-top._px,top.position.y-top._py);
       top._px=top.position.x;top._py=top.position.y;top._pn=0;
       if(moved<4){top._pcool=simStep+180;top._px=undefined;continue;}   // 暫停後重新量，不拿舊位置去比
@@ -1247,8 +1247,8 @@ function hud(){
   document.getElementById('clu').textContent=clusterMax();
   const shown=Math.max(0,score-pendingFly);
   document.getElementById('score').textContent=shown;   // 飛分還沒抵達時扣分，顯示也不會變負
-  {const sc=document.getElementById('score').closest('.chip');if(sc)sc.title=bestAtStart>0?'分數（歷史最高 '+bestAtStart+'）':'分數';}
-  if(!recShown&&bestAtStart>0&&shown>bestAtStart){recShown=true;fx.pops.push({text:'新紀錄！',x:W/2,y:H/2-110,t0:performance.now(),size:30});renderAch();}   // 以畫面上看到的分數為準   // 飛分還沒抵達時扣分，顯示也不會變負
+  if(chipTitleFor!==bestAtStart){chipTitleFor=bestAtStart;const sc=document.getElementById('score').closest('.chip');if(sc)sc.title=bestAtStart>0?'分數（歷史最高 '+bestAtStart+'）':'分數';}
+  if(!recShown&&bestAtStart>0&&shown>bestAtStart){recShown=true;fx.pops.push({text:'新紀錄！',x:W/2,y:H/2-110,t0:performance.now(),size:30});renderAch();}   // 以畫面上看到的分數為準
   const nx=cur?cur.unit:(queue.length?'…':'—');
   const nextBox=document.getElementById('next'),cap=nextBox.querySelector('small');
   if(roundState==='final'){   // 最後一座落下後：這一格改成倒數
