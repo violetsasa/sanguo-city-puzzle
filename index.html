@@ -185,7 +185,8 @@
   .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
   .brand .legend{flex:none;margin-left:8px;gap:8px;white-space:nowrap;align-items:center}
   .legend .zs{display:flex;gap:4px;align-items:center}
-  .legend .zs span{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:bold;color:#5a4636;box-shadow:0 1px 2px rgba(90,70,54,.25)}   /* 州色點：底色是州色，裡面是州名首字 */
+  .legend .zs span{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:bold;color:var(--ink);line-height:1}   /* 州色：左邊一小條色帶，右邊獨立寫州名首字 */
+  .legend .zs span i{display:block;width:22px;height:10px;margin:0;border-radius:5px;box-shadow:0 1px 2px rgba(90,70,54,.25)}
   .legend.bottom{position:relative;height:18px;align-items:center;z-index:5}   /* 較窄的螢幕：平時是一條細細的州色帶，點一下展開對照表 */
   .legend.bottom .zbar{display:flex;gap:2px;width:min(100%,320px);height:18px;padding:5px 0;border:0;border-radius:0;background:none;cursor:pointer}
   .legend.bottom .zbar{position:relative}
@@ -229,12 +230,12 @@
     #ovS{margin-top:6px}#ovS .nm{font-size:22px}
   }
   /* 又寬又高的螢幕：十三州色點直向排在棋盤左邊的空白處；其他螢幕用下方的細色條 */
-  @media (min-width:1200px) and (min-height:620px){
+  @media (min-width:900px) and (min-height:521px){
     .legend.bottom{display:none}
-    .legend.inbrand{display:flex;position:fixed;top:84px;left:calc(50% - 500px - 52px);flex-direction:column;align-items:center;gap:6px;margin:0}
-    .legend.inbrand .zs{flex-direction:column;gap:6px}
-    .legend.inbrand .zl2{margin:0 0 2px;font-size:11px}
-    .legend.inbrand .zs span:hover::after{top:50%;left:30px;transform:translateY(-50%)}
+    .legend.inbrand{display:flex;position:fixed;top:84px;left:max(16px,calc(50% - 484px));flex-direction:column;align-items:flex-start;gap:8px;margin:0}   /* 電腦：十三州直排在左邊，最左和標題圖示對齊 */
+    .legend.inbrand .zs{flex-direction:column;align-items:flex-start;gap:7px}
+    .legend.inbrand .zl2{margin:0 0 2px;font-size:12px}
+    .legend.inbrand .zs span:hover::after{top:50%;left:calc(100% + 8px);transform:translateY(-50%)}
   }
   @media (pointer:coarse){.kb{display:none}}   /* 觸控裝置沒有鍵盤，不顯示鍵盤說明 */
   @media (max-width:380px){.chip{padding:3px 7px}.stats{gap:3px}h1{font-size:16px}}   /* 很窄的手機：標題列再收緊一點 */
@@ -379,7 +380,7 @@ const ZCOL={司隸:'#e8cdb0',冀州:'#d7c6f3',荊州:'#f4b2d6',并州:'#b9e3e8',
 const ZNEUT='#d9d2c0';
 const zcol=s=>ZCOL[s.z]||ZNEUT;
 (function(){
-  const zs=Object.keys(ZCOL).map(z=>`<span title="${z}" style="background:${ZCOL[z]}">${z[0]}</span>`).join('');
+  const zs=Object.keys(ZCOL).map(z=>`<span title="${z}"><i style="background:${ZCOL[z]}"></i>${z[0]}</span>`).join('');
   const zh='<span class="zs" title="底色是漢末十三州">'+zs+'</span>';
   const tip='底色是漢末十三州';
   const names=Object.keys(ZCOL),bot=document.querySelector('.legend.bottom'),inb=document.querySelector('.legend.inbrand');
@@ -510,7 +511,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='優化手機橫放與寬螢幕排版';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.52';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 52 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.53';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 53 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
