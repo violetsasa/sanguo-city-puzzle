@@ -257,6 +257,11 @@
     .legend.inbrand .zs span i{width:clamp(9px,1.4vh,12px);height:clamp(18px,3.4vh,30px);border-radius:4px}
     .legend.inbrand .zs span small.zp{font-size:clamp(11px,1.8vh,14px)}
     .legend.inbrand .zl2{display:none}   /* 直排時不放「十三州」三個字（滑鼠移上去仍有提示） */
+    .legend.inbrand .zk{display:flex;flex-direction:column;gap:4px;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);font-size:clamp(10px,1.5vh,12px);line-height:1.2;color:var(--ink);white-space:nowrap}   /* 圖例下方的說明：虛線框、勾、數字各代表什麼 */
+    .legend.inbrand .zk span{display:flex;align-items:center;gap:8px;opacity:.7}
+    .legend.inbrand .zk b{flex:none;display:inline-block;min-width:1.9em;text-align:center;font-weight:bold;font-variant-numeric:tabular-nums}
+    .legend.inbrand .zk .kr{width:8px;min-width:0;height:12px;border-radius:3px;background:var(--line);opacity:.5;outline:1.5px dashed var(--z-wait);outline-offset:2px;margin:0 .5em}
+    .legend.inbrand .zk .kc{color:var(--z-done)}
     .legend.inbrand .zs span:hover::after{top:50%;left:calc(100% + 8px);transform:translateY(-50%)}
   }
   @media (pointer:coarse){.kb{display:none}}   /* 觸控裝置沒有鍵盤，不顯示鍵盤說明 */
@@ -419,7 +424,7 @@ const zcol=s=>ZCOL[s.z]||ZNEUT;
   const zh='<span class="zs" title="底色是漢末十三州">'+zs+'</span>';
   const tip='底色是漢末十三州';
   const names=Object.keys(ZCOL),bot=document.querySelector('.legend.bottom'),inb=document.querySelector('.legend.inbrand');
-  inb.innerHTML='<span class="zl2">十三州</span>'+zh;inb.title=tip;
+  inb.innerHTML='<span class="zl2">十三州</span>'+zh+'<div class="zk"><span><b class="kr"></b>落完・待連齊</span><span><b class="kc">✓</b>全部連齊</span><span><b class="kn">3/8</b>相連／全部</span></div>';inb.title=tip;
   bot.innerHTML='<button type="button" class="zbar" aria-label="州色對照" aria-expanded="false"><span class="zl">十三州</span>'+names.map(z=>`<span class="zc" data-z="${z}"><i style="background:${ZCOL[z]}"></i></span>`).join('')+'</button><div class="zpanel"><div class="zh">落＝已落下　連＝最大相連的城數</div>'+names.map(z=>`<span data-z="${z}"><i style="background:${ZCOL[z]}"></i>${z}<small class="zq"></small></span>`).join('')+'</div>';
   const zbar=bot.querySelector('.zbar');let zt=0;
   const zset=on=>{bot.classList.toggle('open',on);zbar.setAttribute('aria-expanded',on);clearTimeout(zt);};   // 不再 6 秒自動收起（加了進度文字，讀不完）：點外面、再點色帶或按 Esc 才收起
@@ -553,8 +558,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='成就橫幅不被結算框遮住、修正音量與鍵盤';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.67';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 67 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='十三州圖例補上說明';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.68';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 68 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
