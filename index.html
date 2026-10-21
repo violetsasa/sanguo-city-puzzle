@@ -207,7 +207,7 @@
   @media (min-width:960px){
     #app>.bar{justify-content:center;gap:14px}#next{flex:0 1 460px}}   /* 寬螢幕：下一城不要拉滿整條，和重來、搖一搖靠在一起 */
   /* 手機橫放（矮而寬）：標題列壓成一行，棋盤佔左邊整個高度，下一城、搖一搖、重來疊在右邊一欄 */
-  @media (max-height:520px) and (min-aspect-ratio:1/1){
+  @media (max-height:520px) and (min-aspect-ratio:1/1) and (pointer:coarse){   /* 只給觸控裝置；電腦瀏覽器放大到很高倍數時高度也會變矮，那種情況維持電腦版面 */
     #app{display:grid;grid-template-columns:minmax(0,1fr) 148px;grid-template-rows:auto auto minmax(0,1fr);column-gap:10px;row-gap:4px;padding:4px 10px 6px}
     #app>header{grid-column:1/-1;grid-row:1}
     #app>.legend.bottom{grid-column:2;grid-row:2;display:flex;justify-content:center;margin:0}   /* 橫放：州色條放在右欄最上面 */
@@ -232,7 +232,7 @@
     #ovS{margin-top:6px}#ovS .nm{font-size:22px}
   }
   /* 又寬又高的螢幕：十三州色點直向排在棋盤左邊的空白處；其他螢幕用下方的細色條 */
-  @media (min-width:900px) and (min-height:521px){
+  @media (min-width:900px) and (min-height:521px), (min-width:900px) and (min-height:421px) and (pointer:fine){
     .legend.bottom{display:none}
     .legend.inbrand{display:flex;position:fixed;top:84px;left:min(max(48px,calc(50% - 452px)),calc(var(--bl,9999px) - 100px));flex-direction:column;align-items:flex-start;gap:8px;margin:0}   /* 電腦：十三州直排在左邊，最左和標題圖示對齊 */
     .legend.inbrand .zs{flex-direction:column;align-items:flex-start;gap:clamp(4px,.9vh,8px)}
@@ -516,7 +516,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='十三州顯示各州進度';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.59';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 59 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.60';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 60 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
