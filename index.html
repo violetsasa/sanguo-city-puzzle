@@ -597,8 +597,9 @@ function segmentBlocked(ax,ay,bx,by,topA,topB){
 function magnetScan(){
   if(simStep%MAGNET_EVERY)return;
   const fin=roundState==='final',pullRange=fin?FINAL_PULL_RANGE:PULL_RANGE,pullDv=PULL_DV*(fin?FINAL_PULL_MULT:1),pullCap=PULL_SPEED*(fin?FINAL_SPEED_MULT:1);
-  const items=[];
+  const items=[],pulls=new Map();   // pulls：每塊（整組）這一輪被拉的方向先累加，掃完才推一次（見下）
   for(const t of tops)for(const P of t.pcs)if(P.dropped)items.push(P);
+  const addPull=(top,dx,dy)=>{const e=pulls.get(top);if(e){e.dx+=dx;e.dy+=dy;e.n++;}else pulls.set(top,{dx,dy,n:1});};
   // 跨州磁吸上限（只限制磁吸，不限制碰撞；倒數階段不限制）：還沒連齊的州，最多只會「吸」MAGNET_CROSS_CAP 個別的州，
   // 例如荊州還沒排完、已經和揚州相連，就不會再吸交州；但真的碰到的城照樣相連
   const holeD=fin?HOLE_D+(HOLE_D_MAX-HOLE_D)*Math.max(0,Math.min(1,1-(finalEndStep-simStep)/FINAL_STEPS)):HOLE_D;   // 補洞磁吸的距離：倒數越接近尾聲越寬鬆
@@ -640,9 +641,22 @@ function magnetScan(){
       if(dist>pullRange||dist<1)continue;
       const ux=vx/dist,uy=vy/dist;
       // 兩塊互相拉近（實測：只拉較輕的那塊反而連得比較少，同一種子 11 組 vs 6 組）
-      nudge(P.top,ux*pullDv,uy*pullDv*0.35,pullCap);    // 垂直方向只推一點點，避免把整堆往上拉
-      nudge(Q.top,-ux*pullDv,-uy*pullDv*0.35,pullCap);
+      addPull(P.top,ux*pullDv,uy*pullDv*0.35);    // 垂直方向只推一點點，避免把整堆往上拉
+      addPull(Q.top,-ux*pullDv,-uy*pullDv*0.35);
     }
+  }
+  // 一塊（一整組）有很多個鄰居時，各方向的拉力先相加、只推一次：以前是逐一推，方向互相抵銷又被擋住推不動，整片就會一直微微抖動
+  // 另外，連續拉了好幾輪、位置卻幾乎沒動（被擋住了），就先暫停拉它幾秒，不要一直推
+  for(const [top,e] of pulls){
+    if((top._pcool||0)>simStep)continue;
+    top._pn=(top._pn||0)+1;
+    if(top._pn>=8){
+      const moved=top._px===undefined?99:Math.hypot(top.position.x-top._px,top.position.y-top._py);
+      top._px=top.position.x;top._py=top.position.y;top._pn=0;
+      if(moved<4){top._pcool=simStep+180;continue;}
+    }
+    const m=Math.hypot(e.dx,e.dy),lim=pullDv*2;   // 各方向的拉力相加（互相抵銷的就抵銷掉），但一次最多推 2 倍的力
+    nudge(top,m>lim?e.dx/m*lim:e.dx,m>lim?e.dy/m*lim:e.dy,pullCap);
   }
 }
 function centroid(arr){
