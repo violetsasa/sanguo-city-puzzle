@@ -250,6 +250,7 @@
   }
   @media (pointer:coarse){.kb{display:none}}   /* 觸控裝置沒有鍵盤，不顯示鍵盤說明 */
   @media (max-width:380px){.chip{padding:3px 7px}.stats{gap:3px}}   /* 很窄的手機：標題列再收緊一點 */
+  #sndBtn .a2,#sndBtn .a3{display:none}#sndBtn[data-v="2"] .a2,#sndBtn[data-v="3"] .a2,#sndBtn[data-v="3"] .a3{display:inline}   /* 音量小／中／大：喇叭旁邊的聲波 1／2／3 道 */
   #sndBtn .snd-on{display:none}#sndBtn.is-on .snd-on{display:inline}#sndBtn.is-on .snd-off{display:none}   /* 喇叭圖示：開（有聲波）／關（打叉） */
   #sndBtn.is-on{background:#fbe3a1}
   #side{display:none}
@@ -280,7 +281,7 @@
       <div class="chip" title="進度：已放下的城／全部城數"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg><div class="cap"><small>進度</small><b id="prog">0 / 62</b></div></div>
       <div class="chip" title="最大相連：目前連在一起的城裡，最多有幾座"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><div class="cap"><small>最大相連</small><b id="clu">0</b></div></div>
       <div class="chip" title="分數"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><div class="cap"><small>分數</small><b id="score">0</b></div></div>
-      <button id="sndBtn" class="ib" title="聲音（目前關閉）" aria-label="聲音開關" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><g class="snd-on"><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></g><g class="snd-off"><path d="M16.5 9.5l4.5 5M21 9.5l-4.5 5"/></g></svg></button>
+      <button id="sndBtn" class="ib" title="聲音（目前關閉）" aria-label="聲音開關" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><g class="snd-on"><path class="a1" d="M14.8 10.6a1.8 1.8 0 0 1 0 2.8"/><path class="a2" d="M16.6 9a4 4 0 0 1 0 6"/><path class="a3" d="M19 6.5a8 8 0 0 1 0 11"/></g><g class="snd-off"><path d="M16.5 9.5l4.5 5M21 9.5l-4.5 5"/></g></svg></button>
       <button id="achBtn" class="ib" title="成就圖鑑" aria-label="成就圖鑑"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5v1A3.5 3.5 0 0 0 7.7 10.5M17 6h2.5v1a3.5 3.5 0 0 1-3.2 3.5"/><path d="M12 13.5V17M8 20h8M9.5 17h5"/></svg></button>
     </div>
   </header>
@@ -393,7 +394,9 @@ const STATES=[
  {n:'大和',f:'W',z:'大和',l:[124.555,31.647],r:0.411,v:'124.88,31.08;124.66,30.86;124.67,30.91;124.35,30.98;124.23,31.1;124.29,31.14;123.96,31.31;123.98,31.4;124.06,31.45;124,31.49;124.03,31.56;124.09,31.57;123.96,31.69;124.32,31.98;124.34,32.33;124.27,32.42;124.44,32.34;124.49,32.37;124.66,32.15;124.95,32.14;124.96,31.99;125.11,31.92;124.97,31.82;125,31.44;124.92,31.43;124.75,31.26',p:'124.91,31.08;124.67,30.83;123.94,31.3;124.07,31.57;123.93,31.69;124.3,31.99;124.24,32.46;124.66,32.17;124.96,32.16;125.14,31.92;124.99,31.81;125.02,31.43;124.78,31.26'},
 ];
 // v=繪圖用精細輪廓、p=物理用簡化輪廓（以 "經度，緯度；..." 儲存）
-STATES.forEach(s=>{const f=t=>t.split(";").map(q=>q.split(",").map(Number));s.v=f(s.v);s.p=f(s.p);});
+const ISLE_DX={'夷州':.65,'邪馬台':.7,'大和':.7};   // 三座離島的輪廓往東多推約 65 公里（度）：拉出海峽，相連後的整組也會留著這段距離（參考原版：離島不貼海岸）
+STATES.forEach(s=>{const f=t=>t.split(";").map(q=>q.split(",").map(Number));s.v=f(s.v);s.p=f(s.p);
+  s.dx=ISLE_DX[s.n]||0;if(s.dx){s.v.forEach(q=>{q[0]+=s.dx;});s.p.forEach(q=>{q[0]+=s.dx;});s.l[0]+=s.dx;}});   // dx：交界判定要用「平移前」的座標（見 seam）
 const ADJ_PAIRS="上庸|夷陵 上庸|房陵 上庸|武關 上庸|涪陵 上庸|漢中 下邳|廣陵 下邳|東海 九原|朔方 五丈原|陳倉 交趾|合浦 北平|昌黎 北平|漁陽 北平|雁門 北平|雲中 北海|東海 北海|泰山 南海|合浦 南海|布山 南海|廬陵 南海|建安 南海|桂林 合浦|布山 壽春|下邳 壽春|合肥 壽春|徐州 壽春|汝南 壽春|江夏 壽春|陳留 大和|邪馬台 天水|武都 天水|祁山 天水|街亭 天水|陳倉 夷州|建安 安定|五丈原 安定|朔方 安定|潼關 安定|街亭 安定|陳倉 官渡|虎牢關 宛|房陵 宛|武關 宛|汝南 宛|許昌 平原|北平 平原|北海 平原|泰山 平原|濮陽 平原|雁門 廣陵|曲阿 廣陵|東海 廬江|合肥 廬江|壽春 廬江|會稽 廬江|江夏 廬陵|建安 建寧|布山 建寧|桂林 建寧|興古 建寧|越雋 建寧|雲南 建業|下邳 建業|合肥 建業|壽春 建業|廣陵 建業|廬江 建業|曲阿 建業|會稽 徐州|下邳 徐州|東海 徐州|泰山 徐州|濮陽 徐州|陳留 成都|江州 成都|綿竹 成都|越雋 房陵|夷陵 新野|夏口 新野|宛 新野|房陵 新野|武關 新野|汝南 新野|襄陽 晉陽|九原 晉陽|安定 晉陽|朔方 晉陽|潼關 晉陽|虎牢關 晉陽|雁門 會稽|建安 會稽|曲阿 柴桑|夏口 柴桑|廬江 柴桑|建安 柴桑|會稽 柴桑|江夏 柴桑|豫章 柴桑|赤壁 桂林|布山 桂林|涪陵 桂陽|南海 桂陽|廬陵 武關|房陵 武陵|夷陵 武陵|涪陵 武陵|赤壁 武陵|長坂坡 武陵|長沙 武陵|零陵 汝南|夏口 汝南|徐州 汝南|陳留 江夏|夏口 江夏|汝南 江州|建寧 江州|桂林 江州|涪陵 江州|漢中 江州|綿竹 江州|越雋 泰山|東海 洛陽|宛 洛陽|武關 洛陽|潼關 洛陽|虎牢關 洛陽|許昌 涪陵|夷陵 涼州|朔方 涼州|祁山 涼州|街亭 涼州|酒泉 漁陽|昌黎 漢中|武都 漢中|涪陵 漢中|綿竹 漢中|陳倉 潼關|武關 濮陽|泰山 祁山|武都 綿竹|武都 興古|合浦 興古|布山 興古|桂林 虎牢關|潼關 街亭|朔方 街亭|祁山 街亭|陳倉 襄陽|夏口 襄陽|夷陵 襄陽|房陵 襄陽|汝南 襄陽|長坂坡 許昌|官渡 許昌|汝南 許昌|虎牢關 許昌|陳留 豫章|廬陵 豫章|建安 豫章|赤壁 赤壁|夏口 遼東|昌黎 邪馬台|大和 邪馬台|會稽 鄴|平原 鄴|晉陽 鄴|濮陽 鄴|虎牢關 鄴|陳留 鄴|雁門 長坂坡|夏口 長坂坡|夷陵 長坂坡|赤壁 長安|上庸 長安|五丈原 長安|安定 長安|武關 長安|漢中 長安|潼關 長安|陳倉 長沙|廬陵 長沙|桂陽 長沙|豫章 長沙|赤壁 陳倉|武都 陳留|官渡 陳留|濮陽 陳留|虎牢關 雁門|九原 雁門|雲中 雲中|九原 雲中|漁陽 雲南|興古 雲南|越雋 零陵|南海 零陵|桂林 零陵|桂陽 零陵|涪陵 零陵|長沙".split(" ");
 const adj=new Set(ADJ_PAIRS.flatMap(t=>{const [x,y]=t.split('|');return [x+'|'+y,y+'|'+x];}));
 const isAdj=(a,b)=>adj.has(a.n+'|'+b.n);
@@ -423,15 +426,18 @@ let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單�
 // ---- 音效：全部由 Web Audio 即時合成（沒有音檔、沒有授權問題）；預設關閉，玩家按標題列的喇叭才開 ----
 // 音色分兩類：撥弦類（古箏）用在相連、搖一搖、失敗；成就用小鑼與高音鈴；天下一統用古箏刮奏、磬與長笛。
 const SND=(()=>{
-  let ac=null,dry=null,bus=null,noiseBuf=null,on=false;const cache=new Map(),last={};
-  try{on=localStorage.getItem('sg_sound')==='1';}catch(e){}
+  let ac=null,dry=null,bus=null,noiseBuf=null,on=false,vol=2;const GV=[0,.5,.75,1];   // vol：音量 1 小／2 中（原本的音量）／3 大；GV 是各級的總音量
+  const cache=new Map(),last={};
+  try{on=localStorage.getItem('sg_sound')==='1';const v=+localStorage.getItem('sg_vol');if(v>=1&&v<=3)vol=v|0;}catch(e){}
   const rat=[1,9/8,5/4,3/2,5/3],pent=(d,root=293.66)=>root*rat[((d%5)+5)%5]*Math.pow(2,Math.floor(d/5));   // 五聲音階
   function ensure(){
-    if(ac){if(ac.state==='suspended'){try{ac.resume().catch(()=>{});}catch(e){}}return;}
+    try{if(navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback';}catch(e){}   // iPhone：當成「播放媒體」，不被側邊靜音撥片吃掉（iOS 17 以上；舊版沒有這個介面就略過）
+    if(ac){if(ac.state!=='running'){try{ac.resume().catch(()=>{});}catch(e){}}return;}   // 含 iOS 通話／鬧鐘打斷後的 interrupted 狀態
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
     ac=new AC();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ac.destination);
-    dry=ac.createGain();dry.gain.value=.75;dry.connect(comp);   // 乾聲：城落下（整體音量 0.75，避免太吵）
-    bus=ac.createGain();bus.gain.value=.75;bus.connect(comp);   // 帶迴響：其餘音效
+    dry=ac.createGain();dry.gain.value=on?GV[vol]:0;dry.connect(comp);   // 乾聲：城落下（整體音量 0.75，避免太吵）
+    bus=ac.createGain();bus.gain.value=on?GV[vol]:0;bus.connect(comp);   // 帶迴響：其餘音效
+    try{const kb=ac.createBuffer(1,1,22050),ks=ac.createBufferSource();ks.buffer=kb;ks.connect(ac.destination);ks.start(0);}catch(e){}   // 在手勢裡先播一小段靜音：部分手機要真的有東西送出去，音訊才算啟動
     const conv=ac.createConvolver(),wet=ac.createGain();wet.gain.value=.3;
     {const sr=ac.sampleRate,len=Math.floor(sr*1.0),ib=ac.createBuffer(2,len,sr);for(let c=0;c<2;c++){const d=ib.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);}conv.buffer=ib;}
     bus.connect(conv);conv.connect(wet);wet.connect(comp);
@@ -510,9 +516,12 @@ const SND=(()=>{
   };
   return {
     get on(){return on;},
+    get vol(){return vol;},
+    setVol(n){vol=Math.max(1,Math.min(3,n|0));try{localStorage.setItem('sg_vol',vol);}catch(e){}this.apply();},
+    apply(){try{if(!ac)return;const t=ac.currentTime,g=on?GV[vol]:0;[dry,bus].forEach(x=>{x.gain.cancelScheduledValues(t);x.gain.setTargetAtTime(g,t,.02);});}catch(e){}},   // 關掉聲音時，已經排好、還在響的音效也一起靜音
     set(v){on=!!v;try{localStorage.setItem('sg_sound',on?'1':'0');}catch(e){}
-      try{if(on){ensure();if(ac){const t=ac.currentTime;[dry,bus].forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(.75,t,.02);});}}
-      else if(ac){const t=ac.currentTime;[dry,bus].forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(0,t,.02);});}}catch(e){}   // 關掉聲音時，已經排好、還在響的音效也一起靜音；音訊引擎建立失敗也不拋錯（按鈕狀態照常更新）
+      try{if(on)ensure();}catch(e){}   // 音訊引擎建立失敗也不拋錯（按鈕狀態照常更新）
+      this.apply();
     },
     unlock(cb){   // 在使用者手勢裡呼叫：建立並啟動 AudioContext，啟動後才執行 cb（手機上 resume 是非同步的）
       try{ensure();if(!ac)return;if(ac.state==='running'){if(cb)cb();}else ac.resume().then(()=>{if(cb&&ac.state==='running')cb();}).catch(()=>{});}catch(e){}
@@ -531,8 +540,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='成就欄減重、修正結算時重來';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.63';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 63 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='音量分四段、離島拉開海峽';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.64';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 64 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -629,7 +638,7 @@ const seamCache=new Map();
 function seam(c,o){
   const key=c.n+'|'+o.n;let r=seamCache.get(key);if(r)return r;
   r=[];
-  c.v.forEach((q,i)=>{for(const u of o.v){if(Math.abs(q[0]-u[0])<SEAM_GEO&&Math.abs(q[1]-u[1])<SEAM_GEO){r.push(i);break;}}});
+  c.v.forEach((q,i)=>{for(const u of o.v){if(Math.abs((q[0]-(c.dx||0))-(u[0]-(o.dx||0)))<SEAM_GEO&&Math.abs(q[1]-u[1])<SEAM_GEO){r.push(i);break;}}});   // 離島平移過，比對時先扣回去
   r.set=new Set(r);seamCache.set(key,r);return r;
 }
 const unitSize=P=>Math.sqrt(P.s.a1)*P.k;   // 單塊的大概邊長（px）
@@ -1141,8 +1150,9 @@ document.getElementById('achBtn').onclick=function(){if(document.getElementById(
   endPeek();ptrDown=false;ptrId=null;   // 開面板時，按住畫布的手勢一併作廢，放開時不會落城
   achTab=achDone.size?'run':'all';renderAch();document.getElementById('ach').style.display='flex';this.blur();};
 document.getElementById('side').onclick=()=>document.getElementById('achBtn').click();
-{const sb=document.getElementById('sndBtn'),upd=()=>{sb.classList.toggle('is-on',SND.on);sb.setAttribute('aria-pressed',SND.on);sb.title=SND.on?'聲音（目前開啟）':'聲音（目前關閉）';};
-  sb.onclick=function(){SND.set(!SND.on);upd();if(SND.on)SND.unlock(()=>SND.play('merge',2));this.blur();};upd();
+{const sb=document.getElementById('sndBtn'),upd=()=>{sb.classList.toggle('is-on',SND.on);sb.setAttribute('aria-pressed',SND.on);const nm=['關閉','小','中','大'][SND.on?SND.vol:0];sb.dataset.v=SND.on?SND.vol:0;sb.title='聲音：'+nm+'（點一下切換）';sb.setAttribute('aria-label','聲音：'+nm);};
+  sb.onclick=function(){if(!SND.on){SND.setVol(1);SND.set(true);}else if(SND.vol<3)SND.setVol(SND.vol+1);else SND.set(false);   // 點一下循環：關→小→中→大→關
+    upd();if(SND.on)SND.unlock(()=>SND.play('merge',2));this.blur();};upd();   // 每次切換都播一個示範音，馬上聽得到大小
   ['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(SND.on)SND.unlock();},true));}   // 之前就開著聲音的話，第一次點任何地方就先把音效引擎啟動
 document.getElementById('achClose').onclick=()=>{document.getElementById('ach').style.display='none';};
 renderAch();
