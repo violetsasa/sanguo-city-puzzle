@@ -108,7 +108,7 @@
   #ov p::-webkit-scrollbar{width:8px}#ov p::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}#ov p::-webkit-scrollbar-track{background:transparent}
   #ov h2,#ov button,#ov .ovbtns{flex:none}
   #ov .ovbtns{display:flex;gap:10px}
-  #ov .ovbtns button{flex:1}
+  #ov .ovbtns button{flex:1;min-height:44px}
   #ov #ovB{background:var(--accent);border-color:var(--accent);color:#fff8e8;font-weight:bold;letter-spacing:2px;box-shadow:0 3px 10px rgba(168,85,43,.35)}   /* 主要動作（開始、再次挑戰）用主色，和旁邊的次要按鈕區分 */
   #ov #ovB:hover{filter:brightness(1.08)}
   #ov.intro-card .card{width:min(94%,480px)}
@@ -168,7 +168,7 @@
   .ai.now{background:rgba(217,165,33,.17);border-color:#d9a521}   /* 本局：淡金色底 */
   .ai.lock{background:rgba(0,0,0,.05)}                              /* 未解鎖：灰底 */
   .tabs{display:flex;gap:6px;margin:2px 0 4px}
-  .tabs button{flex:1;border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 10px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
+  .tabs button{min-height:44px;flex:1;border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 10px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
   .tabs button b{font-variant-numeric:tabular-nums;margin-left:4px}
   .tabs button.on{background:var(--line);color:var(--panel)}
   #next.urgent{border-color:#c4574f;color:#a63a32}   /* 倒數最後 10 秒轉紅 */
@@ -179,6 +179,7 @@
   .ach-empty{text-align:center;opacity:.7;font-size:13px;padding:26px 10px;line-height:1.8}
   #toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-140%);z-index:20;background:#fff8dc;color:#3a2a18;border:2px solid #d9a521;border-radius:12px;padding:8px 16px;font-size:14px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;transition:transform .35s ease,opacity .35s ease;pointer-events:none;max-width:90vw}
   #toast.show{transform:translate(-50%,0);opacity:1}
+  @media (prefers-color-scheme:dark){#toast{background:#2f2718;color:#f3e3b8;border-color:#d9a521;box-shadow:0 6px 18px rgba(0,0,0,.5)}}   /* 要放在一般 #toast 之後才會生效 */
   #toast b{display:block;font-size:17px}
   .legend{font-size:clamp(11px,min(1.9vh,3vw),17px);display:flex;gap:10px;justify-content:center}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
@@ -509,7 +510,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='優化手機橫放與寬螢幕排版';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.50';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 50 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.51';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 51 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -524,6 +525,7 @@ addEventListener('resize',resize);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 function init(){
+  document.getElementById('ach').style.display='none';
   engine=Engine.create({gravity:{y:1.1},positionIterations:10,velocityIterations:8});
   // 牆做得很厚，避免快速移動的大塊穿牆
   const wall=(x,y,w,h)=>Bodies.rectangle(x,y,w,h,{isStatic:true,friction:.6});
@@ -1353,6 +1355,7 @@ function fitIntro(){
 }
 window.addEventListener('resize',fitIntro);try{document.fonts.ready.then(fitIntro);}catch(e){}
 function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
+  document.getElementById('ach').style.display='none';   // 兩個視窗不同時開著：結算／簡介出現時先收掉圖鑑
   document.getElementById('ovT').textContent=t;
   document.getElementById('ovP').innerHTML=p.replace(/\n/g,'<br>');
   const btn=document.getElementById('ovB');btn.textContent=b;
@@ -1627,8 +1630,8 @@ function checkOverflow(){
 }
 function step(){
   simStep++;Engine.update(engine,1000/60);magnetScan();mergePending();keepInside();
+  if(roundState==='final')roundTick();   // 先判通關／時限，再判溢出：最後一次合併剛好完成全圖時，同一步就算越線也算通關
   if(!over&&roundState!=='won')checkOverflow();   // 已通關就不再改判失敗（收尾 1.3 秒內地圖越線也一樣）
-  if(roundState==='final')roundTick();
   const sb=document.getElementById('shake');
   if(shakeReadyStep){
     if(simStep>=shakeReadyStep){shakeReadyStep=0;sb.classList.remove('cool');sb.style.removeProperty('--cd');sb.title='搖一搖';if(!over)sb.disabled=false;}   // 冷卻結束才解鎖搖一搖按鈕
