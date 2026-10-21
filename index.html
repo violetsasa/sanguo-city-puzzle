@@ -186,6 +186,8 @@
   .brand .legend{flex:none;margin-left:8px;gap:8px;white-space:nowrap;align-items:center}
   .legend .zs{display:flex;gap:4px;align-items:center}
   .legend .zs span{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:bold;color:var(--ink);line-height:1}   /* 州色：左邊一小條色帶，右邊獨立寫州名首字 */
+  .legend .zs span small.zp{font-size:11px;font-weight:normal;opacity:.65;font-variant-numeric:tabular-nums;margin-left:1px}   /* 各州進度：已連 / 全部；整州連成一片改顯示綠勾 */
+  .legend .zs span.zd small.zp{color:#5f8a2f;font-weight:bold;opacity:1;font-size:12px}
   .legend .zs span i{display:block;width:8px;height:20px;margin:0;border-radius:3px;box-shadow:0 1px 2px rgba(90,70,54,.25)}
   .legend.bottom{position:relative;height:18px;align-items:center;z-index:5}   /* 較窄的螢幕：平時是一條細細的州色帶，點一下展開對照表 */
   .legend.bottom .zbar{display:flex;gap:2px;width:min(100%,320px);height:18px;padding:5px 0;border:0;border-radius:0;background:none;cursor:pointer}
@@ -380,7 +382,7 @@ const ZCOL={司隸:'#e8cdb0',冀州:'#d7c6f3',荊州:'#f4b2d6',并州:'#b9e3e8',
 const ZNEUT='#d9d2c0';
 const zcol=s=>ZCOL[s.z]||ZNEUT;
 (function(){
-  const zs=Object.keys(ZCOL).map(z=>`<span title="${z}"><i style="background:${ZCOL[z]}"></i>${z[0]}</span>`).join('');
+  const zs=Object.keys(ZCOL).map(z=>`<span title="${z}" data-z="${z}"><i style="background:${ZCOL[z]}"></i>${z[0]}<small class="zp"></small></span>`).join('');
   const zh='<span class="zs" title="底色是漢末十三州">'+zs+'</span>';
   const tip='底色是漢末十三州';
   const names=Object.keys(ZCOL),bot=document.querySelector('.legend.bottom'),inb=document.querySelector('.legend.inbrand');
@@ -511,7 +513,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='優化手機橫放與寬螢幕排版';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.54';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 54 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.55';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 55 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1298,11 +1300,26 @@ function drop(){
   else{roundState='final';finalEndStep=simStep+FINAL_STEPS;hud();bigAlert('倒數 60 秒','把全部的城連在一起！',2.2);}   // 最後一座落下：進入倒數，限時內把全部連成一片才算天下一統
 }
 const clusterMax=()=>Math.max(0,...tops.map(t=>t.pcs.length));
+// 電腦版左側各州進度：該州目前連成最大一片的城數 / 該州全部城數（整州連成一片＝完成，和縮小規則、「某某平定」成就同一標準）
+const ZSIZE=new Map();STATES.forEach(st=>ZSIZE.set(st.z,(ZSIZE.get(st.z)||0)+1));
+let zpKey='';
+function updateZoneProg(){
+  const best=new Map();
+  for(const t of tops){const c=new Map();t.pcs.forEach(p=>c.set(p.s.z,(c.get(p.s.z)||0)+1));c.forEach((n,z)=>{if(n>(best.get(z)||0))best.set(z,n);});}
+  const key=[...ZSIZE.keys()].map(z=>best.get(z)||0).join(',');
+  if(key===zpKey)return;zpKey=key;
+  document.querySelectorAll('.legend.inbrand .zs span[data-z]').forEach(sp=>{
+    const z=sp.dataset.z,n=best.get(z)||0,m=ZSIZE.get(z)||0,done=m>0&&n===m;
+    sp.classList.toggle('zd',done);sp.title=z+'　已連 '+n+' / '+m;
+    const g=sp.querySelector('small.zp');if(g)g.textContent=done?'✓':n+'/'+m;
+  });
+}
 function hud(){
   document.getElementById('prog').textContent=`${placed} / ${STATES.length}`;
   document.getElementById('clu').textContent=clusterMax();
   const shown=Math.max(0,score-pendingFly);
-  document.getElementById('score').textContent=shown;   // 飛分還沒抵達時扣分，顯示也不會變負
+  document.getElementById('score').textContent=shown;
+  updateZoneProg();   // 飛分還沒抵達時扣分，顯示也不會變負
   if(chipTitleFor!==bestAtStart){chipTitleFor=bestAtStart;const sc=document.getElementById('score').closest('.chip');if(sc)sc.title=bestAtStart>0?'分數（歷史最高 '+bestAtStart+'）':'分數';}
   if(recShown&&shown>recVal){recVal=shown;const sb=document.getElementById('sideBest');if(sb)sb.textContent=shown.toLocaleString('en-US');}   // 破紀錄後，側欄的最高分跟著分數走
   if(!recShown&&bestAtStart>0&&shown>bestAtStart){recShown=true;recVal=shown;fx.pops.push({text:'新紀錄！',x:W/2,y:H/2-110,t0:performance.now(),size:30});renderAch();}   // 以畫面上看到的分數為準
