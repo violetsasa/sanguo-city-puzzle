@@ -510,7 +510,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='優化手機橫放與寬螢幕排版';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.51';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 51 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.52';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 52 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1624,7 +1624,7 @@ function checkOverflow(){
     t.parts.forEach((p,i)=>{if(t.parts.length>1&&i===0)return;if(!high&&p.vertices.some(v=>v.y<LINE-4))high=true;});
     const fresh=simStep-Math.max(...t.pcs.map(p=>p.dropStep||0))<OVER_STEPS;   // 剛落下 1.5 秒內不檢查
     // 同原版：不要求靜止；只要這塊城高過溢出線，且不是剛落下（fresh）、也不在搖動免死期內，就開始累計；連續 1.2 秒就算溢出
-    t.overSteps=(high&&simStep>=(t.graceUntil||0)&&!fresh)?(t.overSteps||0)+1:0;
+    t.overSteps=(high&&simStep>=(t.graceUntil||0)&&(!fresh||(t.overSteps||0)>0))?(t.overSteps||0)+1:0;   // 已經在累計越線的組，新落下的城併進來也不能重新取得保護（否則連續落城可以一直拖延失敗）
     if(t.overSteps>OVER_HOLD_STEPS){gameOver();return;}
   }
 }
