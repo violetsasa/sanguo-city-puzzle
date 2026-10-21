@@ -463,7 +463,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='1.33';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 33 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.34';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 34 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1204,11 +1204,15 @@ function makePiece(s,x,y,k){
     lab:(()=>{const r=proj(s.l,k);return {x:r.x-c.x,y:r.y-c.y};})(),labR:s.r*40*k};   // 標籤放在「離邊界最遠」的點，labR 是可用半徑（px）
   subs.forEach(p=>p.piece=P);b.pcs=[P];pieceOf.set(s,P);return b;
 }
-let alertTimer=0;
-function hideAlert(){clearTimeout(alertTimer);const el=document.getElementById('alert');if(el)el.classList.remove('show');}
+let alertTimer=0,alertAt=0,alertWait=0;
+const ALERT_MIN=1400;   // 前一則至少要讓人讀完這麼久，下一則才會接上（避免快速連續操作時被攔腰截斷）
+function hideAlert(){clearTimeout(alertTimer);clearTimeout(alertWait);const el=document.getElementById('alert');if(el)el.classList.remove('show');}
 function bigAlert(title,sub,sec){   // 畫面中央的大提示（最後一座城、倒數開始）；時間到就一定收掉（「減少動態效果」時也一樣），重開時也會收掉
-  const el=document.getElementById('alert');el.innerHTML='<b>'+title+'</b>'+(sub?'<small>'+sub+'</small>':'');el.style.setProperty('--ad',(sec||2.4)+'s');
-  clearTimeout(alertTimer);el.classList.remove('show');void el.offsetWidth;el.classList.add('show');alertTimer=setTimeout(hideAlert,(sec||2.4)*1000);
+  clearTimeout(alertWait);
+  const el=document.getElementById('alert'),gap=alertAt+ALERT_MIN-performance.now();
+  if(el.classList.contains('show')&&gap>0){alertWait=setTimeout(()=>bigAlert(title,sub,sec),gap);return;}
+  el.innerHTML='<b>'+title+'</b>'+(sub?'<small>'+sub+'</small>':'');el.style.setProperty('--ad',(sec||2.4)+'s');
+  clearTimeout(alertTimer);el.classList.remove('show');void el.offsetWidth;el.classList.add('show');alertAt=performance.now();alertTimer=setTimeout(hideAlert,(sec||2.4)*1000);
 }
 function nextPiece(){
   if(!queue.length)return;
