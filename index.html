@@ -172,6 +172,7 @@
   .legend.bottom{position:relative;height:18px;align-items:center;z-index:5}   /* 較窄的螢幕：平時是一條細細的州色帶，點一下展開對照表 */
   .legend.bottom .zbar{display:flex;gap:2px;width:min(100%,320px);height:18px;padding:5px 0;border:0;border-radius:0;background:none;cursor:pointer}
   .legend.bottom .zbar i{flex:1;height:8px;margin:0;border-radius:4px}
+  .legend.inbrand .zl2{font-size:12px;opacity:.65;margin-right:2px;white-space:nowrap;align-self:center}   /* 寬螢幕：州色點前面的小標示 */
   .legend.bottom .zbar .zl{flex:none;align-self:center;margin-right:6px;font-size:11px;line-height:1;color:var(--ink);opacity:.6}   /* 色帶左邊的小「州」字，暗示這是州色、可以點開 */
   .legend.bottom .zpanel{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:min(94%,340px);display:none;flex-wrap:wrap;gap:6px 12px;justify-content:center;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 18px rgba(90,70,54,.22)}
   .legend.bottom.open .zpanel{display:flex}
@@ -327,8 +328,8 @@ const zcol=s=>ZCOL[s.z]||ZNEUT;
   const zh='<span class="zs" title="底色是漢末十三州">'+zs+'</span>';
   const tip='底色是漢末十三州';
   const names=Object.keys(ZCOL),bot=document.querySelector('.legend.bottom'),inb=document.querySelector('.legend.inbrand');
-  inb.innerHTML=zh;inb.title=tip;
-  bot.innerHTML='<button type="button" class="zbar" aria-label="州色對照" aria-expanded="false"><span class="zl">州</span>'+names.map(z=>`<i style="background:${ZCOL[z]}"></i>`).join('')+'</button><div class="zpanel">'+names.map(z=>`<span><i style="background:${ZCOL[z]}"></i>${z}</span>`).join('')+'</div>';
+  inb.innerHTML='<span class="zl2">十三州</span>'+zh;inb.title=tip;
+  bot.innerHTML='<button type="button" class="zbar" aria-label="州色對照" aria-expanded="false"><span class="zl">十三州</span>'+names.map(z=>`<i style="background:${ZCOL[z]}"></i>`).join('')+'</button><div class="zpanel">'+names.map(z=>`<span><i style="background:${ZCOL[z]}"></i>${z}</span>`).join('')+'</div>';
   const zbar=bot.querySelector('.zbar');let zt=0;
   const zset=on=>{bot.classList.toggle('open',on);zbar.setAttribute('aria-expanded',on);clearTimeout(zt);if(on)zt=setTimeout(()=>zset(false),6000);};
   zbar.addEventListener('click',()=>zset(!bot.classList.contains('open')));
@@ -452,7 +453,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='1.28';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 28 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.29';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 29 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1561,7 +1562,7 @@ function frame(ts){
   },{passive:false});
 }
 resize();init();
-show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……<br>烽火連年，山河破碎，有人據城而守，有人火燒赤壁。<br>這一回，你不必披甲上陣，<br>只需讓每座名城各歸其位。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');},true);
+show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……<br>烽火連年，山河破碎，有人據城而守，有人火燒赤壁。<br>這一回，你不必披甲上陣，<br>只需讓每座名城各歸其位。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div><div>◆ 城池依西元 240 年前後的疆域擺放，底色是漢末十三州。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');},true);
 document.body.classList.add('intro');
 {const ov=document.getElementById('ov'),r=document.getElementById('ovR');r.onclick=()=>{const on=ov.classList.toggle('showrules');r.textContent=on?'返回簡介':'玩法說明';};}   // 簡介：玩法說明 ⇄ 返回簡介
 requestAnimationFrame(frame);
