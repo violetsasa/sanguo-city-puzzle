@@ -411,8 +411,10 @@ const SND=(()=>{
     g.connect(bus);[o,o2,lfo,n].forEach(x=>{x.start(t);x.stop(t+dur+.3);});
   }
   const fx={
-    // 城落下：輕輕的木頭敲擊（乾聲，不帶迴響）
-    drop(t){wood(t,520,.22,dry);drum(t,70,.25,.18,dry);},
+    // 城落下：很輕的小鈴音（像小木琴輕敲一下），每次從五聲音階裡隨機挑一個音（乾聲，不帶迴響）；連續放城聽起來像一串小旋律
+    drop(t){const f=pent([0,2,4,5,7][(Math.random()*5)|0],220);
+      [[1,1,.35],[4,.12,.08]].forEach(([r,am,l])=>{const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f*r;
+        g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16*am,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+l);o.connect(g);g.connect(dry);o.start(t);o.stop(t+l+.05);});},
     // 相連：小片兩個撥弦；中片三音刮奏；大片六音刮奏加低磬
     merge(t,n){const tier=Math.min(6,Math.floor(Math.log2(Math.max(2,n))*1.4)),b=2+tier;
       if(tier<2){guzheng(pent(b),t,.24);guzheng(pent(b+2),t+.07,.22);}
@@ -450,7 +452,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='1.27';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 27 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.28';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 28 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
