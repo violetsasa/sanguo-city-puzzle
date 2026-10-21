@@ -253,8 +253,8 @@
   #sndBtn .snd-on{display:none}#sndBtn.is-on .snd-on{display:inline}#sndBtn.is-on .snd-off{display:none}   /* 喇叭圖示：開（有聲波）／關（打叉） */
   #sndBtn.is-on{background:#fbe3a1}
   #side{display:none}
-  @media (min-width:1540px){
-    #side{display:block;position:fixed;top:72px;left:calc(50% + 516px);width:250px;max-height:calc(100vh - 150px);overflow:auto;cursor:pointer}
+  @media (min-width:900px) and (min-height:521px){   /* 成就欄貼在棋盤右緣外側；右邊有 190px 以上的空位才顯示（由 resize() 加上 sideok） */
+    html.sideok #side{display:block;position:fixed;top:72px;left:calc(var(--br,0px) + 24px);width:var(--sw,220px);max-height:calc(100vh - 150px);overflow:auto;cursor:pointer}
     #side .sd-h{font-size:13px;letter-spacing:2px;margin:10px 2px 4px;opacity:.7}
     #side .sd-i{padding:6px 10px;margin-bottom:5px;border-radius:8px;background:rgba(217,165,33,.17);border:1px solid #d9a521;font-size:13px;line-height:1.45}
     #side .sd-i small{opacity:.7;margin-left:6px}
@@ -521,8 +521,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='標題換成書法字';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.61';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 61 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='右側成就欄靠近棋盤';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.62';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 62 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -533,6 +533,8 @@ function resize(){
   cv.style.width=VW*k+'px';cv.style.height=VH*k+'px';cv.style.left=(aw-VW*k)/2+'px';cv.style.top=Math.max(0,(ah-VH*k)/2)+'px';   // 左右、上下都置中，上下留白才平均
   cv.width=VW*k*d;cv.height=VH*k*d;
   document.documentElement.style.setProperty('--bl',cv.getBoundingClientRect().left+'px');   // 棋盤左緣位置：左側州色欄不超過它
+  {const r=cv.getBoundingClientRect(),room=innerWidth-r.right-24-16,de=document.documentElement;   // 棋盤右緣：右側成就欄貼在它外面，空位夠才顯示
+   de.style.setProperty('--br',r.right+'px');de.style.setProperty('--sw',Math.min(250,room)+'px');de.classList.toggle('sideok',room>=190&&innerWidth>=900&&innerHeight>=521);}
 }
 addEventListener('resize',resize);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
