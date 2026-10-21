@@ -472,7 +472,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='倒數階段防卡死';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.40';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 40 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.41';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 41 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1296,7 +1296,7 @@ function winRound(){
   fx.pops.push({text:'天下一統！＋'+win,x:W/2,y:H/2-40,t0:performance.now(),size:30});
   const gid=gameId,rid=roundId;
   setTimeout(()=>{if(gid!==gameId||rid!==roundId||over)return;
-    show('天下一統',`諸城相連，山河重歸一統。\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>startRound(round+1));},1300);
+    show('天下一統',`諸城相連，山河重歸一統。\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>init());},1300);
 }
 function gameOver(kind){
   over=true;if(roundState!=='won')SND.play('lose');   // 剛通關還在收尾時，不播失敗的聲音
