@@ -61,7 +61,7 @@
   #wrap{position:relative;flex:1;min-height:0}
   canvas{position:absolute;display:block;touch-action:pinch-zoom;border-radius:10px}
   .bar{display:flex;gap:8px;align-items:center}
-  @media (max-width:640px){   /* 手機：下一城獨佔一行；搖一搖放中間、放大，重來在左（兩手都好按） */
+  @media (max-width:640px) and (min-height:521px){   /* 手機（直式）：下一城獨佔一行；搖一搖放中間、放大，重來在左（兩手都好按） */
     #app>.bar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px}
     #app>#next{flex:none;align-self:center;min-width:min(100%,240px);justify-content:center;padding-block:4px}   /* 手機：下一城搬到州色條下方，底部只留三顆按鈕 */
     #app>.bar #reset{grid-row:1;grid-column:1;justify-self:start}
@@ -199,6 +199,26 @@
   .legend.inbrand{display:none}
   @media (min-width:960px){.legend.inbrand{display:flex}.legend.bottom{display:none}
     #app>.bar{justify-content:center;gap:14px}#next{flex:0 1 460px}}   /* 寬螢幕：下一城不要拉滿整條，和重來、搖一搖靠在一起 */
+  /* 手機橫放（矮而寬）：標題列壓成一行，棋盤佔左邊整個高度，下一城、搖一搖、重來疊在右邊一欄 */
+  @media (max-height:520px) and (min-aspect-ratio:1/1){
+    #app{display:grid;grid-template-columns:minmax(0,1fr) 148px;grid-template-rows:auto minmax(0,1fr);column-gap:10px;row-gap:4px;padding:4px 10px 6px}
+    #app>header{grid-column:1/-1;grid-row:1}
+    #app>.legend.bottom{display:none!important}
+    #wrap{grid-column:1;grid-row:2}
+    #app>.bar{grid-column:2;grid-row:2;display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:10px}
+    #app>.bar #next{flex:none;order:1;justify-content:center;min-width:0}
+    #app>.bar #shake{order:2;align-self:center;width:72px;height:72px;border-radius:50%}
+    #app>.bar #reset{order:3;align-self:center}
+    h1{width:auto;white-space:nowrap;font-size:18px;letter-spacing:1px}
+    .chip{padding:2px 9px}.chip b{font-size:16px}.chip small{font-size:9px}
+    .ib{width:34px;height:34px}
+    #ov{position:fixed;inset:0;border-radius:0;padding:6px}   /* 矮螢幕：簡介蓋滿整個畫面，板子才有高度放文字 */
+    #ov .card{padding:10px 18px;max-width:min(96%,620px)}
+    #ov.intro-card .card{width:min(96%,620px)}
+    #ov h2{font-size:22px;letter-spacing:4px}
+    #ov p{margin:2px 0 6px;line-height:1.5}
+    #ovS{margin-top:6px}#ovS .nm{font-size:22px}
+  }
   body.hdr-tight .legend.inbrand{display:none!important}body.hdr-tight .legend.bottom{display:flex!important}   /* 寬螢幕但標題列擠不下（分數位數多、字放大）：州色點改放下方 */
   @media (pointer:coarse){.kb{display:none}}   /* 觸控裝置沒有鍵盤，不顯示鍵盤說明 */
   @media (max-width:380px){.chip{padding:3px 7px}.stats{gap:3px}h1{font-size:16px}}   /* 很窄的手機：標題列再收緊一點 */
@@ -474,7 +494,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='倒數階段防卡死';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.44';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 44 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.45';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 45 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1083,7 +1103,7 @@ document.getElementById('side').onclick=()=>document.getElementById('achBtn').cl
 document.getElementById('achClose').onclick=()=>{document.getElementById('ach').style.display='none';};
 renderAch();
 {  // 手機：成就鈕搬到底部右側（和左邊的重來對稱），標題列空出來；寬螢幕放回標題列
-  const mq=matchMedia('(max-width:640px)'),btn=document.getElementById('achBtn'),bar=document.querySelector('#app>.bar'),st=document.querySelector('.stats');
+  const mq=matchMedia('(max-width:640px) and (min-height:521px)'),btn=document.getElementById('achBtn'),bar=document.querySelector('#app>.bar'),st=document.querySelector('.stats');
   const nx=document.getElementById('next'),lg=document.querySelector('.legend.bottom');   // 手機：下一城放在州色條下方；寬螢幕放回按鈕列
   const place=()=>{if(mq.matches){if(btn.parentElement!==bar)bar.appendChild(btn);if(nx.parentElement!==lg.parentElement)lg.after(nx);}else{if(btn.parentElement!==st)st.appendChild(btn);if(nx.parentElement!==bar)bar.insertBefore(nx,document.getElementById('shake'));}resize();};
   mq.addEventListener('change',place);place();
