@@ -1028,8 +1028,9 @@ function rankHTML(){
   return `<div class="ach-rank"><b>稱號　${name}</b>　<span>累計 ${e} / ${n}</span><div class="rk-bar"><i style="width:${pct}%"></i></div><small>${next?`再解鎖 ${next[0]-e} 個成就，升為「${next[1]}」`:'已集滿全部成就'}</small></div>`;
 }
 const mmCache=new Map();
+const TRI_SHOW=['許昌','洛陽','鄴','成都','漢中','江州','建業','長沙','會稽'];   // 三分天下的小地圖：魏、蜀、吳各取三座代表城（條件本身沒有指定城）
 function miniMap(a,lit){   // 成就要連的城，畫成小地圖（未解鎖時是灰色剪影）
-  const sts=(a.id==='tri'?STATES.map(s=>s.n):a.need).map(n=>STATES.find(s=>s.n===n)).filter(Boolean);   // 三分天下沒有指定城（條件是魏蜀吳三方相連），小地圖畫全部
+  const sts=(a.id==='tri'?TRI_SHOW:a.need).map(n=>STATES.find(s=>s.n===n)).filter(Boolean);
   if(!sts.length)return '';
   const key=a.id+(lit?'1':'0');
   if(mmCache.has(key))return mmCache.get(key);
