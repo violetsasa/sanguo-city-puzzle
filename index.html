@@ -234,8 +234,11 @@
   /* 又寬又高的螢幕：十三州色點直向排在棋盤左邊的空白處；其他螢幕用下方的細色條 */
   @media (min-width:900px) and (min-height:521px){
     .legend.bottom{display:none}
-    .legend.inbrand{display:flex;position:fixed;top:84px;left:max(16px,calc(50% - 484px));flex-direction:column;align-items:flex-start;gap:8px;margin:0}   /* 電腦：十三州直排在左邊，最左和標題圖示對齊 */
-    .legend.inbrand .zs{flex-direction:column;align-items:flex-start;gap:6px}
+    .legend.inbrand{display:flex;position:fixed;top:84px;left:min(max(48px,calc(50% - 452px)),calc(var(--bl,9999px) - 100px));flex-direction:column;align-items:flex-start;gap:8px;margin:0}   /* 電腦：十三州直排在左邊，最左和標題圖示對齊 */
+    .legend.inbrand .zs{flex-direction:column;align-items:flex-start;gap:clamp(4px,.9vh,8px)}
+    .legend.inbrand .zs span{font-size:clamp(13px,2.1vh,17px);gap:10px}   /* 色塊與字隨視窗高度放大：768 高約 26px 高的色塊 */
+    .legend.inbrand .zs span i{width:clamp(9px,1.4vh,12px);height:clamp(18px,3.4vh,30px);border-radius:4px}
+    .legend.inbrand .zs span small.zp{font-size:clamp(11px,1.8vh,14px)}
     .legend.inbrand .zl2{display:none}   /* 直排時不放「十三州」三個字（滑鼠移上去仍有提示） */
     .legend.inbrand .zs span:hover::after{top:50%;left:calc(100% + 8px);transform:translateY(-50%)}
   }
@@ -513,7 +516,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='十三州顯示各州進度';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.57';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 57 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.59';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 59 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -523,6 +526,7 @@ function resize(){
   const w=cv.parentElement,aw=w.clientWidth,ah=w.clientHeight,k=Math.min(aw/VW,ah/VH),d=devicePixelRatio||1;
   cv.style.width=VW*k+'px';cv.style.height=VH*k+'px';cv.style.left=(aw-VW*k)/2+'px';cv.style.top=Math.max(0,(ah-VH*k)/2)+'px';   // 左右、上下都置中，上下留白才平均
   cv.width=VW*k*d;cv.height=VH*k*d;
+  document.documentElement.style.setProperty('--bl',cv.getBoundingClientRect().left+'px');   // 棋盤左緣位置：左側州色欄不超過它
 }
 addEventListener('resize',resize);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
