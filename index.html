@@ -463,7 +463,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='1.30';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 30 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.31';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 31 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -484,7 +484,7 @@ function init(){
   const T=300;
   Composite.add(engine.world,[wall(W/2,BOXB+T/2,W+2*T,T),wall(BOXL-T/2,H/2,T,H*3),wall(BOXR+T/2,H/2,T,H*3)]);
   gameId++;roundId++;simStep=0;pendingFly=0;shakeLockUntil=0;lastShakeStep=-1e9;hitstopUntil=0;acc=0;pieceOf.clear();
-  bestAtStart=bestRead();recShown=false;
+  bestAtStart=bestRead();recShown=false;hideAlert();
   tops=[];pending=[];pendingKeys=new Set();score=0;over=false;cur=null;dropX=W/2;lastDrop=0;fxToken++;resetFx();
   {const sb=document.getElementById('shake');sb.disabled=false;sb.classList.remove('cool','on');sb.style.removeProperty('--cd');sb.title='搖一搖';}
   achDone=new Set();achProg.clear();noRoomUntil.clear();resetToasts();ptrDown=false;ptrId=null;peek=null;clearTimeout(peekTimer);peekStart=null;roundState='play';shakeReadyStep=0;labelFrame=0;   // 每一局重新開始：本局成就、冷卻表、提示、手勢、輪末狀態全部清空
@@ -610,7 +610,7 @@ function magnetScan(){
   const fin=roundState==='final',pullRange=fin?FINAL_PULL_RANGE:PULL_RANGE,pullDv=PULL_DV*(fin?FINAL_PULL_MULT:1),pullCap=PULL_SPEED*(fin?FINAL_SPEED_MULT:1);
   const items=[],pulls=new Map();   // pulls：每塊（整組）這一輪被拉的方向先累加，掃完才推一次（見下）
   for(const t of tops)for(const P of t.pcs)if(P.dropped)items.push(P);
-  const addPull=(top,dx,dy)=>{const e=pulls.get(top);if(e){e.dx+=dx;e.dy+=dy;e.n++;}else pulls.set(top,{dx,dy,n:1});};
+  const addPull=(top,dx,dy)=>{const e=pulls.get(top);if(e){e.dx+=dx;e.dy+=dy;}else pulls.set(top,{dx,dy});};
   // 跨州磁吸上限（只限制磁吸，不限制碰撞；倒數階段不限制）：還沒連齊的州，最多只會「吸」MAGNET_CROSS_CAP 個別的州，
   // 例如荊州還沒排完、已經和揚州相連，就不會再吸交州；但真的碰到的城照樣相連
   const holeD=fin?HOLE_D+(HOLE_D_MAX-HOLE_D)*Math.max(0,Math.min(1,1-(finalEndStep-simStep)/FINAL_STEPS)):HOLE_D;   // 補洞磁吸的距離：倒數越接近尾聲越寬鬆
@@ -664,7 +664,7 @@ function magnetScan(){
     if(top._pn>=8){
       const moved=top._px===undefined?99:Math.hypot(top.position.x-top._px,top.position.y-top._py);
       top._px=top.position.x;top._py=top.position.y;top._pn=0;
-      if(moved<4){top._pcool=simStep+180;continue;}
+      if(moved<4){top._pcool=simStep+180;top._px=undefined;continue;}   // 暫停後重新量，不拿舊位置去比
     }
     const m=Math.hypot(e.dx,e.dy),lim=pullDv*2;   // 各方向的拉力相加（互相抵銷的就抵銷掉），但一次最多推 2 倍的力
     nudge(top,m>lim?e.dx/m*lim:e.dx,m>lim?e.dy/m*lim:e.dy,pullCap);
@@ -1048,7 +1048,7 @@ function renderAch(){
     return `<div class="ai lock">${miniMap(a,false)}<div class="tx"><b>？？？${a.auto?'（'+a.name+'）':''}</b><div class="need">${need}</div>${progOf(a)}</div></div>`;
   };
   {const sd=document.getElementById('side'),got=ACH_DEF.filter(a=>achDone.has(a.id));
-   sd.innerHTML=rankHTML()+`<div class="sd-h">歷史最高分　${bestRead()||'—'}</div><div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.yl||a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
+   sd.innerHTML=rankHTML()+`<div class="sd-h">歷史最高分　${Math.max(bestAtStart||bestRead(),recShown?Math.max(0,(score||0)-(pendingFly||0)):0)||'—'}</div><div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.yl||a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
   if(achTab==='run'){
     const got=ACH_DEF.filter(a=>achDone.has(a.id));
     list.innerHTML=rankHTML()+(got.length?note:'')+(got.length?got.map(card).join(''):'<div class="ach-empty">這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。</div>');
@@ -1204,9 +1204,11 @@ function makePiece(s,x,y,k){
     lab:(()=>{const r=proj(s.l,k);return {x:r.x-c.x,y:r.y-c.y};})(),labR:s.r*40*k};   // 標籤放在「離邊界最遠」的點，labR 是可用半徑（px）
   subs.forEach(p=>p.piece=P);b.pcs=[P];pieceOf.set(s,P);return b;
 }
-function bigAlert(title,sub,sec){   // 畫面中央的大提示（最後一座城、倒數開始）
+let alertTimer=0;
+function hideAlert(){clearTimeout(alertTimer);const el=document.getElementById('alert');if(el)el.classList.remove('show');}
+function bigAlert(title,sub,sec){   // 畫面中央的大提示（最後一座城、倒數開始）；時間到就一定收掉（「減少動態效果」時也一樣），重開時也會收掉
   const el=document.getElementById('alert');el.innerHTML='<b>'+title+'</b>'+(sub?'<small>'+sub+'</small>':'');el.style.setProperty('--ad',(sec||2.4)+'s');
-  el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
+  clearTimeout(alertTimer);el.classList.remove('show');void el.offsetWidth;el.classList.add('show');alertTimer=setTimeout(hideAlert,(sec||2.4)*1000);
 }
 function nextPiece(){
   if(!queue.length)return;
@@ -1243,9 +1245,10 @@ const clusterMax=()=>Math.max(0,...tops.map(t=>t.pcs.length));
 function hud(){
   document.getElementById('prog').textContent=`${placed} / ${STATES.length}`;
   document.getElementById('clu').textContent=clusterMax();
-  document.getElementById('score').textContent=Math.max(0,score-pendingFly);
+  const shown=Math.max(0,score-pendingFly);
+  document.getElementById('score').textContent=shown;   // 飛分還沒抵達時扣分，顯示也不會變負
   {const sc=document.getElementById('score').closest('.chip');if(sc)sc.title=bestAtStart>0?'分數（歷史最高 '+bestAtStart+'）':'分數';}
-  if(!recShown&&bestAtStart>0&&score>bestAtStart){recShown=true;fx.pops.push({text:'新紀錄！',x:W/2,y:H/2-90,t0:performance.now(),size:30});}   // 飛分還沒抵達時扣分，顯示也不會變負
+  if(!recShown&&bestAtStart>0&&shown>bestAtStart){recShown=true;fx.pops.push({text:'新紀錄！',x:W/2,y:H/2-110,t0:performance.now(),size:30});renderAch();}   // 以畫面上看到的分數為準   // 飛分還沒抵達時扣分，顯示也不會變負
   const nx=cur?cur.unit:(queue.length?'…':'—');
   const nextBox=document.getElementById('next'),cap=nextBox.querySelector('small');
   if(roundState==='final'){   // 最後一座落下後：這一格改成倒數
@@ -1260,8 +1263,7 @@ function hud(){
 }
 function bestRead(){try{const v=Number(localStorage.getItem('sg_best'));return Number.isFinite(v)&&v>0?v:0;}catch(e){return 0;}}   // 只讀不寫
 function best(){
-  let b=score;try{const prev=Number(localStorage.getItem('sg_best'));b=Math.max(score,Number.isFinite(prev)?prev:0);   // 存檔壞掉（非數字）時當成 0，不會永遠顯示 NaN
-  localStorage.setItem('sg_best',b);}catch(e){}return b;
+  const b=Math.max(score,bestRead());try{localStorage.setItem('sg_best',b);}catch(e){}return b;   // 存檔壞掉（非數字）時 bestRead 回 0，不會永遠顯示 NaN
 }
 // 最後一州落下後：等整盤穩定（且沒有待處理的合併、不在停頓中）才結算，最多等 8 秒；重開時舊的等待會自動失效
 // 單輪流程（每個物理步呼叫一次）：最後一座落下後有 60 秒，全部連成一片就通關；時間到沒完成就結束。
