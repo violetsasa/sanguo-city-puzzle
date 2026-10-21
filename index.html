@@ -104,7 +104,7 @@
   .ib.primary.cool::after{opacity:1}   /* 冷卻中：底下的小條慢慢填滿，滿了就能再搖 */
   @keyframes wig{0%,100%{transform:rotate(0)}20%{transform:rotate(-10deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-7deg)}80%{transform:rotate(7deg)}}
   .ib.primary.on svg{animation:wig .45s linear 2}
-  #ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;text-align:center;padding:20px}
+  #ov{z-index:8;position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;text-align:center;padding:20px}
   #ov .card{background:var(--panel);border:2px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(90,70,54,.22);padding:18px 22px;max-width:min(94%,480px);max-height:96%;display:flex;flex-direction:column}
   #ov h2{margin:0 0 2px;font-size:26px;letter-spacing:6px}
   #ovT .logo-h{width:min(300px,70%);margin:2px auto 8px}   /* 開場簡介：橫式書法標題取代文字標題 */
@@ -135,7 +135,7 @@
   #ov .rules{text-align:left;font-size:13px;line-height:1.55;margin:0 0 10px;padding:8px 12px;border:1px dashed var(--line);border-radius:8px;background:rgba(138,106,58,.08)}
   #ov .rules div{padding-left:1.1em;text-indent:-1.1em}
   .fly{position:fixed;z-index:10;pointer-events:none;font-weight:bold;font-size:20px;color:#c4574f;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap}
-  #ach{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;padding:10px}
+  #ach{z-index:8;position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;padding:10px}
   #alert{position:absolute;left:50%;top:24%;z-index:6;pointer-events:none;opacity:0;transform:translate(-50%,-50%);text-align:center;background:var(--accent);color:#fff8e8;border:3px solid #fff8e8;border-radius:18px;padding:12px 26px;box-shadow:0 10px 30px rgba(90,40,10,.4);max-width:90%;width:max-content}
   #alert b{display:block;font-size:clamp(24px,7vw,38px);letter-spacing:4px}
   #alert small{display:block;font-size:clamp(13px,3.4vw,16px);margin-top:2px;opacity:.95}
@@ -179,7 +179,7 @@
   #next.urgent{border-color:#c4574f;color:#a63a32}   /* 倒數最後 10 秒轉紅 */
   .ach-note{font-size:12px;opacity:.65;margin:0 2px 4px}
   .ach-clear{text-align:right;margin:0 0 2px}
-  .ach-clear button{border:0;background:none;font:inherit;font-size:12px;color:var(--ink);opacity:.55;text-decoration:underline;cursor:pointer;padding:4px 8px}
+  .ach-clear button{border:0;background:none;font:inherit;font-size:12px;color:var(--ink);opacity:.55;text-decoration:underline;cursor:pointer;padding:4px 8px;min-height:44px}
   .ach-clear button:hover{opacity:.9}
   .ach-empty{text-align:center;opacity:.7;font-size:13px;padding:26px 10px;line-height:1.8}
   #toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-140%);z-index:20;background:#fff8dc;color:#3a2a18;border:2px solid #d9a521;border-radius:12px;padding:8px 16px;font-size:14px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;transition:transform .35s ease,opacity .35s ease;pointer-events:none;max-width:90vw}
@@ -259,6 +259,16 @@
     #side .sd-i{padding:6px 10px;margin-bottom:5px;border-radius:8px;background:rgba(217,165,33,.17);border:1px solid #d9a521;font-size:13px;line-height:1.45}
     #side .sd-i small{opacity:.7;margin-left:6px}
     #side .sd-empty{font-size:12px;opacity:.6;padding:2px}
+    #side .ach-rank{background:none;border-color:rgba(217,165,33,.55);padding:6px 10px;margin:0 0 4px;font-size:12px}   /* 成就欄減重：去底色、字小一號、進度條變細 */
+    #side .ach-rank b{font-size:14px;letter-spacing:1px}
+    #side .ach-rank .rk-bar{height:3px;margin:5px 0 3px}
+    #side .ach-rank small{font-size:11px;opacity:.65}
+    #side .hs{margin:8px 0 2px}
+    #side .hs .lb{font-size:11px;letter-spacing:2px;opacity:.65}
+    #side .hs .lb::before,#side .hs .lb::after{width:14px}
+    #side .hs .nm{font-size:17px;letter-spacing:1px;font-weight:600}
+    #side .sd-h{font-size:12px;opacity:.6;margin:8px 2px 3px}
+    #side .sd-i{font-size:12px;padding:4px 8px;margin-bottom:4px;background:rgba(217,165,33,.1);border-color:rgba(217,165,33,.45)}
   }   /* 寬螢幕：州色塊放標題旁；較窄時放底部 */
 </style>
 </head>
@@ -501,8 +511,8 @@ const SND=(()=>{
   return {
     get on(){return on;},
     set(v){on=!!v;try{localStorage.setItem('sg_sound',on?'1':'0');}catch(e){}
-      if(on){ensure();if(ac){const t=ac.currentTime;[dry,bus].forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(.75,t,.02);});}}
-      else if(ac){const t=ac.currentTime;[dry,bus].forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(0,t,.02);});}   // 關掉聲音時，已經排好、還在響的音效也一起靜音
+      try{if(on){ensure();if(ac){const t=ac.currentTime;[dry,bus].forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(.75,t,.02);});}}
+      else if(ac){const t=ac.currentTime;[dry,bus].forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(0,t,.02);});}}catch(e){}   // 關掉聲音時，已經排好、還在響的音效也一起靜音；音訊引擎建立失敗也不拋錯（按鈕狀態照常更新）
     },
     unlock(cb){   // 在使用者手勢裡呼叫：建立並啟動 AudioContext，啟動後才執行 cb（手機上 resume 是非同步的）
       try{ensure();if(!ac)return;if(ac.state==='running'){if(cb)cb();}else ac.resume().then(()=>{if(cb&&ac.state==='running')cb();}).catch(()=>{});}catch(e){}
@@ -521,8 +531,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='右側成就欄靠近棋盤';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.62';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 62 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='成就欄減重、修正結算時重來';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.63';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 63 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -534,13 +544,13 @@ function resize(){
   cv.width=VW*k*d;cv.height=VH*k*d;
   document.documentElement.style.setProperty('--bl',cv.getBoundingClientRect().left+'px');   // 棋盤左緣位置：左側州色欄不超過它
   {const r=cv.getBoundingClientRect(),room=innerWidth-r.right-24-16,de=document.documentElement;   // 棋盤右緣：右側成就欄貼在它外面，空位夠才顯示
-   de.style.setProperty('--br',r.right+'px');de.style.setProperty('--sw',Math.min(250,room)+'px');de.classList.toggle('sideok',room>=190&&innerWidth>=900&&innerHeight>=521);}
+   de.style.setProperty('--br',r.right+'px');de.style.setProperty('--sw',Math.min(220,room)+'px');de.classList.toggle('sideok',room>=190&&innerWidth>=900&&innerHeight>=521);}
 }
 addEventListener('resize',resize);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 function init(){
-  document.getElementById('ach').style.display='none';
+  document.getElementById('ach').style.display='none';document.getElementById('ov').style.display='none';   // 結算框開著時按外面的「重來」：新局不能被舊結算框蓋住
   engine=Engine.create({gravity:{y:1.1},positionIterations:10,velocityIterations:8});
   // 牆做得很厚，避免快速移動的大塊穿牆
   const wall=(x,y,w,h)=>Bodies.rectangle(x,y,w,h,{isStatic:true,friction:.6});
@@ -1127,7 +1137,9 @@ document.getElementById('achList').addEventListener('click',e=>{
 });
 document.getElementById('tabRun').onclick=function(){achTab='run';renderAch();this.blur();};
 document.getElementById('tabAll').onclick=function(){achTab='all';renderAch();this.blur();};
-document.getElementById('achBtn').onclick=function(){achTab=achDone.size?'run':'all';renderAch();document.getElementById('ach').style.display='flex';this.blur();};
+document.getElementById('achBtn').onclick=function(){if(document.getElementById('ov').style.display==='flex'){this.blur();return;}   // 結算／簡介框開著時不開圖鑑（兩個視窗不同時開）
+  endPeek();ptrDown=false;ptrId=null;   // 開面板時，按住畫布的手勢一併作廢，放開時不會落城
+  achTab=achDone.size?'run':'all';renderAch();document.getElementById('ach').style.display='flex';this.blur();};
 document.getElementById('side').onclick=()=>document.getElementById('achBtn').click();
 {const sb=document.getElementById('sndBtn'),upd=()=>{sb.classList.toggle('is-on',SND.on);sb.setAttribute('aria-pressed',SND.on);sb.title=SND.on?'聲音（目前開啟）':'聲音（目前關閉）';};
   sb.onclick=function(){SND.set(!SND.on);upd();if(SND.on)SND.unlock(()=>SND.play('merge',2));this.blur();};upd();
@@ -1462,7 +1474,8 @@ function startPeek(pt){
   peek={P,x:pt.x,y:pt.y};P.glow={t0:performance.now(),dur:900};
   try{if(navigator.vibrate)navigator.vibrate(12);}catch(_){}
 }
-cv.addEventListener('pointerdown',e=>{if(overlayOpen()||ptrDown)return;if(e.pointerType==='mouse'&&e.button!==0)return;   // 滑鼠只認左鍵
+cv.addEventListener('pointerdown',e=>{if(ptrDown&&e.pointerId!==ptrId&&e.pointerType!=='mouse'){ptrDown=false;ptrId=null;endPeek();return;}   // 第二根手指落下（多半是雙指縮放）：第一根的落城作廢
+  if(overlayOpen()||ptrDown)return;if(e.pointerType==='mouse'&&e.button!==0)return;   // 滑鼠只認左鍵
   ptrDown=true;ptrId=e.pointerId;dropX=toX(e);moveCur();try{cv.setPointerCapture(e.pointerId);}catch(_){}
   if(e.pointerType!=='mouse'){endPeek();peekStart={x:e.clientX,y:e.clientY};const pt={x:toX(e),y:toY(e)};peekTimer=setTimeout(()=>{if(ptrDown&&peekStart)startPeek(pt);},PEEK_MS);}});
 cv.addEventListener('pointermove',e=>{if(overlayOpen()||(ptrDown&&e.pointerId!==ptrId))return;dropX=toX(e);moveCur();if(e.pointerType==='mouse')hoverPt={x:toX(e),y:toY(e)};
@@ -1688,13 +1701,21 @@ function frame(ts){
 {
   const scrollers='#achList,#ovP,#ov .story,#ov .rules,#side';
   const btnAt=t=>t.closest&&!t.closest(scrollers)&&t.closest('button');
+  let tg=null;   // 目前接管的單指按鈕手勢：第二根手指、手指拖遠、觸控被取消，都作廢，不補發點擊
   document.addEventListener('touchstart',e=>{
-    if(e.touches.length===1&&btnAt(e.target)&&e.cancelable)e.preventDefault();
+    if(tg)tg.ok=false;   // 已經有一根手指在按鈕上又來第二根：多指操作（例如雙指縮放），不是點擊
+    if(e.touches.length===1&&btnAt(e.target)){const t=e.touches[0];tg={b:btnAt(e.target),x:t.clientX,y:t.clientY,ok:true};if(e.cancelable)e.preventDefault();}
   },{passive:false});
+  document.addEventListener('touchmove',e=>{
+    if(!tg||!tg.ok)return;const t=e.touches[0];
+    if(!t||e.touches.length>1||Math.hypot(t.clientX-tg.x,t.clientY-tg.y)>14)tg.ok=false;
+  },{passive:true});
+  document.addEventListener('touchcancel',()=>{tg=null;});
   document.addEventListener('touchend',e=>{
+    if(!tg)return;
     if(e.touches.length)return;
-    const b=btnAt(e.target),t=e.changedTouches[0];
-    if(!b||b.disabled||!t)return;
+    const g=tg;tg=null;const b=g.b,t=e.changedTouches[0];
+    if(!g.ok||b.disabled||!t)return;
     const under=document.elementFromPoint(t.clientX,t.clientY);   // 手指還在同一顆按鈕上才算點擊
     if(under&&btnAt(under)===b){if(e.cancelable)e.preventDefault();b.click();}
   },{passive:false});
