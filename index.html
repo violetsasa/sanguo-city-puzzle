@@ -110,7 +110,9 @@
   #ov .ovbtns button{flex:1}
   #ov #ovB{background:var(--accent);border-color:var(--accent);color:#fff8e8;font-weight:bold;letter-spacing:2px;box-shadow:0 3px 10px rgba(168,85,43,.35)}   /* 主要動作（開始、再次挑戰）用主色，和旁邊的次要按鈕區分 */
   #ov #ovB:hover{filter:brightness(1.08)}
-  #ov.intro-card .card{width:min(94%,480px)}   /* 簡介與玩法說明共用同一個板子大小（高度由 fitIntro 量測後設定） */
+  #ov.intro-card .card{width:min(94%,480px)}
+  #ov.intro-card #ovP{display:flex;flex-direction:column}
+  #ov.intro-card .story{margin-top:auto;margin-bottom:auto}   /* 簡介比玩法說明矮時，多出來的空間上下平分，不要全留在文字下面 */   /* 簡介與玩法說明共用同一個板子大小（高度由 fitIntro 量測後設定） */
   #ov .rules{display:none}
   #ovS{display:none;flex:none;margin-top:12px;text-align:center;color:var(--accent)}   /* 歷史最高分（只在開場簡介顯示）：兩側細線夾著小標，下面放大數字 */
   #ovS .lb,.hs .lb{display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;letter-spacing:3px;opacity:.85}
@@ -470,7 +472,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='倒數階段防卡死';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.39';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 39 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.40';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 40 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
