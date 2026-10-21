@@ -463,7 +463,7 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION='1.31';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 31 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.32';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 32 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1385,6 +1385,7 @@ if(document.activeElement&&document.activeElement.blur)document.activeElement.bl
 document.getElementById('shake').onclick=function(){shake();this.blur();};
 document.getElementById('reset').onclick=function(){this.blur();if(confirm('確定要重來嗎？'))init();};
 
+const GHOST_ALPHA=1;   // 預告（還沒放下）的城的不透明度。原本是 0.7，放下前後會有色差；現在 1＝完全一樣的顏色
 function drawPiece(P,ghost,labelPass){
   let w=pieceWorld(P),sc=1;
   if(P.anim){
@@ -1416,7 +1417,7 @@ function drawPiece(P,ghost,labelPass){
     return;
   }
   ctx.beginPath();P.rel.forEach((v,i)=>{const q=T(v);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);});ctx.closePath();
-  ctx.fillStyle=zcol(P.s);ctx.globalAlpha=ghost?.7:1;ctx.fill();ctx.globalAlpha=1;
+  ctx.fillStyle=zcol(P.s);ctx.globalAlpha=ghost?GHOST_ALPHA:1;ctx.fill();ctx.globalAlpha=1;
   // 細白邊：相連的州在交界處看起來像同一張地圖
   ctx.lineJoin='round';ctx.lineWidth=1.4;ctx.strokeStyle='rgba(255,255,255,.95)';ctx.stroke();
   if(P.glow){   // 成就：相關的城發出金光
