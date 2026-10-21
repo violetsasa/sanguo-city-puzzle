@@ -54,6 +54,7 @@
   .chip .cap{display:flex;flex-direction:column;line-height:1.05}
   @media (max-width:520px){   /* 窄螢幕：數據卡收緊（去掉小圖示），標題才放得下 */
     .chip>svg,.brand svg{display:none}.chip{padding:3px 10px}.stats{gap:4px}h1{letter-spacing:0}
+    h1{white-space:normal;word-break:break-all;width:2em;flex:none;line-height:1.08;text-overflow:clip;overflow:visible;font-size:clamp(18px,5.4vw,24px)}   /* 窄螢幕：標題排成「山河／輿圖」兩行方塊，不管分數多長都不會被切到 */
   }
   .chip small{font-size:clamp(9px,1.5vh,11px);opacity:.65;letter-spacing:1px;white-space:nowrap}
   .chip b{font-size:clamp(15px,min(2.8vh,4.4vw),24px);white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -472,7 +473,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='倒數階段防卡死';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.42';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 42 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.43';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 43 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
