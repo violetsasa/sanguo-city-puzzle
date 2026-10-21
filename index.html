@@ -188,7 +188,8 @@
   .legend.bottom{position:relative;height:18px;align-items:center;z-index:5}   /* 較窄的螢幕：平時是一條細細的州色帶，點一下展開對照表 */
   .legend.bottom .zbar{display:flex;gap:2px;width:min(100%,320px);height:18px;padding:5px 0;border:0;border-radius:0;background:none;cursor:pointer}
   .legend.bottom .zbar{position:relative}
-  .legend.bottom .zbar::after{content:"";position:absolute;left:0;right:0;top:-8px;bottom:-8px}   /* 色條只有 18px 高，點擊範圍往上下各加 8px */
+  .legend.bottom .zbar::after{content:"";position:absolute;left:0;right:0;top:-13px;bottom:-13px}   /* 色條只有 18px 高，點擊範圍往上下各加 13px，湊成 44px */
+  .legend.bottom{margin-bottom:5px}   /* 讓加大的點擊範圍不蓋到下面的下一城 */
   .legend.bottom .zbar i{flex:1;height:8px;margin:0;border-radius:4px}
   .legend.inbrand .zl2{font-size:12px;opacity:.65;margin-right:2px;white-space:nowrap;align-self:center}   /* 寬螢幕：州色點前面的小標示 */
   .legend.bottom .zbar .zl{flex:none;align-self:center;margin-right:6px;font-size:11px;line-height:1;color:var(--ink);opacity:.6}   /* 色帶左邊的小「州」字，暗示這是州色、可以點開 */
@@ -203,11 +204,13 @@
     #app>.bar{justify-content:center;gap:14px}#next{flex:0 1 460px}}   /* 寬螢幕：下一城不要拉滿整條，和重來、搖一搖靠在一起 */
   /* 手機橫放（矮而寬）：標題列壓成一行，棋盤佔左邊整個高度，下一城、搖一搖、重來疊在右邊一欄 */
   @media (max-height:520px) and (min-aspect-ratio:1/1){
-    #app{display:grid;grid-template-columns:minmax(0,1fr) 148px;grid-template-rows:auto minmax(0,1fr);column-gap:10px;row-gap:4px;padding:4px 10px 6px}
+    #app{display:grid;grid-template-columns:minmax(0,1fr) 148px;grid-template-rows:auto auto minmax(0,1fr);column-gap:10px;row-gap:4px;padding:4px 10px 6px}
     #app>header{grid-column:1/-1;grid-row:1}
-    #app>.legend.bottom{display:none!important}
-    #wrap{grid-column:1;grid-row:2}
-    #app>.bar{grid-column:2;grid-row:2;display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:10px}
+    #app>.legend.bottom{grid-column:2;grid-row:2;display:flex;justify-content:center;margin:0}   /* 橫放：州色條放在右欄最上面 */
+    .legend.bottom .zbar{width:100%}
+    .legend.bottom .zpanel{left:auto;right:0;transform:none;width:230px}
+    #wrap{grid-column:1;grid-row:2/4}
+    #app>.bar{grid-column:2;grid-row:3;display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:10px}
     #app>.bar #next{flex:none;order:1;justify-content:center;min-width:0}
     #app>.bar #shake{order:2;align-self:center;width:72px;height:72px;border-radius:50%}
     #app>.bar #reset{order:3;align-self:center}
@@ -506,7 +509,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='優化手機橫放與寬螢幕排版';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.49';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 49 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.50';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 50 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
