@@ -47,7 +47,7 @@
   header{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .brand{display:flex;align-items:center;gap:8px;min-width:0}
   .brand svg{width:clamp(22px,3.6vh,34px);height:clamp(22px,3.6vh,34px);flex:none;stroke:var(--line);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  h1{font-size:clamp(17px,min(3.4vh,5.2vw),30px);white-space:nowrap;margin:0;letter-spacing:2px;overflow:hidden;text-overflow:ellipsis}
+  h1{font-size:clamp(17px,min(3.4vh,5.2vw),30px);white-space:nowrap;margin:0;letter-spacing:2px;flex:none}   /* 標題不縮、不加「…」；標題列擠不下時改由 fitHeader 把州色點移到下方 */
   .stats{display:flex;gap:6px;flex-wrap:nowrap}
   .chip{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 12px 4px 8px}
   .chip svg{width:clamp(16px,2.6vh,22px);height:clamp(16px,2.6vh,22px);flex:none;stroke:var(--line);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -199,6 +199,7 @@
   .legend.inbrand{display:none}
   @media (min-width:960px){.legend.inbrand{display:flex}.legend.bottom{display:none}
     #app>.bar{justify-content:center;gap:14px}#next{flex:0 1 460px}}   /* 寬螢幕：下一城不要拉滿整條，和重來、搖一搖靠在一起 */
+  body.hdr-tight .legend.inbrand{display:none!important}body.hdr-tight .legend.bottom{display:flex!important}   /* 寬螢幕但標題列擠不下（分數位數多、字放大）：州色點改放下方 */
   @media (pointer:coarse){.kb{display:none}}   /* 觸控裝置沒有鍵盤，不顯示鍵盤說明 */
   @media (max-width:380px){.chip{padding:3px 7px}.stats{gap:3px}h1{font-size:16px}}   /* 很窄的手機：標題列再收緊一點 */
   #sndBtn .snd-on{display:none}#sndBtn.is-on .snd-on{display:inline}#sndBtn.is-on .snd-off{display:none}   /* 喇叭圖示：開（有聲波）／關（打叉） */
@@ -473,7 +474,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='倒數階段防卡死';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.43';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 43 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.44';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 44 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1316,6 +1317,15 @@ function fitIntro(){
   ov.classList.toggle('showrules',was);card.style.minHeight=Math.ceil(h)+'px';
 }
 window.addEventListener('resize',fitIntro);try{document.fonts.ready.then(fitIntro);}catch(e){}
+// 標題列太擠（寬螢幕的州色點加分數位數變多、字放大）就把州色點移到標題列下方，確保標題不被切到
+function fitHeader(){
+  const hd=document.querySelector('header'),br=document.querySelector('.brand');if(!hd||!br)return;
+  const se=document.getElementById('score'),keep=se.textContent;se.textContent='999999';   // 以 6 位數的分數寬度來量，之後分數變長也不會中途再改版面
+  document.body.classList.remove('hdr-tight');
+  const tight=hd.scrollWidth>hd.clientWidth+1||br.scrollWidth>br.clientWidth+1;   // 標題＋州色點比它分到的空間寬，就是擠了
+  se.textContent=keep;if(tight)document.body.classList.add('hdr-tight');
+}
+window.addEventListener('resize',fitHeader);
 function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
   document.getElementById('ovT').textContent=t;
   document.getElementById('ovP').innerHTML=p.replace(/\n/g,'<br>');
@@ -1627,7 +1637,7 @@ function frame(ts){
     if(under&&btnAt(under)===b){if(e.cancelable)e.preventDefault();b.click();}
   },{passive:false});
 }
-resize();init();
+resize();init();fitHeader();try{document.fonts.ready.then(fitHeader);}catch(e){}
 show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……<br>烽火連年，山河破碎，有人據城而守，有人火燒赤壁。<br>這一回，你不必披甲上陣，<br>只需讓每座名城各歸其位。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div><div>◆ 城池依西元 240 年前後的疆域擺放，底色是漢末十三州。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');},true);
 document.body.classList.add('intro');
 {const ov=document.getElementById('ov'),r=document.getElementById('ovR');r.onclick=()=>{const on=ov.classList.toggle('showrules');r.textContent=on?'返回簡介':'玩法說明';};}   // 簡介：玩法說明 ⇄ 返回簡介
