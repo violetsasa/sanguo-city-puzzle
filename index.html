@@ -111,7 +111,10 @@
   #ov #ovB{background:var(--accent);border-color:var(--accent);color:#fff8e8;font-weight:bold;letter-spacing:2px;box-shadow:0 3px 10px rgba(168,85,43,.35)}   /* 主要動作（開始、再次挑戰）用主色，和旁邊的次要按鈕區分 */
   #ov #ovB:hover{filter:brightness(1.08)}
   #ov .rules{display:none}
-  #ovS{display:none;flex:none;margin-top:8px;font-size:13px;letter-spacing:2px;color:var(--accent)}   /* 歷史最高分（只在開場簡介顯示） */
+  #ovS{display:none;flex:none;margin-top:12px;text-align:center;color:var(--accent)}   /* 歷史最高分（只在開場簡介顯示）：兩側細線夾著小標，下面放大數字 */
+  #ovS .lb{display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;letter-spacing:3px;opacity:.85}
+  #ovS .lb::before,#ovS .lb::after{content:"";width:28px;height:1px;background:currentColor;opacity:.45}
+  #ovS .nm{display:block;margin-top:2px;font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;font-size:30px;font-weight:700;line-height:1.15;letter-spacing:2px;font-variant-numeric:tabular-nums}
   #ovV{display:none;flex:none;margin-top:8px;white-space:pre-line;text-align:center;padding-left:1px;line-height:1.6;font-size:11px;letter-spacing:1px;opacity:.45}   /* 版本號：只在開場簡介顯示，用來確認有沒有更新 */
   body.intro #sndBtn,body.intro #next,body.intro #app>.bar button,body.intro #achBtn,body.intro .stats .chip,body.intro .legend,body.intro #side,body.intro .brand h1,body.intro .brand svg{visibility:hidden}   /* 開場簡介還在時，下一城與底部操作先不出現（位置保留，開始後才顯示） */
   #ov.showrules .rules{display:block}   /* 簡介頁：按「玩法說明」就換成玩法，再按一次回簡介 */
@@ -464,7 +467,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='改善倒數階段容易卡死、湊不齊的問題';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.34';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 34 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.35';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 35 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1302,7 +1305,7 @@ function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明�
   ov.classList.toggle('end',!intro);ov.classList.remove('showrules');
   rb.style.display=intro?'':'none';rb.textContent='玩法說明';   // 玩法說明鈕與版本號只在開場簡介出現
   vl.style.display=intro?'block':'none';vl.textContent='版本 '+VERSION+'\n'+VERSION_NOTE;
-  {const sl=document.getElementById('ovS'),bs=intro?bestRead():0;sl.style.display=bs>0?'block':'none';sl.textContent=bs>0?'歷史最高分　'+bs:'';}
+  {const sl=document.getElementById('ovS'),bs=intro?bestRead():0;sl.style.display=bs>0?'block':'none';sl.innerHTML=bs>0?'<span class="lb">歷史最高分</span><span class="nm">'+bs.toLocaleString('en-US')+'</span>':'';}
   document.getElementById('ov').style.display='flex';
   btn.onclick=()=>{document.getElementById('ov').style.display='none';fn();};
 }
