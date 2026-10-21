@@ -228,7 +228,7 @@
     #app>header{grid-column:1/-1;grid-row:1}
     #app>.legend.bottom{grid-column:2;grid-row:2;display:flex;justify-content:center;margin:0}   /* 橫放：州色條放在右欄最上面 */
     .legend.bottom .zbar{width:100%}
-    .legend.bottom .zpanel{left:auto;right:0;transform:none;width:230px}
+    .legend.bottom .zpanel{left:auto;right:0;transform:none;width:min(340px,calc(100vw - 24px));max-height:calc(100vh - 96px);overflow-y:auto;padding:8px 10px;gap:4px 12px}   /* 橫放：對照表加寬成兩欄、太高時自己捲動，不被畫面切掉 */
     #wrap{grid-column:1;grid-row:2/4}
     #app>.bar{grid-column:2;grid-row:3;display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:10px}
     #app>.bar #next{flex:none;order:1;justify-content:center;min-width:0}
@@ -438,7 +438,7 @@ let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單�
 // ---- 音效：全部由 Web Audio 即時合成（沒有音檔、沒有授權問題）；預設關閉，玩家按標題列的喇叭才開 ----
 // 音色分兩類：撥弦類（古箏）用在相連、搖一搖、失敗；成就用小鑼與高音鈴；天下一統用古箏刮奏、磬與長笛。
 const SND=(()=>{
-  let ac=null,dry=null,bus=null,noiseBuf=null,on=false,vol=2;const GV=[0,.5,.75,1];   // vol：音量 1 小／2 中（原本的音量）／3 大；GV 是各級的總音量
+  let ac=null,dry=null,bus=null,master=null,noiseBuf=null,on=false,vol=2;const GV=[0,.5,.75,1];   // vol：音量 1 小／2 中（原本的音量）／3 大；GV 是各級的總音量
   const cache=new Map(),last={};
   try{on=localStorage.getItem('sg_sound')==='1';const v=+localStorage.getItem('sg_vol');if(v>=1&&v<=3)vol=v|0;}catch(e){}
   const rat=[1,9/8,5/4,3/2,5/3],pent=(d,root=293.66)=>root*rat[((d%5)+5)%5]*Math.pow(2,Math.floor(d/5));   // 五聲音階
@@ -447,12 +447,13 @@ const SND=(()=>{
     if(ac){if(ac.state!=='running'){try{ac.resume().catch(()=>{});}catch(e){}}return;}   // 含 iOS 通話／鬧鐘打斷後的 interrupted 狀態
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
     ac=new AC();const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ac.destination);
-    dry=ac.createGain();dry.gain.value=on?GV[vol]:0;dry.connect(comp);   // 乾聲：城落下（整體音量 0.75，避免太吵）
-    bus=ac.createGain();bus.gain.value=on?GV[vol]:0;bus.connect(comp);   // 帶迴響：其餘音效
+    master=ac.createGain();master.gain.value=on?GV[vol]/.75:0;master.connect(comp);   // 總音量：乾聲、帶迴響的聲音和迴響尾音都走這一個節點，關掉或調小時尾音也一起收
+    dry=ac.createGain();dry.gain.value=.75;dry.connect(master);   // 乾聲：城落下（整體音量 0.75，避免太吵）
+    bus=ac.createGain();bus.gain.value=.75;bus.connect(master);   // 帶迴響：其餘音效
     try{const kb=ac.createBuffer(1,1,22050),ks=ac.createBufferSource();ks.buffer=kb;ks.connect(ac.destination);ks.start(0);}catch(e){}   // 在手勢裡先播一小段靜音：部分手機要真的有東西送出去，音訊才算啟動
     const conv=ac.createConvolver(),wet=ac.createGain();wet.gain.value=.3;
     {const sr=ac.sampleRate,len=Math.floor(sr*1.0),ib=ac.createBuffer(2,len,sr);for(let c=0;c<2;c++){const d=ib.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);}conv.buffer=ib;}
-    bus.connect(conv);conv.connect(wet);wet.connect(comp);
+    bus.connect(conv);conv.connect(wet);wet.connect(master);
     noiseBuf=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
   }
   function pluckBuf(f,dur,v){   // 撥弦（Karplus-Strong）：像古箏；每個音有 3 種不同的雜訊起音，輪流用，聽起來不會每次都一模一樣
@@ -530,7 +531,7 @@ const SND=(()=>{
     get on(){return on;},
     get vol(){return vol;},
     setVol(n){vol=Math.max(1,Math.min(3,n|0));try{localStorage.setItem('sg_vol',vol);}catch(e){}this.apply();},
-    apply(){try{if(!ac)return;const t=ac.currentTime,g=on?GV[vol]:0;[dry,bus].forEach(x=>{x.gain.cancelScheduledValues(t);x.gain.setTargetAtTime(g,t,.02);});}catch(e){}},   // 關掉聲音時，已經排好、還在響的音效也一起靜音
+    apply(){try{if(!ac||!master)return;const t=ac.currentTime,g=on?GV[vol]/.75:0;master.gain.cancelScheduledValues(t);master.gain.setTargetAtTime(g,t,.02);}catch(e){}},   // 關掉聲音時，已經排好、還在響的音效也一起靜音
     set(v){on=!!v;try{localStorage.setItem('sg_sound',on?'1':'0');}catch(e){}
       try{if(on)ensure();}catch(e){}   // 音訊引擎建立失敗也不拋錯（按鈕狀態照常更新）
       this.apply();
@@ -552,8 +553,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='倒數階段磁力改為漸進';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.66';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 66 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='成就橫幅不被結算框遮住、修正音量與鍵盤';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.67';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 67 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -581,7 +582,8 @@ function init(){
   bestAtStart=bestRead();recShown=false;recVal=0;hideAlert();
   tops=[];pending=[];pendingKeys=new Set();score=0;over=false;cur=null;dropX=W/2;lastDrop=0;fxToken++;resetFx();
   {const sb=document.getElementById('shake');sb.disabled=false;sb.classList.remove('cool','on');sb.style.removeProperty('--cd');sb.title='搖一搖';}
-  achDone=new Set();achProg.clear();noRoomUntil.clear();resetToasts();ptrDown=false;ptrId=null;peek=null;clearTimeout(peekTimer);peekStart=null;roundState='play';shakeReadyStep=0;labelFrame=0;   // 每一局重新開始：本局成就、冷卻表、提示、手勢、輪末狀態全部清空
+  achDone=new Set();achProg.clear();noRoomUntil.clear();resetToasts();document.querySelectorAll('.fly').forEach(e=>e.remove());   // 重來：上一局還在飛的「＋分數」一併清掉
+ ptrDown=false;ptrId=null;peek=null;clearTimeout(peekTimer);peekStart=null;roundState='play';shakeReadyStep=0;labelFrame=0;   // 每一局重新開始：本局成就、冷卻表、提示、手勢、輪末狀態全部清空
   const onContact=e=>{
     for(const p of e.pairs){
       const a=p.bodyA.piece,b=p.bodyB.piece;
@@ -948,7 +950,7 @@ function drawFxFront(now){
     drawStar(x0+34,cy,17);
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.font='bold 13px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif';ctx.fillStyle='#7a4a10';ctx.fillText('成就解鎖'+(b.sub?'　'+b.sub:''),x0+bw/2+14,y0+20);
-    ctx.font='bold 28px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif';ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,248,220,.9)';ctx.strokeText(b.name,x0+bw/2+14,y0+47);
+    ctx.font='bold 28px '+tf;{let fs=28;while(fs>16&&ctx.measureText(b.name).width>bw-96){fs-=2;ctx.font='bold '+fs+'px '+tf;}}ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,248,220,.9)';ctx.strokeText(b.name,x0+bw/2+14,y0+47);
     ctx.fillStyle='#3a2208';ctx.fillText(b.name,x0+bw/2+14,y0+47);
     ctx.font='13px '+tf;ctx.fillStyle='#5a3a0c';b.lines.forEach((ln,i)=>ctx.fillText(ln,x0+bw/2+14,y0+77+i*18));
     ctx.restore();
@@ -966,8 +968,8 @@ function achievementBurst(list,T){
     fx.banners.push({t0,dur,name:a.name,story,sub:(a.y?a.y+' 年':'')+(a._first?(a.y?'・':'')+'首次達成':''),y:BOX_TOP-8});
     addConfetti(W/2,BOX_TOP-8,t0+120,34,[GOLD,GOLD2,'#fff6bf','#ffffff','#e0603f','#4f7cc4','#4f9a5e'],1.5,true);
     fx.flashes.push({t0:t0+100,dur:700,color:'255,226,130',alpha:.35});
-    const names=new Set(a.need||[]);
-    T.pcs.forEach(P=>{if(a.id==='tri'||a.id==='all'||names.has(P.s.n))P.glow={t0:t0+100,dur:1700};});
+    const gn=(a.id==='tri'||a.id==='all')?T.pcs.map(P=>P.s.n):(a.need||[]),gid0=gameId;
+    setTimeout(()=>{if(gid0!==gameId)return;for(const n of gn){const st=STATES.find(x=>x.n===n),P=st&&pieceOf.get(st);if(P&&P.dropped)P.glow={t0:performance.now()+100,dur:1700};}},Math.max(0,t0-now));   // 輪到這張橫幅時才讓相關的城發光（用最新的城物件，不會被後面的排程覆蓋）
     const gid=gameId;setTimeout(()=>{if(gid===gameId&&!over&&roundState!=='won')SND.play('achievement');},Math.max(0,t0-now)+160);   // 剛通關時不疊成就的聲音
   });
   shakeScreen(now,3.5,450);
@@ -1413,7 +1415,7 @@ function winRound(){
   fx.pops.push({text:'天下一統！＋'+win,x:W/2,y:H/2-40,t0:performance.now(),size:30});
   const gid=gameId,rid=roundId;
   setTimeout(()=>{if(gid!==gameId||rid!==roundId||over)return;
-    show('天下一統',`諸城相連，山河重歸一統。\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>init());},1300);
+    show('天下一統',`諸城相連，山河重歸一統。\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>init());},Math.min(9000,Math.max(1300,bannerFree-performance.now()+250)));   // 最後一次相連解鎖的成就橫幅要播完，才跳結算框（上限 9 秒）
 }
 function gameOver(kind){
   over=true;if(roundState!=='won')SND.play('lose');   // 剛通關還在收尾時，不播失敗的聲音
@@ -1522,6 +1524,7 @@ cv.addEventListener('pointercancel',e=>{if(e.pointerId===ptrId){ptrDown=false;pt
 cv.addEventListener('lostpointercapture',e=>{if(e.pointerId===ptrId&&ptrDown){ptrDown=false;ptrId=null;endPeek();}});
 addEventListener('keydown',e=>{
   if(overlayOpen())return;
+  if(e.key===' '&&e.target&&e.target.matches&&e.target.matches('button:focus-visible,a:focus-visible,input,textarea,select,[contenteditable]'))return;   // 用 Tab 聚焦到按鈕時，空白鍵交給按鈕（滑鼠點過的按鈕不算，仍然是丟城）
   if(e.key==='ArrowLeft'){dropX-=20;e.preventDefault();}else if(e.key==='ArrowRight'){dropX+=20;e.preventDefault();}   // 擋掉方向鍵順便捲動頁面
   else if(e.key===' '){if(e.repeat){e.preventDefault();return;}drop();e.preventDefault();   // 按住空白鍵不連續丟城（repeat 事件直接忽略）
 if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();}else return;
@@ -1720,7 +1723,7 @@ let lastT=0,acc=0;
 function frame(ts){
   // 固定 60Hz 物理步長 + 累加器，120Hz 螢幕也不會加速；切回分頁時限制追趕步數
   const dt=lastT?Math.min(ts-lastT,100):0;lastT=ts;acc+=dt;
-  if(overlayOpen())acc=0;                       // 面板開著時不累積補算時間，關閉後才不會一口氣補跑
+  if(overlayOpen()){acc=0;fx.banners.forEach(b=>{b.t0+=dt;});bannerFree+=dt;}   // 面板開著時不累積補算時間，關閉後才不會一口氣補跑；成就橫幅的時鐘也一起暫停，不會在面板後面播完
   if(engine&&!over&&!overlayOpen()){
     if(performance.now()<hitstopUntil)acc=0;      // 相連瞬間的短暫停頓
     else{let n=0;while(acc>=1000/60&&n<4&&!over&&performance.now()>=hitstopUntil){step();acc-=1000/60;n++;}
