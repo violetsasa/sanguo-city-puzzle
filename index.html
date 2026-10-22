@@ -597,7 +597,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='修正手機選難度被切到、連點放大';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.77';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 77 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.78';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 78 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1232,6 +1232,7 @@ function miniMap(a,lit){   // 成就要連的城，畫成小地圖（未解鎖�
   const out=`<div class="mm">${svg}</div>`;mmCache.set(key,out);return out;
 }
 function renderAch(){
+  if(achTab==='run'&&achFilter==='todo'){achFilter='all';const sel0=document.getElementById('achFilter');if(sel0)sel0.value='all';}   // 本局頁沒有「尚未解鎖」（本局解鎖的一定已解鎖過）：從別處進來時也一律退回全部
   const pool=achPool(),n=pool.length,everN=pool.filter(a=>achEver.has(a.id)).length,doneN=pool.filter(a=>achDone.has(a.id)).length;
   document.getElementById('cntRun').textContent=doneN;
   document.getElementById('cntAll').textContent=`${everN} / ${n}`;
@@ -1662,7 +1663,7 @@ function hud(){
   }else{
     cap.textContent='下一城';document.getElementById('nextName').textContent=nx;nextBox.classList.remove('urgent');
   }
-  document.getElementById('nextDot').style.background=cur&&cur.pcs[0]?zcol(cur.pcs[0].s):'#aaa';
+  document.getElementById('nextDot').style.background=cur&&cur.pcs[0]&&nx!=='？'?zcol(cur.pcs[0].s):'#aaa';   // 大霧中名字是「？」，色點也不洩漏州色
   document.getElementById('nextDot').style.display=roundState==='final'?'none':'';   // 倒數時沒有「下一城」，灰色小圓點也不顯示
 }
 function bestRead(){try{const v=Number(localStorage.getItem(bestKey()));return Number.isFinite(v)&&v>0?v:0;}catch(e){return 0;}}   // 只讀不寫
@@ -2093,12 +2094,13 @@ function frame(ts){
   },{passive:false});
   // 按鈕以外的地方（含選難度的卡片：它們在可捲動區裡，上面的按鈕保護不處理）快速連點兩下，iOS 內嵌瀏覽器會把畫面放大：
   // 第二下的 touchend 取消掉就不會放大；單指、單擊、雙指縮放都不受影響，畫布不處理（它本來就只允許雙指縮放）
-  let lastTap=0;
+  let lastTap=0,lastX=-999,lastY=-999;
   document.addEventListener('touchend',e=>{
     if(e.touches.length||e.changedTouches.length!==1)return;
     if(btnAt(e.target)||(e.target.closest&&e.target.closest('canvas')))return;
-    if(e.timeStamp-lastTap<350&&e.cancelable)e.preventDefault();
-    lastTap=e.timeStamp;
+    const t=e.changedTouches[0],near=Math.hypot(t.clientX-lastX,t.clientY-lastY)<40;   // 雙擊放大要點在差不多同一處；點不同的卡片不受影響
+    if(near&&e.timeStamp-lastTap<350&&e.cancelable)e.preventDefault();
+    lastTap=e.timeStamp;lastX=t.clientX;lastY=t.clientY;
   },{passive:false});
 }
 function introHTML(){
@@ -2124,7 +2126,7 @@ function showDiffPick(){   // 第二步：選難度，按「出戰」才真正�
 function openDiffPick(){init();showDiffPick();}   // 結算框的「換難度」：先清掉上一局，直接到第二步選難度
 document.getElementById('ovP').addEventListener('click',e=>{const fc=e.target.closest&&e.target.closest('.fchip');if(fc){FIELD_PICK=fc.dataset.f;try{localStorage.setItem('sg_field',FIELD_PICK);}catch(e2){}init();showDiffPick();return;}   // 指定戰場：重畫這一步並重開一局
   const b=e.target.closest&&e.target.closest('.dcard');if(!b)return;DIFF=b.dataset.d==='hard'?'hard':'normal';try{localStorage.setItem('sg_diff',DIFF);}catch(e2){}init();showDiffPick();});   // 選難度：整局重來並重畫這一步
-{try{DIFF=localStorage.getItem('sg_diff')==='hard'?'hard':'normal';const f=localStorage.getItem('sg_field');if(FIELDS.some(x=>x.id===f))FIELD_PICK=f;}catch(e){}}
+{try{DIFF=localStorage.getItem('sg_diff')==='hard'?'hard':'normal';const f=localStorage.getItem('sg_field');if(DEVMODE&&FIELDS.some(x=>x.id===f))FIELD_PICK=f;}catch(e){}}   // 指定戰場只在 ?dev=1 有效：一般玩家沒有選項可以取消，不能被舊的測試設定卡住
 {const u=new URLSearchParams(location.search).get('field');if(FIELDS.some(x=>x.id===u))FIELD_PICK=u;}   // 網址指定戰場（測試用）
 resize();init();showIntro();
 requestAnimationFrame(frame);
