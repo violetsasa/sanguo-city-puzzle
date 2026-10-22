@@ -596,8 +596,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='困難模式開局戰場公告';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.74';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 74 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='修正連環樓船的風線與貼牆滑動';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.75';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 75 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1989,7 +1989,7 @@ function draw(){
   ctx.setLineDash([10,8]);ctx.strokeStyle='#c4574f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wl(LINE),LINE);ctx.lineTo(wr(LINE),LINE);ctx.stroke();ctx.setLineDash([]);
   ctx.save();clipBoxUp();
   if(cur){const windy=DIFF==='hard'&&evt.phase==='active'&&evt.kind==='wind';ctx.strokeStyle=windy?'rgba(70,110,160,.6)':'rgba(138,106,58,.4)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(dropX,curY+60);
-    if(windy){const t0=WIND.vmax/WIND.a;for(let y=curY+80;y<=BOXB;y+=16){const t=Math.sqrt(2*(y-curY)/0.24),d=t<t0?0.5*WIND.a*t*t:0.5*WIND.vmax*t0+WIND.vmax*(t-t0);ctx.lineTo(Math.min(BOXR-4,Math.max(BOXL+4,dropX+(evt.dir||-1)*d)),y);}}   // 彎線：城往下掉的同時被往西吹（0.24 是實測的下落加速度）
+    if(windy){const t0=WIND.vmax/WIND.a;for(let y=curY+80;y<=BOXB;y+=16){const t=Math.sqrt(2*(y-curY)/0.24),d=t<t0?0.5*WIND.a*t*t:0.5*WIND.vmax*t0+WIND.vmax*(t-t0);ctx.lineTo(Math.min(wr(y)-4,Math.max(wl(y)+4,dropX+(evt.dir||-1)*d)),y);}}   // 彎線：城往下掉的同時被往西吹（0.24 是實測的下落加速度）
     else ctx.lineTo(dropX,BOXB);
     ctx.stroke();ctx.setLineDash([]);}ctx.restore();   // 受風時，輔助線改成斜的（預估會往西偏）   // 落點輔助線先畫，溢出線標籤畫在它上面，兩者不會互相切到
   {
@@ -2026,7 +2026,7 @@ function keepInside(){
     if(y1>BOXB)dy=BOXB-y1;
     if(dx||dy){
       Body.translate(t,{x:dx,y:dy});
-      Body.setVelocity(t,{x:dx?0:t.velocity.x,y:dy&&t.velocity.y>0?0:t.velocity.y});
+      Body.setVelocity(t,{x:dx>0?Math.max(t.velocity.x,0):dx<0?Math.min(t.velocity.x,0):t.velocity.x,y:dy&&t.velocity.y>0?0:t.velocity.y});   // 只去掉朝牆外的水平速度，沿牆滑動的分量保留
     }
   }
 }
