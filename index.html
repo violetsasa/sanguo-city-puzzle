@@ -596,8 +596,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='簡介頁最高分分成普通與困難';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.73';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 73 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='困難模式開局戰場公告';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.74';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 74 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -617,7 +617,7 @@ addEventListener('resize',resize);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 function init(){
-  pickField();fieldChipUntil=performance.now()+3500;setTimeout(()=>updateEvtUI(),3600);resize();
+  pickField();fieldAnnounce=DIFF==='hard';resize();
   document.getElementById('ach').style.display='none';document.getElementById('ov').style.display='none';   // 結算框開著時按外面的「重來」：新局不能被舊結算框蓋住
   engine=Engine.create({gravity:{y:1.1},positionIterations:10,velocityIterations:8});
   // 牆做得很厚，避免快速移動的大塊穿牆
@@ -917,6 +917,7 @@ const PAL_GOLD={g0:'#ffe9a3',g1:GOLD,g2:GOLD2,edge:'#a8552b',head:'#7a4a10',name
 const PAL_EVT={   // 特殊事件的橫幅：預告＝橘紅、東南風＝藍、地鳴＝土褐（和金色的成就橫幅一眼分得出來）
   warn:{g0:'#ffd9b0',g1:'#ff9a3c',g2:'#e8641c',edge:'#8f2d0a',head:'#7a2306',name:'#3a0f02',story:'#5a2208',halo:'255,150,70',shadow:'rgba(120,40,0,.5)',stroke:'rgba(255,236,220,.92)'},
   wind:{g0:'#d6ecff',g1:'#7ab8f0',g2:'#3f8bd0',edge:'#1c5a96',head:'#15406e',name:'#0b2745',story:'#173a60',halo:'140,200,255',shadow:'rgba(20,60,110,.5)',stroke:'rgba(235,246,255,.92)'},
+  field:{g0:'#d8efe0',g1:'#7cc49a',g2:'#3f9a6a',edge:'#1f6b45',head:'#16543a',name:'#0b2f20',story:'#164a33',halo:'120,200,150',shadow:'rgba(10,60,35,.5)',stroke:'rgba(238,252,244,.92)'},
   fog:{g0:'#f0f0f0',g1:'#c9ccd1',g2:'#9aa0a8',edge:'#5a6068',head:'#3d434a',name:'#22262b',story:'#3d434a',halo:'220,224,230',shadow:'rgba(50,55,62,.5)',stroke:'rgba(250,250,252,.92)'},
   flood:{g0:'#c8f0f0',g1:'#4fc0c8',g2:'#1f8a96',edge:'#0c5560',head:'#0a4650',name:'#052a30',story:'#0c4650',halo:'110,210,220',shadow:'rgba(5,60,70,.5)',stroke:'rgba(235,252,252,.92)'},
   quake:{g0:'#ead4b8',g1:'#b88958',g2:'#8b5a30',edge:'#4e2f16',head:'#3d230d',name:'#2a1606',story:'#3d230d',halo:'210,160,100',shadow:'rgba(60,30,10,.55)',stroke:'rgba(250,238,222,.92)'}
@@ -969,6 +970,7 @@ function drawFxBack(now){
   ctx.globalAlpha=1;
 }
 function drawFxFront(now){
+  if(fieldAnnounce&&!overlayOpen()){fieldAnnounce=false;eventBanner('field',FIELD.name,FIELD.tale,FIELD.glyph,'戰場');}
   drawFlood(now);drawFog(now);
   // 彩紙
   fx.confetti=fx.confetti.filter(c=>now-c.t0<c.life);
@@ -993,7 +995,7 @@ function drawFxFront(now){
   let bannerOn=false;
   for(const b of fx.banners){
     const u=(now-b.t0)/b.dur;if(u<0)continue;
-    if(b.head==='特殊事件'&&(over||roundState==='won'))continue;
+    if((b.head==='特殊事件'||b.head==='戰場')&&(over||roundState==='won'))continue;
     bannerOn=true;   // 結束後，事件橫幅不再蓋在結算視窗上
     const inT=RM.matches?1:Math.min(1,u/.18),outT=u>.82?(u-.82)/.18:0,e=1-Math.pow(1-inT,3);
     const bw=Math.min(W-60,380),cx=W/2,tf='"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif';
@@ -1140,9 +1142,9 @@ const STAR2=20,STAR3=40;   // 星級：通關 1 星；倒數剩餘 20 秒以上 
 [
  {id:'h:shu',name:'蜀道不難',map:['成都','漢中','江州'],hint:'在困難的「劍閣棧道」通關',story:'李白嘆「蜀道之難，難於上青天」；你在劍閣天險之上，把山河拼回一統。'},
  {id:'h:wu',name:'橫渡天塹',map:['廣陵','建業'],hint:'在困難的「長江天塹」通關',story:'曹丕臨江觀兵，嘆「固天所以隔南北也」；你卻讓兩岸連成一片。'},
- {id:'h:zhong',name:'逐鹿中原',map:['洛陽','許昌','官渡'],hint:'在困難的「中原」通關',story:'「秦失其鹿，天下共逐之」；你在中原逐鹿，贏得天下。'},
+ {id:'h:zhong',name:'逐鹿中原',map:['洛陽','許昌','官渡'],hint:'在困難的「官渡平原」通關',story:'「秦失其鹿，天下共逐之」；你在中原逐鹿，贏得天下。'},
  {id:'h:ship',name:'連環計成',map:['柴桑','江夏','長沙'],hint:'在困難的「連環樓船」通關',story:'龐統獻連環計，曹操鎖船於江上；你在樓船之上，把山河連成一片。'},
- {id:'h:all3',name:'三戰皆捷',map:TRI_SHOW,hint:'劍閣棧道、長江天塹、中原三個戰場都通關過',story:'棧道、天塹、中原，三處險地你都闖過，天下已在掌中。'},
+ {id:'h:all3',name:'三戰皆捷',map:TRI_SHOW,hint:'劍閣棧道、長江天塹、官渡平原三個戰場都通關過',story:'棧道、天塹、平原，三處險地你都闖過，天下已在掌中。'},
  {id:'h:s2',name:'運籌帷幄',map:['長安','漢中'],hint:'困難通關，且倒數剩餘 '+STAR2+' 秒以上',story:'劉邦稱張良「運籌策帷帳之中，決勝於千里之外」；你以從容的步調拼回天下。'},
  {id:'h:s3',name:'神機妙算',map:['襄陽','宛','成都'],hint:'困難通關，且倒數剩餘 '+STAR3+' 秒以上',story:'世人稱諸葛亮神機妙算；你在變局之中仍然游刃有餘。'}
 ].forEach(a=>ACH_DEF.push({...a,need:[],special:true,hardOnly:true}));
@@ -1464,10 +1466,10 @@ const clusterMax=()=>Math.max(0,...tops.map(t=>t.pcs.length));
 const WIND={startCalm:8,len:3,gapMin:8,gapMax:13,a:0.3,vmax:2.2,maxSteps:240,slide:40,pool:1.0,poolSteps:60,minLeft:6};   // 風強（最強檔）：落下的城幾乎一落下就達到 2.2 px/步的側向速度；另外每座受風的城落下時會吹一陣陣風（poolSteps 步），池子裡所有的城都被往西推（pool＝推力加速度，px/步²）；落點輔助線依 a、vmax 畫彎線
 // 戰場：困難難度每局開始時隨機抽一種箱子形狀（只在 init() 時決定，局中不會動牆）；普通難度固定是平原
 const FIELDS=[
-  {id:'plain',name:'中原',note:'標準箱子',l:50,r:550,line:230,w:0.2},   // w：隨機抽戰場的權重（中原是普通地圖，少抽一點）
-  {id:'gorge',name:'劍閣棧道',note:'蜀道險窄，箱子較窄',l:100,r:500,line:230},
-  {id:'river',name:'長江天塹',note:'江面遼闊，箱子較矮',l:50,r:550,line:360},
-  {id:'ship',name:'連環樓船',note:'船身口寬底窄',l:50,r:550,line:230,sl:75,sr:-75}   // sl／sr：左右牆到箱底往內（正）或往外（負）移的距離＝箱子不是方的
+  {id:'plain',name:'官渡平原',note:'標準箱子',l:50,r:550,line:230,w:0.2,glyph:'渡',tale:'官渡相持，火燒烏巢，一戰定北方。'},   // w：隨機抽戰場的權重（中原是普通地圖，少抽一點）
+  {id:'gorge',name:'劍閣棧道',note:'蜀道險窄，箱子較窄',l:100,r:500,line:230,glyph:'險',tale:'劍閣崢嶸，一夫當關，萬夫莫開。'},
+  {id:'river',name:'長江天塹',note:'江面遼闊，箱子較矮',l:50,r:550,line:360,glyph:'江',tale:'長江浩蕩，天塹橫陳，隔開南北。'},
+  {id:'ship',name:'連環樓船',note:'船身口寬底窄',l:50,r:550,line:230,sl:75,sr:-75,glyph:'船',tale:'鐵鎖連舟，首尾相接，樓船列陣江上。'}   // sl／sr：左右牆到箱底往內（正）或往外（負）移的距離＝箱子不是方的
 ];
 const DEVMODE=/[?&]dev=1(&|$)/.test(location.search);   // 測試用：網址加 ?dev=1 才顯示戰場選項
 let FIELD=FIELDS[0],FIELD_PICK='random';   // FIELD_PICK：選難度時指定的戰場（random 隨機）
@@ -1486,9 +1488,9 @@ const wl=y=>BOXL+SLL*Math.min(1,boxU(y)),wr=y=>BOXR+SLR*Math.min(1,boxU(y));   /
 function clipBoxUp(){ctx.beginPath();ctx.moveTo(wl(0),0);ctx.lineTo(wl(BOXB),BOXB);ctx.lineTo(wr(BOXB),BOXB);ctx.lineTo(wr(0),0);ctx.closePath();ctx.clip();}   // 箱子加上箱口以上的區域：落點輔助線不畫到斜牆外面
 function boxPath(){ctx.beginPath();ctx.moveTo(BOXL,BOX_TOP);ctx.lineTo(wl(BOXB),BOXB);ctx.lineTo(wr(BOXB),BOXB);ctx.lineTo(BOXR,BOX_TOP);ctx.closePath();}
 const WIND_NAME={'-1':'借東風','1':'西涼烈風'};   // 風向 -1＝往西吹（赤壁借東風）、1＝往東吹（馬超西涼鐵騎）
-let fieldChipUntil=0;   // 困難：開局先顯示戰場名稱 3.5 秒，之後標籤只在事件期間出現
+let fieldAnnounce=false;   // 困難：這一局開始、沒有視窗蓋著時，公告一次戰場名稱（用成就橫幅的樣式）
 let evt={phase:'calm',left:WIND.startCalm,kind:'wind',dir:-1},shakeCount=0,gustUntil=0,gustDir=-1,quakeAt=0,floodAt=0,floodT0=0,fogA=0;
-function eventBanner(kind,name,story,glyph){
+function eventBanner(kind,name,story,glyph,head){
   const now=performance.now(),dur=2200;   // 事件橫幅不排隊：玩家點很快時，正式通知也要立刻出現（舊的事件橫幅直接換掉，進行中的成就橫幅快速收掉，之後的成就橫幅排在它後面）
   fx.banners=fx.banners.filter(x=>x.head==='特殊事件'?false:true);
   fx.banners=fx.banners.filter(x=>now<x.t0+x.dur);   // 先清掉已經播完的
@@ -1497,7 +1499,7 @@ function eventBanner(kind,name,story,glyph){
   let cur=t0+dur+120;   // 還沒開始的成就橫幅，依原順序排到事件橫幅後面
   fx.banners.filter(x=>now<x.t0).sort((a,b)=>a.t0-b.t0).forEach(x=>{x.t0=cur;cur+=x.dur+120;});
   bannerFree=Math.max(cur,t0+dur+120);
-  fx.banners.push({t0,dur,name,story,head:'特殊事件',sub:'',y:BOX_TOP-8,pal:PAL_EVT[kind],glyph});
+  fx.banners.push({t0,dur,name,story,head:head||'特殊事件',sub:'',y:BOX_TOP-8,pal:PAL_EVT[kind],glyph});
   shakeScreen(now,2.5,350);
 }
 function evtReset(){evt={phase:'calm',left:WIND.startCalm,kind:'wind'};quakeAt=0;floodAt=0;floodT0=0;fogA=0;evtBag=[];updateEvtUI();}
@@ -1531,7 +1533,6 @@ function updateEvtUI(){   // 標籤只放短短一行（窄螢幕也放得下）
   if(DIFF!=='hard'){e.className='';e.textContent='';return;}
   if(evt.phase==='warn'){e.className='show warn';e.textContent=evt.kind==='quake'?'⚠ 預告：洛陽地動':evt.kind==='flood'?'⚠ 預告：水淹七軍':evt.kind==='fog'?'⚠ 預告：大霧漫江':'⚠ 預告：'+WIND_NAME[evt.dir];}
   else if(evt.phase==='active'){e.className='show active';e.textContent=evt.kind==='quake'?'▲ 洛陽地動　池子即將上彈':evt.kind==='flood'?'≈ 水淹七軍　水即將漲起':evt.kind==='fog'?'≋ 大霧漫江　還有 '+evt.left+' 座城在霧中':(evt.dir<0?'◀ ':'▶ ')+WIND_NAME[evt.dir]+'　還有 '+evt.left+' 座城受風';}
-  else if(FIELD.id!=='plain'&&performance.now()<fieldChipUntil){e.className='show';e.textContent='戰場：'+FIELD.name;}
   else{e.className='';e.textContent='';}
 }
 const QUAKE={delay:25,vyMin:7,vyMax:12,vx:4,graceSteps:150};   // 地鳴：每塊城往上彈的速度（比搖一搖更大一些）；彈起後有 2.5 秒不計溢出
