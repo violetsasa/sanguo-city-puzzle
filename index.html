@@ -598,8 +598,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='成就標籤分色與篩選選項統一四字';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.80';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 80 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='修正火燒洛陽的重建與計分';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.81';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 81 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -883,7 +883,8 @@ function startMergeFx(sa,sb,T){
   for(let i=0;i<10;i++){const q=pts[(r()*pts.length)|0];fx.stars.push({x:q.x,y:q.y,vx:(r()-.5)*30,vy:-(34+r()*44),s:3.2+r()*2.8,t0:go+r()*260});}
   const single=sa.length===1&&sb.length===1;
   fx.pops.push({text:single?`${sa[0].n}＋${sb[0].n}`:`${cnNum(n)}城相連`,x:Math.max(BOXL+60,Math.min(BOXR-60,cx)),y:cy-22,t0:go,size:n===2?17:n<6?19:21});
-  const reborn=[...sa,...sb].filter(x=>burnedSt.has(x));reborn.forEach(x=>burnedSt.delete(x));   // 火燒後重新連回去的第一次：不加分（不能靠被燒來刷分）
+  const all=[...sa,...sb],reborn=all.filter(x=>burnedSt.has(x));
+  if(all.some(x=>!burnedSt.has(x)))reborn.forEach(x=>burnedSt.delete(x));   // 火燒後重新連回去的第一次：不加分（不能靠被燒來刷分）；被燒的城先彼此相連時標記保留，接回沒被燒的城才清除
   const pts2=reborn.length?0:n*n*10;score+=pts2;pendingFly+=pts2;   // 邏輯分數立刻入帳；畫面上的數字等飛分抵達才更新
   if(pts2>0)flyScore(pts2,cx,cy,go);
   mergeBurst(n,cx,cy,pts,T,go);if(n<STATES.length)SND.play('merge',n);   // 連成整張地圖那一下由通關的聲音負責，不疊兩個
@@ -1361,6 +1362,9 @@ function shrinkToFit(T){
   // 寬、高都不可超過箱寬的 90%；並確保旋轉成任何角度都放得進箱子（外接圓直徑不超過箱寬）
   const k=Math.min(1,lim/w,lim/h,((BOXR-BOXL)-8)/(2*R));
   if(k>=1)return;
+  scaleTop(T,k);
+}
+function scaleTop(T,k){
   Body.scale(T,k,k,T.position);          // 以質心為中心縮放所有零件，並重算質量
   fixInertia(T);
   for(const P of T.pcs){                  // 繪圖用的相對座標同步縮放
@@ -1459,7 +1463,7 @@ function drop(){
   tops.push(b);Composite.add(engine.world,b);
   b.pcs.forEach(P=>{P.dropStep=simStep;});
   if(simStep<lastShakeStep+SHAKE_GRACE_STEPS)b.graceUntil=lastShakeStep+SHAKE_GRACE_STEPS;   // 搖動餘波中落下的城，也在那一次搖動的免死期內（同原版）
-  cur=null;placed++;score+=10;evtAdvance();hud();SND.play('drop');
+  cur=null;placed++;if(!burnedSt.has(b.pcs[0].s))score+=10;evtAdvance();hud();SND.play('drop');
   lastDropStep=simStep;
   const gid=gameId,rid=roundId;
   if(queue.length)setTimeout(()=>{if(gid===gameId&&rid===roundId&&!over)nextPiece();},450);
@@ -1514,7 +1518,8 @@ const FOG_LEN=5,EVT_LEN={quake:1,flood:1,fog:FOG_LEN,fire:1};
 const EVT_BAG=['wind','wind','quake','flood','fog','fire'];   // 抽事件用「籤袋」：袋子抽完才洗牌重裝，所以每種事件出現的頻率平均（不會一直遇不到某一種，但一局事件次數有限，不保證每種都遇到）；同一種不連續出現（袋裡只剩和上一個相同的，會提前補一袋）
 let evtBag=[];
 function pickKind(last){
-  const fill=()=>{const b=EVT_BAG.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}evtBag.push(...b);};
+  const fill=()=>{const b=EVT_BAG.filter(k=>!(k==='fire'&&evtBag.includes('fire')));   // 洛陽還沒落下時，袋子裡等著的火燒洛陽最多留一張，不會積欠一堆
+    for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}evtBag.push(...b);};
   if(!evtBag.length)fill();
   const ok=k=>k!==last&&(k!=='fire'||fireEligible());   // 火燒洛陽：洛陽已經在池子裡才抽得到，不然留在袋子裡等下一次
   let i=evtBag.findIndex(ok);
@@ -1545,28 +1550,35 @@ function updateEvtUI(){   // 標籤只放短短一行（窄螢幕也放得下）
   else if(evt.phase==='active'){e.className='show active';e.textContent=evt.kind==='quake'?'▲ 洛陽地動　池子即將上彈':evt.kind==='fire'?'🔥 火燒洛陽　幾座城即將被燒毀':evt.kind==='flood'?'≈ 水淹七軍　水即將漲起':evt.kind==='fog'?'≋ 大霧漫江　還有 '+evt.left+' 座城在霧中':(evt.dir<0?'◀ ':'▶ ')+WIND_NAME[evt.dir]+'　還有 '+evt.left+' 座城受風';}
   else{e.className='';e.textContent='';}
 }
-const FIRE={delay:25,count:3};   // 火燒洛陽：這座城落下後 25 步起火，燒掉洛陽和離它最近的共 3 座城（燒掉的城回到待落下的城池）
+const FIRE={delay:25,count:3,graceSteps:120};   // 火燒洛陽：這座城落下後 25 步起火，燒掉洛陽和離它最近的共 3 座城（燒掉的城回到待落下的城池）
 function fireEligible(){
   if(DIFF!=='hard'||over||roundState!=='play'||queue.length<4)return false;
   const lo=STATES.find(x=>x.n==='洛陽'),P=lo&&pieceOf.get(lo);
   return !!(P&&P.dropped&&P.top&&tops.includes(P.top));
 }
 // 把一組城（comp）依真實地理重新焊成新的一塊，位置接在原本那組上（某座參考城的世界座標不變）
-function rebuildSubset(old,comp){
+function rebuildSubset(old,comp,siblings){
   const states=comp.map(p=>p.s);
   const before=new Map(comp.map(p=>[p.s,{w:pieceWorld(p),k:p.k}]));
   const k=states.reduce((m,x)=>Math.min(m,x.sc),1e9)*Math.max(MIN_SHRINK,Math.pow(REGION_SHRINK,regionsDone(states)));
   const bs=states.map(s=>{const raw=s.p.map(q=>proj(q,k)),c=Vertices.centre(raw);return makePiece(s,c.x,c.y,k);});
   const T=fuse(bs);
-  T.graceUntil=old.graceUntil||0;T.overSteps=old.overSteps||0;
+  T.graceUntil=Math.max(old.graceUntil||0,simStep+FIRE.graceSteps);T.overSteps=old.overSteps||0;   // 重建的那塊如果被上提到溢出線以上，給 2 秒落回去的時間（矮箱子的長江天塹實測會直接判溢出）
   const t0=Math.max(...comp.map(p=>p.t0)),ds=Math.max(...comp.map(p=>p.dropStep||0));
   T.pcs.forEach(p=>{p.dropped=true;p.t0=t0;p.dropStep=ds;pieceOf.set(p.s,p);});
   Body.setAngle(T,old.angle);Body.setPosition(T,old.position);
+  shrinkToFit(T);   // 先縮放，再用參考城對齊（縮放會以質心為中心，放在對齊之後會把參考城又推動）
   const ref=T.pcs[0],w0=before.get(ref.s).w,w1=pieceWorld(ref);
   Body.translate(T,{x:w0.c.x-w1.c.x,y:w0.c.y-w1.c.y});
-  Body.setVelocity(T,old.velocity);Body.setAngularVelocity(T,old.angularVelocity);
-  shrinkToFit(T);
-  placeFree(T,tops.filter(x=>x!==old));   // 放不下就留在原地，交給物理推開
+  // 底部不可低於原本那一整塊的最低點（否則會陷進地板或下方的城），必要時整組上提（同 rebuildGroup）
+  const bottom=o=>{let m=-1e9;o.parts.forEach((p,i)=>{if(o.parts.length>1&&i===0)return;for(const v of p.vertices)if(v.y>m)m=v.y;});return m;};
+  const dy=bottom(T)-bottom(old);if(dy>0)Body.translate(T,{x:0,y:-dy});
+  // 拆開後每塊的質心速度＝舊質心速度＋旋轉造成的差（ω×r），拆分瞬間才不會突然變速
+  const r={x:T.position.x-old.position.x,y:T.position.y-old.position.y},w=old.angularVelocity;
+  Body.setVelocity(T,{x:old.velocity.x-w*r.y,y:old.velocity.y+w*r.x});Body.setAngularVelocity(T,w);
+  // 找位置：先原地、再左右微移、往上抬；同一舊塊拆出的其他新塊（siblings）也要避開。找不到就再縮小一點重試（最多三次）
+  const others=tops.filter(x=>x!==old).concat(siblings||[]);
+  for(let tries=0;tries<4&&!placeFree(T,others);tries++){if(tries<3)scaleTop(T,0.94);}
   const now=performance.now();
   T.pcs.forEach(P=>{const b=before.get(P.s);if(b)P.anim={t0:now,w:b.w,r:b.k/P.k};});
   return T;
@@ -1594,7 +1606,7 @@ function doFire(){
       for(let i=0;i<comp.length;i++)for(const q of rest)if(!seen.has(q)&&isAdj(comp[i].s,q.s)){seen.add(q);comp.push(q);}
       comps.push(comp);
     }
-    const news=comps.map(c=>rebuildSubset(t,c));
+    const news=[];comps.forEach(c=>news.push(rebuildSubset(t,c,news)));   // 後面的新塊要避開前面已經定位的
     Composite.remove(engine.world,t);tops=tops.filter(x=>x!==t);
     news.forEach(T=>{Composite.add(engine.world,T);tops.push(T);});
   }
