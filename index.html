@@ -596,8 +596,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='困難模式新增火燒洛陽';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.79';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 79 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='降低手機發熱';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.80';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 80 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -606,7 +606,7 @@ const pieceOf=new Map();                                           // 州 → �
 const BOT_GAP=22;
 function resize(){
   const w=cv.parentElement,aw=w.clientWidth,ah=w.clientHeight-BOT_GAP;if(!(aw>0&&ah>0))return;   // 底部多留一點空，棋盤不要貼著下一城那一列   // 容器還沒有尺寸（隱藏中）：先不排版，避免算出負的倍率
-  const k=Math.min(aw/VW,ah/VH),d=devicePixelRatio||1;
+  const k=Math.min(aw/VW,ah/VH),d=Math.min(devicePixelRatio||1,2);   // 像素密度最多算 2：3 倍螢幕的畫布像素是 2 倍的 2.25 倍，畫起來又慢又燙，字和邊緣差別看不太出來
   cv.style.width=VW*k+'px';cv.style.height=VH*k+'px';cv.style.left=(aw-VW*k)/2+'px';cv.style.top=Math.max(0,(ah-VH*k)/2)+'px';   // 左右、上下都置中，上下留白才平均
   cv.width=VW*k*d;cv.height=VH*k*d;
   document.documentElement.style.setProperty('--bl',cv.getBoundingClientRect().left+'px');   // 棋盤左緣位置：左側州色欄不超過它
@@ -1711,6 +1711,7 @@ function updateZoneProg(){
   });
 }
 function hud(){
+  drawDirty=true;
   document.getElementById('prog').textContent=`${placed} / ${STATES.length}`;
   document.getElementById('clu').textContent=clusterMax();
   const shown=Math.max(0,score-pendingFly);
@@ -2112,8 +2113,18 @@ function checkOverflow(){
     if(t.overSteps>OVER_HOLD_STEPS){gameOver();return;}
   }
 }
+// 池子是否「幾乎不動」：所有城連續約 0.75 秒速度都很小，而且沒有特殊事件。只用來決定畫面要不要全速重畫，物理每一步照算。
+// （試過靜止時隔步算物理或整個停掉：停下來的城每一步仍有亞像素微調，省掉之後同一局的結果會不一樣，所以不動物理）
+let calmSteps=0,slowSteps=0;   // calmSteps：連續幾步幾乎不動；slowSteps：連續幾步沒有快速移動（慢慢漂移的磁吸、貼牆滑動算「慢」）
+const CALM_SPEED=0.08,CALM_SPIN=0.004,CALM_AFTER=45,SLOW_SPEED=0.5,SLOW_AFTER=20;
+function eventsQuiet(){return DIFF!=='hard'||(evt.phase!=='active'&&!floodAt&&floodLevel()===0&&!quakeAt&&!fireAt&&simStep>=gustUntil&&!tops.some(t=>t.windOn&&simStep<(t.windEnd||0)));}
+function engineStep(){
+  Engine.update(engine,1000/60);
+  let moving=false,fast=false;for(const t of tops){if(t.speed>CALM_SPEED||t.angularSpeed>CALM_SPIN)moving=true;if(t.speed>SLOW_SPEED||t.angularSpeed>SLOW_SPEED/60){fast=true;break;}}
+  const quiet=eventsQuiet();calmSteps=(moving||!quiet)?0:calmSteps+1;slowSteps=(fast||!quiet)?0:slowSteps+1;
+}
 function step(){
-  simStep++;if(DIFF==='hard'){if(quakeAt&&simStep>=quakeAt){quakeAt=0;doQuake();}if(fireAt&&simStep>=fireAt){fireAt=0;doFire();}applyWind();applyFlood();}Engine.update(engine,1000/60);magnetScan();mergePending();keepInside();
+  simStep++;if(DIFF==='hard'){if(quakeAt&&simStep>=quakeAt){quakeAt=0;doQuake();}if(fireAt&&simStep>=fireAt){fireAt=0;doFire();}applyWind();applyFlood();}engineStep();magnetScan();mergePending();keepInside();
   if(roundState==='final')roundTick();   // 先判通關／時限，再判溢出：最後一次合併剛好完成全圖時，同一步就算越線也算通關
   if(!over&&roundState!=='won')checkOverflow();   // 已通關就不再改判失敗（收尾 1.3 秒內地圖越線也一樣）
   const sb=document.getElementById('shake');
@@ -2132,8 +2143,18 @@ function frame(ts){
     else{let n=0;while(acc>=1000/60&&n<4&&!over&&performance.now()>=hitstopUntil){step();acc-=1000/60;n++;}
     if(n===4)acc=0;}
   }
-  draw();requestAnimationFrame(frame);
+  // 畫面更新頻率：有快速動靜（城在掉、特效、剛操作過、倒數）才全速重畫，而且最多約 60 張／秒（120Hz 螢幕不必畫 120 張）；
+  // 只剩慢慢漂移約 30 張／秒；完全靜止、沒人操作降到 10 張／秒；面板蓋著降到 4 張／秒。任何狀態改變（drawDirty）一律立刻補畫一張。
+  const ov=overlayOpen();if(ov!==prevOv){prevOv=ov;drawDirty=true;}
+  const fxAny=fx.stars.length||fx.pops.length||fx.rings.length||fx.glints.length||fx.confetti.length||fx.flashes.length||fx.banners.length||fx.shake||peek;
+  const hot=drawDirty||fxAny||(!ov&&(ts-lastInputTs<1500||slowSteps<SLOW_AFTER||roundState==='final'||(DIFF==='hard'&&(evt.phase!=='calm'||fogA>0||floodLevel()>0))));
+  const gap=hot?12:ov?250:calmSteps>=CALM_AFTER?100:33;   // 全速（約 60 張）／慢慢漂移（約 30 張）／完全靜止（10 張）／面板蓋著（4 張）
+  if(drawDirty||ts-lastDrawTs>=gap){draw();lastDrawTs=ts;drawDirty=false;}
+  requestAnimationFrame(frame);
 }
+let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;
+['pointerdown','pointermove','pointerup','keydown','touchstart','touchmove','wheel'].forEach(ev=>addEventListener(ev,()=>{lastInputTs=performance.now();drawDirty=true;},{passive:true,capture:true}));
+addEventListener('resize',()=>{drawDirty=true;});document.addEventListener('visibilitychange',()=>{drawDirty=true;});
 // iPhone 的雙擊／連點放大：touch-action 在部分內嵌瀏覽器（例如 Discord、LINE）擋不住，所以按鈕上的觸控在 touchstart 就取消瀏覽器的預設手勢。
 // 取消後瀏覽器不會再補發 click，所以按鈕由 touchend 自己觸發。只處理「單指落在按鈕上」：其他地方（畫布、背景、可捲動區域）完全不干涉，雙指縮放照常可用。
 {
