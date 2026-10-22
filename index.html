@@ -208,7 +208,9 @@
   .tabs button b{font-variant-numeric:tabular-nums;margin-left:4px}
   .tabs button.on{background:var(--line);color:var(--panel)}
   #achFilter{flex:0 1 150px;min-width:104px;min-height:36px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;font-weight:normal;cursor:pointer;text-overflow:ellipsis}   /* 篩選放在標題旁邊，小而不搶眼 */
-  .ai .tag.hard{background:var(--accent)}
+  .ai .tag.kind{background:transparent;color:var(--ink);border:1px solid var(--line);padding:0 6px}   /* 類別（普通／困難）＝空心框；狀態（本局、曾達成）＝實心色塊，兩種一眼分得出來 */
+  .ai .tag.kind.hard{color:var(--accent);border-color:var(--accent);background:rgba(168,85,43,.1)}
+  .ai .tag.ever{background:#5f8f4a;color:#fff}
   #next.urgent{border-color:#c4574f;color:#a63a32}   /* 倒數最後 10 秒轉紅 */
   .ach-note{font-size:12px;opacity:.65;margin:0 2px 4px}
   .ach-bar{display:flex;align-items:center;gap:8px;margin:0 2px 6px}   /* 說明文字與「清除累計紀錄」同一列 */
@@ -596,8 +598,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='困難模式新增火燒洛陽';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.79';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 79 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='成就標籤分色與篩選選項統一四字';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.80';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 80 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1206,7 +1208,7 @@ function grantSpecial(ids){   // 困難通關：依戰場與星級解鎖困難�
   saveAch();hud();achievementBurst(fresh,T||{pcs:[]});renderAch();
 }
 let achTab='all',achFilter='all';
-const ACH_FILTERS=[['all','全部成就'],['todo','尚未解鎖'],['done','已解鎖'],['normal','普通成就'],['hard','困難成就'],['hist','歷史名場面'],['zone','各州平定'],['fac','勢力與天下一統'],['ro','含《三國演義》情節']];
+const ACH_FILTERS=[['all','全部成就'],['todo','尚未解鎖'],['done','已經解鎖'],['normal','普通成就'],['hard','困難成就'],['hist','歷史場面'],['zone','各州平定'],['fac','勢力一統'],['ro','演義情節']];
 const achMatch=(f,a)=>f==='all'?true:f==='todo'?!achEver.has(a.id):f==='done'?achEver.has(a.id):f==='normal'?!a.hardOnly:f==='hard'?!!a.hardOnly:f==='hist'?!a.auto&&!a.hardOnly:f==='zone'?a.id.startsWith('z:'):f==='fac'?(a.id.startsWith('f:')||a.id==='tri'||a.id==='all'):f==='ro'?!!a.ro:true;
 {const sel=document.getElementById('achFilter');if(sel){sel.innerHTML=ACH_FILTERS.map(f=>`<option value="${f[0]}">${f[1]}</option>`).join('');sel.onchange=()=>{achFilter=sel.value;renderAch();};}}
 const RANKS=[[0,'布衣'],[5,'亭長'],[14,'縣令'],[26,'太守'],[40,'州牧'],[56,'丞相']];   // 依累計解鎖數給稱號；全部集滿是「天下一統」
@@ -1247,10 +1249,10 @@ function renderAch(){
   const list=document.getElementById('achList'),noteTxt='普通成就：這幾座城連在同一片就算，中間夾著別的城也可以；困難成就：依卡片所列的通關條件。',bar=(extra,clr)=>'<div class="ach-bar"><span class="ach-note">'+extra+noteTxt+'</span>'+(clr?'<button id="achClear">清除累計紀錄</button>':'')+'</div>';
   const progOf=a=>{const p=achProg.get(a.id),t=a.id==='tri'?3:a.need.length;return p&&t?`<div class="prog">本局最多連了 ${p} / ${t}${a.id==='tri'?' 個勢力':' 座'}</div>`:'';};
   const card=a=>{
-    const need=needOf(a),yr=a.y?` <span class="need">${a.yl||a.y} 年</span>`:'',ro=(a.ro?'<span class="tag ro" title="含《三國演義》情節">演義</span>':'')+(a.hardOnly?'<span class="tag hard">困難</span>':'<span class="tag">普通</span>');
+    const need=needOf(a),yr=a.y?` <span class="need">${a.yl||a.y} 年</span>`:'',ro=(a.ro?'<span class="tag ro" title="含《三國演義》情節">演義</span>':'')+(a.hardOnly?'<span class="tag kind hard">困難</span>':'<span class="tag kind">普通</span>');
     if(achDone.has(a.id))return `<div class="ai now">${miniMap(a,true)}<div class="tx"><b>★ ${a.name}</b>${yr}${ro}<span class="tag now">本局</span><div>${a.story}</div><div class="need">${need}</div></div></div>`;
-    if(achEver.has(a.id))return `<div class="ai ever">${miniMap(a,true)}<div class="tx"><b>☆ ${a.name}</b>${yr}${ro}<span class="tag">曾達成</span><div>${a.story}</div><div class="need">${need}</div>${progOf(a)}</div></div>`;
-    return `<div class="ai lock">${miniMap(a,false)}<div class="tx"><b>？？？${a.auto?'（'+a.name+'）':''}</b>${a.hardOnly?'<span class="tag hard">困難</span>':'<span class="tag">普通</span>'}<div class="need">${need}</div>${progOf(a)}</div></div>`;
+    if(achEver.has(a.id))return `<div class="ai ever">${miniMap(a,true)}<div class="tx"><b>☆ ${a.name}</b>${yr}${ro}<span class="tag ever">曾達成</span><div>${a.story}</div><div class="need">${need}</div>${progOf(a)}</div></div>`;
+    return `<div class="ai lock">${miniMap(a,false)}<div class="tx"><b>？？？${a.auto?'（'+a.name+'）':''}</b>${a.hardOnly?'<span class="tag kind hard">困難</span>':'<span class="tag kind">普通</span>'}<div class="need">${need}</div>${progOf(a)}</div></div>`;
   };
   {const sd=document.getElementById('side'),got=ACH_DEF.filter(a=>achDone.has(a.id));
    sd.innerHTML=rankHTML()+`<div class="hs"><span class="lb">歷史最高分${DIFF==='hard'?'（困難）':''}</span><span class="nm" id="sideBest">${(v=>v?v.toLocaleString('en-US'):'—')(Math.max(bestAtStart||bestRead(),recVal))}</span></div><div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.yl||a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
