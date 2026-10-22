@@ -462,6 +462,7 @@ const zcol=s=>ZCOL[s.z]||ZNEUT;
 
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 const VX=34,VY=40,VW=532,VH=644;   // 可視範圍：只顯示箱子與預覽區，裁掉四周多餘留白，同樣的畫面裡整個遊戲區可以畫得更大（物理座標不變）
+let SLL=0,SLR=0;   // 左右牆從箱口到箱底的位移（0＝直牆）
 let BOXL=50,BOXR=550;   // 箱子左右邊界（箱子置中，寬度可調；改寬度要連同 VX／VW 一起改）
 const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30;
 let LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
@@ -586,8 +587,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='難度選擇：多變的戰場與星級（原型）';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.70';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 70 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='困難模式：連環樓船戰場與成就篩選';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.71';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 71 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -613,6 +614,11 @@ function init(){
   // 牆做得很厚，避免快速移動的大塊穿牆
   const wall=(x,y,w,h)=>Bodies.rectangle(x,y,w,h,{isStatic:true,friction:.6});
   const T=300;
+  if(SLL||SLR){   // 斜牆：沿著牆線放一塊轉過角度的厚板，內側面剛好貼在牆線上
+    const slant=(x0,x1,sign)=>{const dx=x1-x0,dy=BOXB-BOX_TOP,len=Math.hypot(dx,dy),nx=sign*(-dy)/len,ny=sign*dx/len;
+      const b=Bodies.rectangle((x0+x1)/2+nx*T/2,(BOX_TOP+BOXB)/2+ny*T/2,len+900,T,{isStatic:true,friction:.6});Body.setAngle(b,Math.atan2(dy,dx));return b;};
+    Composite.add(engine.world,[wall(W/2,BOXB+T/2,W+2*T,T),slant(BOXL,wl(BOXB),1),slant(BOXR,wr(BOXB),-1)]);
+  }else
   Composite.add(engine.world,[wall(W/2,BOXB+T/2,W+2*T,T),wall(BOXL-T/2,H/2,T,H*3),wall(BOXR+T/2,H/2,T,H*3)]);
   gameId++;roundId++;simStep=0;pendingFly=0;shakeLockUntil=0;lastShakeStep=-1e9;hitstopUntil=0;acc=0;pieceOf.clear();
   bestAtStart=bestRead();recShown=false;recVal=0;hideAlert();
@@ -1126,6 +1132,7 @@ const STAR2=20,STAR3=40;   // 星級：通關 1 星；倒數剩餘 20 秒以上 
  {id:'h:shu',name:'蜀道不難',map:['成都','漢中','江州'],hint:'在困難的「劍閣棧道」通關',story:'李白嘆「蜀道之難，難於上青天」；你在劍閣天險之上，把山河拼回一統。'},
  {id:'h:wu',name:'橫渡天塹',map:['廣陵','建業'],hint:'在困難的「長江天塹」通關',story:'曹丕臨江觀兵，嘆「固天所以隔南北也」；你卻讓兩岸連成一片。'},
  {id:'h:zhong',name:'逐鹿中原',map:['洛陽','許昌','官渡'],hint:'在困難的「中原」通關',story:'「秦失其鹿，天下共逐之」；你在中原逐鹿，贏得天下。'},
+ {id:'h:ship',name:'連環計成',map:['柴桑','江夏','長沙'],hint:'在困難的「連環樓船」通關',story:'龐統獻連環計，曹操鎖船於江上；你在樓船之上，把山河連成一片。'},
  {id:'h:all3',name:'三戰皆捷',map:TRI_SHOW,hint:'劍閣棧道、長江天塹、中原三個戰場都通關過',story:'棧道、天塹、中原，三處險地你都闖過，天下已在掌中。'},
  {id:'h:s2',name:'運籌帷幄',map:['長安','漢中'],hint:'困難通關，且倒數剩餘 '+STAR2+' 秒以上',story:'劉邦稱張良「運籌策帷帳之中，決勝於千里之外」；你以從容的步調拼回天下。'},
  {id:'h:s3',name:'神機妙算',map:['襄陽','宛','成都'],hint:'困難通關，且倒數剩餘 '+STAR3+' 秒以上',story:'世人稱諸葛亮神機妙算；你在變局之中仍然游刃有餘。'}
@@ -1448,17 +1455,27 @@ const clusterMax=()=>Math.max(0,...tops.map(t=>t.pcs.length));
 const WIND={startCalm:8,len:3,gapMin:8,gapMax:13,a:0.3,vmax:2.2,maxSteps:240,slide:40,pool:1.0,poolSteps:60,minLeft:6};   // 風強（最強檔）：落下的城幾乎一落下就達到 2.2 px/步的側向速度；另外每座受風的城落下時會吹一陣陣風（poolSteps 步），池子裡所有的城都被往西推（pool＝推力加速度，px/步²）；落點輔助線依 a、vmax 畫彎線
 // 戰場：困難難度每局開始時隨機抽一種箱子形狀（只在 init() 時決定，局中不會動牆）；普通難度固定是平原
 const FIELDS=[
-  {id:'plain',name:'中原',note:'標準箱子',l:50,r:550,line:230},
+  {id:'plain',name:'中原',note:'標準箱子',l:50,r:550,line:230,w:0.4},   // w：隨機抽戰場的權重（中原是普通地圖，少抽一點）
   {id:'gorge',name:'劍閣棧道',note:'蜀道險窄，箱子較窄',l:100,r:500,line:230},
-  {id:'river',name:'長江天塹',note:'江面遼闊，箱子較矮',l:50,r:550,line:360}
+  {id:'river',name:'長江天塹',note:'江面遼闊，箱子較矮',l:50,r:550,line:360},
+  {id:'ship',name:'連環樓船',note:'船身口寬底窄',l:50,r:550,line:230,sl:75,sr:-75}   // sl／sr：左右牆到箱底往內（正）或往外（負）移的距離＝箱子不是方的
 ];
 const DEVMODE=/[?&]dev=1(&|$)/.test(location.search);   // 測試用：網址加 ?dev=1 才顯示戰場選項
 let FIELD=FIELDS[0],FIELD_PICK='random';   // FIELD_PICK：選難度時指定的戰場（random 隨機）
 function pickField(){
   const fixed=FIELDS.find(f=>f.id===FIELD_PICK);
-  FIELD=DIFF==='hard'?(fixed||FIELDS[Math.floor(Math.random()*FIELDS.length)]):FIELDS[0];
-  BOXL=FIELD.l;BOXR=FIELD.r;LINE=FIELD.line;BOX_TOP=LINE-50;
+  let pick=FIELDS[0];
+  if(DIFF==='hard'){
+    if(fixed)pick=fixed;
+    else{let r=Math.random()*FIELDS.reduce((a,f)=>a+(f.w||1),0);pick=FIELDS.find(f=>(r-=(f.w||1))<0)||FIELDS[0];}
+  }
+  FIELD=pick;
+  BOXL=FIELD.l;BOXR=FIELD.r;LINE=FIELD.line;BOX_TOP=LINE-50;SLL=FIELD.sl||0;SLR=FIELD.sr||0;
 }
+const boxU=y=>(y-BOX_TOP)/(BOXB-BOX_TOP);
+const wl=y=>BOXL+SLL*Math.min(1,boxU(y)),wr=y=>BOXR+SLR*Math.min(1,boxU(y));   // 在高度 y 的左右牆位置（箱口以上往外延伸）
+function clipBoxUp(){ctx.beginPath();ctx.moveTo(wl(0),0);ctx.lineTo(wl(BOXB),BOXB);ctx.lineTo(wr(BOXB),BOXB);ctx.lineTo(wr(0),0);ctx.closePath();ctx.clip();}   // 箱子加上箱口以上的區域：落點輔助線不畫到斜牆外面
+function boxPath(){ctx.beginPath();ctx.moveTo(BOXL,BOX_TOP);ctx.lineTo(wl(BOXB),BOXB);ctx.lineTo(wr(BOXB),BOXB);ctx.lineTo(BOXR,BOX_TOP);ctx.closePath();}
 const WIND_NAME={'-1':'借東風','1':'西涼烈風'};   // 風向 -1＝往西吹（赤壁借東風）、1＝往東吹（馬超西涼鐵騎）
 let fieldChipUntil=0;   // 困難：開局先顯示戰場名稱 3.5 秒，之後標籤只在事件期間出現
 let DIFF='normal',evt={phase:'calm',left:WIND.startCalm,kind:'wind',dir:-1},shakeCount=0,gustUntil=0,gustDir=-1,quakeAt=0,floodAt=0,floodT0=0,fogA=0;
@@ -1543,7 +1560,7 @@ function drawFlood(now){
   if(!lv)return;
   const wy=BOXB-lv,d=DARK.matches,amp=fl?4+Math.min(5,fl/30):2.2,sp=RM.matches?0:(fl?0.007:0.002);
   const surf=x=>wy+Math.sin(now*sp+x*0.05)*amp+Math.sin(now*sp*1.7+x*0.11)*amp*0.4;
-  ctx.save();ctx.beginPath();ctx.rect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);ctx.clip();
+  ctx.save();boxPath();ctx.clip();
   if(river&&fl){ctx.fillStyle=d?'rgba(40,110,140,.12)':'rgba(40,120,170,.10)';ctx.fillRect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);}   // 水淹七軍：整個江面泛起水色
   ctx.beginPath();ctx.moveTo(BOXL,BOXB);
   for(let x=BOXL;x<=BOXR;x+=8)ctx.lineTo(x,surf(x));
@@ -1565,7 +1582,7 @@ function drawFlood(now){
 function drawFog(now){
   const on=DIFF==='hard'&&evt.phase==='active'&&evt.kind==='fog';
   fogA+=((on?0.94:0)-fogA)*0.06;if(fogA<0.01)return;
-  ctx.save();ctx.beginPath();ctx.rect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);ctx.clip();
+  ctx.save();boxPath();ctx.clip();
   const base=DARK.matches?'150,158,172':'245,247,250';   // 深色模式的霧用灰色，不要比背景亮太多
   ctx.fillStyle='rgba('+base+','+fogA+')';ctx.fillRect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);
   if(!RM.matches)for(let i=0;i<5;i++){const x=BOXL+((now*0.02*(1+i*.3)+i*140)%(BOXR-BOXL+200))-100,y=BOX_TOP+60+i*90;const gr=ctx.createRadialGradient(x,y,0,x,y,110);gr.addColorStop(0,'rgba('+base+','+Math.min(1,fogA)+')');gr.addColorStop(1,'rgba('+base+',0)');ctx.fillStyle=gr;ctx.fillRect(x-110,y-110,220,220);}
@@ -1589,7 +1606,7 @@ function applyWind(){
 const RM=matchMedia('(prefers-reduced-motion:reduce)');
 function drawWind(now){
   if(DIFF!=='hard'||evt.phase!=='active'||evt.kind!=='wind')return;
-  ctx.save();ctx.strokeStyle=DARK.matches?'rgba(160,200,240,.30)':'rgba(70,110,160,.28)';ctx.lineWidth=2;ctx.lineCap='round';
+  ctx.save();boxPath();ctx.clip();ctx.strokeStyle=DARK.matches?'rgba(160,200,240,.30)':'rgba(70,110,160,.28)';ctx.lineWidth=2;ctx.lineCap='round';
   for(let i=0;i<7;i++){
     const y=BOX_TOP+26+i*74,wd=evt.dir||-1,ph=(now*0.22+i*131)%(BOXR-BOXL+70),x=RM.matches?BOXR-60-i*37%300:(wd<0?BOXR-ph+35:BOXL+ph-81);
     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+46,y);ctx.stroke();
@@ -1657,7 +1674,7 @@ function winRound(){
   if(DIFF==='hard'){
     const sl=finalEndStep-simStep,left=Math.max(0,Math.round(sl/60)),stars=sl>=STAR3*60?3:sl>=STAR2*60?2:1;   // 星級用剩餘步數判定（不受顯示取整影響）
     let prev=0;
-    grantSpecial([{gorge:'h:shu',river:'h:wu',plain:'h:zhong'}[FIELD.id]].concat(stars>=3?['h:s3','h:s2']:stars>=2?['h:s2']:[]));
+    grantSpecial([{gorge:'h:shu',river:'h:wu',plain:'h:zhong',ship:'h:ship'}[FIELD.id]].concat(stars>=3?['h:s3','h:s2']:stars>=2?['h:s2']:[]));
     try{prev=readStars();if(stars>prev)localStorage.setItem('sg_star_hard',stars);}catch(e){}
     starText='評價：'+'★'.repeat(stars)+'☆'.repeat(3-stars)+(stars>prev?'（新紀錄）':'')+'\n倒數剩餘 '+left+' 秒・搖一搖 '+shakeCount+' 次'+(shakeCount===0?'・不搖一搖通關':'')+'\n';
   }
@@ -1828,7 +1845,8 @@ function drawPiece(P,ghost,labelPass){
 // 標籤位置限制：不可壓到箱壁或箱底（預覽區在箱口以上，只限制不超出畫面）
 function lblPos(L){
   const inBox=L.y>BOX_TOP-4;
-  const x=Math.max((inBox?BOXL:0)+L.hx+3,Math.min((inBox?BOXR:W)-L.hx-3,L.x));
+  const yy=Math.min(BOXB,L.y+L.hy),yt=Math.max(BOX_TOP,L.y-L.hy);   // 斜牆：上下緣各量一次，取比較窄的那一側
+  const x=Math.max((inBox?Math.max(wl(yy),wl(yt)):0)+L.hx+3,Math.min((inBox?Math.min(wr(yy),wr(yt)):W)-L.hx-3,L.x));
   const y=inBox?Math.min(BOXB-L.hy-4,L.y):Math.max(VY+L.hy+2,L.y);   // 箱內不壓底；箱口以上（預覽區）不超出畫面上緣
   return {x,y};
 }
@@ -1903,6 +1921,7 @@ function boxTheme(){
   const d=DARK.matches,id=DIFF==='hard'?FIELD.id:'plain';
   if(id==='gorge')return{bg:d?'rgba(214,176,118,.09)':'#f8eed9',frame:d?'#b89560':'#6b5238'};
   if(id==='river')return{bg:d?'rgba(120,190,210,.09)':'#eff7f7',frame:d?'#7fa9b4':'#4f5f66'};
+  if(id==='ship')return{bg:d?'rgba(200,160,110,.09)':'#f7f0e4',frame:d?'#b08a58':'#6b4a2a'};
   return{bg:d?'rgba(255,248,232,.07)':'#fffdf6',frame:d?'#a98550':'#7a634e'};
 }
 function drawBoxDecor(now){
@@ -1929,6 +1948,18 @@ function drawBoxDecor(now){
     ctx.fillStyle=d?'#c9a46a':'#5a3a1a';
     for(let x=dx+17;x<dx+dw;x+=34){ctx.beginPath();ctx.arc(x,dy+dh/2+1,1.6,0,Math.PI*2);ctx.fill();}
     ctx.restore();
+  }else if(FIELD.id==='ship'){   // 連環樓船：兩側船舷（深色木板加橫紋）、底部龍骨，邊緣掛兩面小旗
+    ctx.save();ctx.lineCap='round';
+    for(const [x0,x1,sg] of [[BOXL,wl(BOXB),-1],[BOXR,wr(BOXB),1]]){
+      const dx=x1-x0,dy=BOXB-BOX_TOP,len=Math.hypot(dx,dy),nx=sg*dy/len*-1,ny=sg*dx/len*-1;   // 往外的單位法線
+      ctx.strokeStyle=d?'#7a5a34':'#8b5e34';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(x0+nx*9,BOX_TOP+ny*9);ctx.lineTo(x1+nx*9,BOXB+ny*9);ctx.stroke();
+      ctx.strokeStyle=d?'rgba(15,8,2,.55)':'rgba(60,36,14,.5)';ctx.lineWidth=1.3;ctx.beginPath();
+      for(let k=1;k<18;k++){const u=k/18,px=x0+dx*u,py=BOX_TOP+dy*u;ctx.moveTo(px+nx*4,py+ny*4);ctx.lineTo(px+nx*14,py+ny*14);}
+      ctx.stroke();
+    }
+    ctx.fillStyle=d?'#7a5a34':'#7a5230';ctx.beginPath();ctx.moveTo(wl(BOXB)-10,BOXB+4);ctx.lineTo(wr(BOXB)+10,BOXB+4);ctx.lineTo(wr(BOXB)-4,BOXB+13);ctx.lineTo(wl(BOXB)+4,BOXB+13);ctx.closePath();ctx.fill();
+    for(const [x,sg] of [[BOXL-12,-1],[BOXR+12,1]]){ctx.strokeStyle='#5a3a1a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,BOX_TOP);ctx.lineTo(x,BOX_TOP-28);ctx.stroke();ctx.fillStyle='#c4574f';ctx.beginPath();ctx.moveTo(x,BOX_TOP-28);ctx.lineTo(x+sg*(-16),BOX_TOP-22);ctx.lineTo(x,BOX_TOP-16);ctx.closePath();ctx.fill();}
+    ctx.restore();
   }else if(FIELD.id==='river'){
     ctx.save();
     ctx.strokeStyle=d?'rgba(10,20,26,.5)':'rgba(40,30,22,.35)';ctx.lineWidth=1.2;ctx.beginPath();   // 外框像船板：細橫紋
@@ -1941,18 +1972,19 @@ function draw(){
   ctx.clearRect(0,0,W,H);
   const now0=performance.now(),_sh=shakeOffset(now0);ctx.save();ctx.translate(_sh.x,_sh.y);
   const TH=boxTheme();
-  ctx.fillStyle=TH.bg;ctx.fillRect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);
-  ctx.strokeStyle=TH.frame;ctx.lineWidth=6;ctx.lineJoin='miter';ctx.beginPath();ctx.moveTo(BOXL-3,BOX_TOP);ctx.lineTo(BOXL-3,BOXB+4);ctx.lineTo(BOXR+3,BOXB+4);ctx.lineTo(BOXR+3,BOX_TOP);ctx.stroke();drawBoxDecor(now0);   // 外框整條畫在碰撞邊界『外側』：城的輪廓（含細尖角）不會壓在框線上，底部不再被切到
-  ctx.setLineDash([10,8]);ctx.strokeStyle='#c4574f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(BOXL,LINE);ctx.lineTo(BOXR,LINE);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=TH.bg;boxPath();ctx.fill();
+  ctx.strokeStyle=TH.frame;ctx.lineWidth=6;ctx.lineJoin='miter';ctx.beginPath();ctx.moveTo(BOXL-3,BOX_TOP);ctx.lineTo(wl(BOXB)-3,BOXB+4);ctx.lineTo(wr(BOXB)+3,BOXB+4);ctx.lineTo(BOXR+3,BOX_TOP);ctx.stroke();drawBoxDecor(now0);   // 外框整條畫在碰撞邊界『外側』：城的輪廓（含細尖角）不會壓在框線上，底部不再被切到
+  ctx.setLineDash([10,8]);ctx.strokeStyle='#c4574f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wl(LINE),LINE);ctx.lineTo(wr(LINE),LINE);ctx.stroke();ctx.setLineDash([]);
+  ctx.save();clipBoxUp();
   if(cur){const windy=DIFF==='hard'&&evt.phase==='active'&&evt.kind==='wind';ctx.strokeStyle=windy?'rgba(70,110,160,.6)':'rgba(138,106,58,.4)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(dropX,curY+60);
     if(windy){const t0=WIND.vmax/WIND.a;for(let y=curY+80;y<=BOXB;y+=16){const t=Math.sqrt(2*(y-curY)/0.24),d=t<t0?0.5*WIND.a*t*t:0.5*WIND.vmax*t0+WIND.vmax*(t-t0);ctx.lineTo(Math.min(BOXR-4,Math.max(BOXL+4,dropX+(evt.dir||-1)*d)),y);}}   // 彎線：城往下掉的同時被往西吹（0.24 是實測的下落加速度）
     else ctx.lineTo(dropX,BOXB);
-    ctx.stroke();ctx.setLineDash([]);}   // 受風時，輔助線改成斜的（預估會往西偏）   // 落點輔助線先畫，溢出線標籤畫在它上面，兩者不會互相切到
+    ctx.stroke();ctx.setLineDash([]);}ctx.restore();   // 受風時，輔助線改成斜的（預估會往西偏）   // 落點輔助線先畫，溢出線標籤畫在它上面，兩者不會互相切到
   {
     // 溢出線標籤：實心小標牌 + 較大的粗體字，座標取整數避免字邊緣糊掉
     const txt='溢出線',fs=15;
     ctx.font=`bold ${fs}px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif`;ctx.textAlign='left';ctx.textBaseline='middle';
-    const tw=Math.ceil(ctx.measureText(txt).width),bx=Math.round(BOXL+8),by=Math.round(LINE-fs-6),bw=tw+12,bh=fs+8;
+    const tw=Math.ceil(ctx.measureText(txt).width),bx=Math.round(wl(LINE)+8),by=Math.round(LINE-fs-6),bw=tw+12,bh=fs+8;
     ctx.fillStyle='#c4574f';ctx.beginPath();ctx.roundRect?ctx.roundRect(bx,by,bw,bh,5):ctx.rect(bx,by,bw,bh);ctx.fill();
     ctx.fillStyle='#fff8e8';ctx.fillText(txt,bx+6,by+bh/2+1);
   }
@@ -1974,11 +2006,11 @@ function draw(){
 function keepInside(){
   for(const t of tops){
     // 用實際頂點量測（t.bounds 會依速度外擴，會把物體提早推離牆面）
-    let x0=1e9,x1=-1e9,y1=-1e9;
-    t.parts.forEach((p,i)=>{if(t.parts.length>1&&i===0)return;for(const v of p.vertices){if(v.x<x0)x0=v.x;if(v.x>x1)x1=v.x;if(v.y>y1)y1=v.y;}});
+    let nl=0,nr=0,y1=-1e9;
+    t.parts.forEach((p,i)=>{if(t.parts.length>1&&i===0)return;for(const v of p.vertices){const a=wl(v.y)-v.x,b=v.x-wr(v.y);if(a>nl)nl=a;if(b>nr)nr=b;if(v.y>y1)y1=v.y;}});
     let dx=0,dy=0;
-    if(x0<BOXL&&x1>BOXR)dx=(BOXL+BOXR)/2-(x0+x1)/2;   // 比箱子還寬：置中，避免左右來回
-    else if(x0<BOXL)dx=BOXL-x0;else if(x1>BOXR)dx=BOXR-x1;
+    if(nl>0&&nr>0)dx=(nl-nr)/2;   // 比箱子還寬：置中，避免左右來回
+    else if(nl>0)dx=nl;else if(nr>0)dx=-nr;
     if(y1>BOXB)dy=BOXB-y1;
     if(dx||dy){
       Body.translate(t,{x:dx,y:dy});
