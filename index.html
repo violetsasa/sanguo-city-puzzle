@@ -598,8 +598,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='火燒事件新增火舌、火星與濃煙特效';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.84';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 84 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='火燒特效改成更真實的火焰';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.85';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 85 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -975,6 +975,21 @@ function drawFxBack(now){
   ctx.globalAlpha=1;
 }
 const FIRE_FX_MS=2000;
+// 一根火舌：由底部往上、寬度逐漸收尖，中線隨時間左右扭動（S 形，越往上擺幅越大），畫成平滑曲線；底色→尖端漸層
+function flameShape(x,y,w,h,t,ph,k,c0,c1){
+  const n=7,L=[],Rr=[];
+  for(let i=0;i<=n;i++){
+    const p=i/n,wid=w*Math.pow(1-p,.85)*(1+.25*Math.sin(p*3.1+ph)),sw=Math.sin(t*.012+ph+p*3.4)*w*1.5*p*p+Math.sin(t*.021+ph*1.7)*w*.35*p;
+    const cx=x+sw,cy=y-h*p;L.push({x:cx-wid,y:cy});Rr.push({x:cx+wid,y:cy});
+  }
+  ctx.beginPath();ctx.moveTo(L[0].x,L[0].y);
+  for(let i=1;i<=n;i++){const m={x:(L[i-1].x+L[i].x)/2,y:(L[i-1].y+L[i].y)/2};ctx.quadraticCurveTo(L[i-1].x,L[i-1].y,m.x,m.y);}
+  ctx.lineTo(L[n].x,L[n].y);
+  for(let i=n;i>=1;i--){const m={x:(Rr[i].x+Rr[i-1].x)/2,y:(Rr[i].y+Rr[i-1].y)/2};ctx.quadraticCurveTo(Rr[i].x,Rr[i].y,m.x,m.y);}
+  ctx.lineTo(Rr[0].x,Rr[0].y);ctx.closePath();
+  const g=ctx.createLinearGradient(0,y,0,y-h);g.addColorStop(0,c0);g.addColorStop(.7,c1);g.addColorStop(1,'rgba(255,200,80,0)');
+  ctx.fillStyle=g;ctx.fill();
+}
 function drawFires(now){
   if(!fx.fires||!fx.fires.length)return;
   fx.fires=fx.fires.filter(f=>now-f.t0<f.dur);
@@ -991,17 +1006,22 @@ function drawFires(now){
      ctx.globalAlpha=alpha;ctx.fillStyle=f.col;ctx.fill();
      ctx.fillStyle='rgba(40,16,6,'+(.78*char)+')';ctx.fill();
      ctx.shadowColor='rgba(255,120,30,.95)';ctx.shadowBlur=reduce?6:16;ctx.lineWidth=3;ctx.strokeStyle='rgba(255,170,70,'+(.9*(1-char*.4))+')';ctx.stroke();ctx.shadowBlur=0;ctx.globalAlpha=1;}
-    // 火舌：沿著輪廓上半部長出來，一晃一晃，內焰黃、外焰橘紅
-    const env=Math.sin(Math.PI*Math.min(1,u*1.05)),pts=f.pts.filter(q=>q.y<c.y+f.R*.25),N=Math.min(18,pts.length);
-    for(let i=0;i<N;i++){
-      const q=pts[(i*Math.max(1,Math.floor(pts.length/N)))%pts.length],ph=f.seed+i*1.9;
-      const flick=reduce?.8:.65+.35*Math.sin(now*.018+ph),h=(R*1.05+((i*37)%5)*R*.12)*flick*env,w=Math.max(7,R*.2),sway=reduce?0:Math.sin(now*.011+ph)*w*.7;
-      if(h<3)continue;
-      ctx.beginPath();ctx.moveTo(q.x-w,q.y);ctx.quadraticCurveTo(q.x-w*.5,q.y-h*.55,q.x+sway,q.y-h);ctx.quadraticCurveTo(q.x+w*.5,q.y-h*.5,q.x+w,q.y);ctx.closePath();
-      const g=ctx.createLinearGradient(0,q.y,0,q.y-h);g.addColorStop(0,'rgba(214,64,28,.95)');g.addColorStop(.55,'rgba(255,128,40,.9)');g.addColorStop(1,'rgba(255,214,90,.0)');ctx.fillStyle=g;ctx.fill();
-      ctx.beginPath();ctx.moveTo(q.x-w*.5,q.y);ctx.quadraticCurveTo(q.x-w*.2,q.y-h*.4,q.x+sway*.8,q.y-h*.72);ctx.quadraticCurveTo(q.x+w*.2,q.y-h*.4,q.x+w*.5,q.y);ctx.closePath();
-      ctx.fillStyle='rgba(255,236,150,'+(.75*env)+')';ctx.fill();
-    }
+    // 火舌：沿著輪廓上半部密密地長出來（很多根細的，高低交錯、像波浪一樣一波一波），每根是會扭動的 S 形，外焰紅橘、中焰橘黃、焰心白黃
+    {const env=Math.sin(Math.PI*Math.min(1,u*1.05)),top=f.pts.filter(q=>q.y<c.y+f.R*.35);
+     if(top.length>1&&env>.02){
+       const NT=reduce?14:34;
+       for(let i=0;i<NT;i++){
+         const t01=i/(NT-1),pos=t01*(top.length-1),k=Math.floor(pos),fr=pos-k,a0=top[k],a1=top[Math.min(top.length-1,k+1)];
+         const bx=a0.x+(a1.x-a0.x)*fr+(((i*37)%7)-3)*R*.025,by=a0.y+(a1.y-a0.y)*fr+R*.08,ph=f.seed+i*2.3;
+         const wave=reduce?.8:.55+.45*Math.sin(now*.007+i*.55)*Math.sin(now*.0031+i*.21+f.seed);   // 一波一波的高低
+         const flick=reduce?1:.7+.3*Math.sin(now*(.013+((i*13)%5)*.002)+ph);
+         const h=R*(.7+((i*53)%9)*.14)*wave*flick*env,w=R*(.13+((i*29)%4)*.03);
+         if(h<5)continue;
+         flameShape(bx,by,w,h,reduce?0:now,ph,1,'rgba(200,36,16,.92)','rgba(255,110,30,.9)');   // 外焰
+         flameShape(bx,by,w*.68,h*.78,reduce?0:now,ph+.4,1,'rgba(255,140,30,.95)','rgba(255,200,60,.92)');   // 中焰
+         flameShape(bx,by,w*.38,h*.5,reduce?0:now,ph+.9,1,'rgba(255,230,120,.95)','rgba(255,252,220,.9)');   // 焰心
+       }
+     }}
     // 火星：往上飄、左右晃、慢慢熄滅
     if(!reduce)for(let i=0;i<12;i++){
       const t=((u*1.3+i*.083+f.seed)%1),x=c.x+((((i*53)%11)/5.5)-1)*R*.9+Math.sin(t*9+i)*R*.18,y=c.y-R*.2-t*R*2.4,a=(1-t)*Math.min(1,u*5)*(u>.8?(1-u)/.2:1);
