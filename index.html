@@ -599,7 +599,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='降低手機發熱';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.86';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 86 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.87';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 87 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -844,7 +844,7 @@ function touchesSeam(P,Q,pts){
 
 // ---- 相連效果（依原版）：短暫停頓、彈跳、交界處星星、名稱浮字、＋分數飛向計分區 ----
 let hitstopUntil=0,fxToken=0;
-const fx={stars:[],pops:[],rings:[],glints:[],confetti:[],flashes:[],banners:[],shake:null};
+const fx={stars:[],pops:[],rings:[],glints:[],confetti:[],flashes:[],banners:[],fires:[],shake:null};
 let bannerFree=0;   // 成就橫幅依序顯示：上一張結束的時間
 function resetFx(){fx.fires=[];bannerFree=0;fx.stars=[];fx.pops=[];fx.rings=[];fx.glints=[];fx.confetti=[];fx.flashes=[];fx.banners=[];fx.shake=null;}
 const POP_MS=320,STAR_MS=750,POPUP_MS=1300;
@@ -1495,6 +1495,7 @@ function bigAlert(title,sub,sec){   // 畫面中央的大提示（最後一座�
 }
 function nextPiece(){
   if(!queue.length)return;
+  drawDirty=true;   // 新的預覽城出現：不等下一張定時重畫
   const st=STATES[queue.shift()];
   cur=makePiece(st,dropX,0);
   cur.unit=st.n;
@@ -1662,7 +1663,7 @@ function doFire(){
   const sp=sp0.find(x=>x.n===fireCity)||sp0[Math.floor(Math.random()*sp0.length)];
   if(!sp)return;
   const P0=pieceOf.get(STATES.find(x=>x.n===sp.n));
-  if(fireCity&&sp.n!==fireCity)eventBanner('fire',sp.name+'！',sp.act,'火');   // 預告的地點已經不在池子裡、改燒另一處：當場公告實際的地點
+  if(fireCity&&sp.n!==fireCity){eventBanner('fire',sp.name+'！',sp.act,'火');evt.spot=sp;fireCity=sp.n;updateEvtUI();}   // 預告的地點已經不在池子裡、改燒另一處：當場公告實際的地點
   const c0=pieceWorld(P0).c,dist=p=>{const c=pieceWorld(p).c;return Math.hypot(c.x-c0.x,c.y-c0.y);};
   const all=tops.flatMap(t=>t.pcs.filter(p=>p.dropped));
   const burn=[P0].concat(all.filter(p=>p!==P0).sort((a,b)=>dist(a)-dist(b))).slice(0,Math.min(FIRE.count,all.length));   // 起火那座城一定被燒，再加上離它最近的
