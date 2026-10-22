@@ -120,20 +120,41 @@
   #ov.intro-card #ovP{display:flex;flex-direction:column}
   #ov.intro-card .story{margin-top:auto;margin-bottom:auto}   /* 簡介比玩法說明矮時，多出來的空間上下平分，不要全留在文字下面 */   /* 簡介與玩法說明共用同一個板子大小（高度由 fitIntro 量測後設定） */
   #ov .rules{display:none}
-  #ovS{display:none;flex:none;margin-top:12px;text-align:center;color:var(--accent)}   /* 歷史最高分（只在開場簡介顯示）：兩側細線夾著小標，下面放大數字 */
+  #ov .difflabel{font-size:13px;letter-spacing:4px;opacity:.65;margin:0 0 8px}
+  #ov .dcards{display:flex;flex-direction:column;gap:10px;margin:0 0 6px;text-align:left}
+  #ov .dcard{position:relative;display:block;width:100%;min-height:64px;padding:10px 44px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;text-align:center;cursor:pointer;line-height:1.4;white-space:normal}
+  #ov .dcard b{display:block;font-size:17px;letter-spacing:2px}
+  #ov .dcard span{display:block;font-size:13px;opacity:.85}
+  #ov .dcard small{display:block;font-size:11.5px;opacity:.65;margin-top:2px;line-height:1.45}
+  #ov .dcard::after{content:"";position:absolute;right:14px;top:50%;width:20px;height:20px;margin-top:-10px;border-radius:50%;border:1.5px solid var(--line)}   /* 右邊的小圓：沒選中是空心 */
+  #ov .fieldrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:2px 0 6px;font-size:12.5px}
+  #ov .fieldrow span{flex:0 0 100%;opacity:.65;letter-spacing:3px;text-align:left}   /* 「戰　場」小標自己一行，窄螢幕下四顆選項才排得下 */
+  #ov .fchip{flex:1 1 0;min-width:0;min-height:40px;padding:4px 6px;border:1.5px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+  #ov .fchip.on{border-color:var(--accent);background:rgba(168,85,43,.12);color:var(--accent);font-weight:bold}
+  #ov .dcard.on{border:2px solid var(--accent);background:rgba(168,85,43,.08);padding:9.5px 43.5px}
+  #ov .dcard.on::after{content:"✓";border-color:var(--accent);background:var(--accent);color:#fff8e8;font-size:13px;line-height:19px;text-align:center}
+  #evt{position:absolute;left:8px;right:8px;top:auto;bottom:auto;width:fit-content;margin:0 auto;z-index:4;max-width:calc(100% - 16px);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 12px;border-radius:12px;background:rgba(255,250,240,.96);border:2px solid var(--line);font-size:14px;font-weight:bold;line-height:1.35;color:var(--ink);pointer-events:none;display:none;box-shadow:0 2px 8px rgba(90,70,54,.25)}   /* 困難的事件／戰場標籤：棋盤左上角 */
+  #evt.show{display:block}
+  #evt.warn{border-color:#e8641c;background:#ffe3b8;color:#7a2306}
+  #evt.active{border-color:#3f8bd0;background:#d9ecff;color:#15406e}
+  @keyframes evtpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  @media (prefers-reduced-motion:no-preference){#evt.warn,#evt.active{animation:evtpulse 1.1s ease-in-out infinite;transform-origin:center}}
+  @media (prefers-color-scheme:dark){#evt{background:rgba(42,36,27,.96)}#evt.warn{background:#5a3412;color:#ffd9a8;border-color:#ff9a3c}#evt.active{background:#173a60;border-color:#7fb0e6;color:#cfe8ff}}
+  #ovS{display:none;flex:none;margin-top:22px;text-align:center;color:var(--accent)}   /* 歷史最高分（只在開場簡介顯示）：兩側細線夾著小標，下面放大數字 */
   #ovS .lb,.hs .lb{display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;letter-spacing:3px;opacity:.85}
   #ovS .lb::before,#ovS .lb::after,.hs .lb::before,.hs .lb::after{content:"";width:28px;height:1px;background:currentColor;opacity:.45}
   .hs{text-align:center;color:var(--accent);margin:10px 0 6px}
   #ovS .nm,.hs .nm{display:block;margin-top:2px;font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;font-size:30px;font-weight:700;line-height:1.15;letter-spacing:2px;font-variant-numeric:tabular-nums}
   .hs .nm{font-size:24px}
-  #ovV{display:none;flex:none;margin-top:8px;white-space:pre-line;text-align:center;padding-left:1px;line-height:1.6;font-size:11px;letter-spacing:1px;opacity:.45}   /* 版本號：只在開場簡介顯示，用來確認有沒有更新 */
+  #ovV{display:none;flex:none;margin-top:12px;white-space:pre-line;text-align:center;padding-left:1px;line-height:1.6;font-size:11px;letter-spacing:1px;opacity:.45}   /* 版本號：只在開場簡介顯示，用來確認有沒有更新 */
   body.intro #sndBtn,body.intro #next,body.intro #app>.bar button,body.intro #achBtn,body.intro .stats .chip,body.intro .legend,body.intro #side,body.intro .brand h1{visibility:hidden}   /* 開場簡介還在時，下一城與底部操作先不出現（位置保留，開始後才顯示） */
   #ov.showrules .rules{display:block}   /* 簡介頁：按「玩法說明」就換成玩法，再按一次回簡介 */
-  #ov.showrules .story,#ov.showrules .sub{display:none}
+  #ov.showrules .story,#ov.showrules .sub,#ov.showrules .difflabel,#ov.showrules .dcards,#ov.showrules .fieldrow{display:none}
   #ov .sub{font-size:13px;letter-spacing:3px;opacity:.7;margin-bottom:6px}
-  #ov .story{text-align:center;font-size:14px;line-height:1.7;margin:6px 0 10px}
-  #ov .rules{text-align:left;font-size:13px;line-height:1.55;margin:0 0 10px;padding:8px 12px;border:1px dashed var(--line);border-radius:8px;background:rgba(138,106,58,.08)}
-  #ov .rules div{padding-left:1.1em;text-indent:-1.1em}
+  #ov .story{text-align:center;font-size:15px;line-height:1.95;margin:6px 0 10px}
+  #ov .rules{text-align:left;font-size:14px;line-height:1.65;margin:0 0 10px;padding:2px 4px}
+  #ov .rules div{padding-left:1.3em;text-indent:-1.3em;margin:0 0 7px}
+  #ov .rules .rt{padding:0;text-indent:0;text-align:center;font-size:13px;letter-spacing:6px;opacity:.6;margin:0 0 8px}
   .fly{position:fixed;z-index:10;pointer-events:none;font-weight:bold;font-size:20px;color:#c4574f;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap}
   #ach{z-index:8;position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;padding:10px}
   #alert{position:absolute;left:50%;top:24%;z-index:6;pointer-events:none;opacity:0;transform:translate(-50%,-50%);text-align:center;background:var(--accent);color:#fff8e8;border:3px solid #fff8e8;border-radius:18px;padding:12px 26px;box-shadow:0 10px 30px rgba(90,40,10,.4);max-width:90%;width:max-content}
@@ -146,8 +167,9 @@
   @media (prefers-color-scheme:dark){#ov,#ach{background:rgba(20,16,10,.72)}#ov.end{background:rgba(20,16,10,.28)}   /* 深色模式的遮罩：要放在 #ov／#ach 的淺色底之後才會生效 */
     #toast{background:#2f2718;color:#f3e3b8;border-color:#d9a521;box-shadow:0 6px 18px rgba(0,0,0,.5)}}   /* 成就提示：深色底，不刺眼 */
   #ach .card{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:14px 16px;width:100%;max-height:100%;display:flex;flex-direction:column}
-  #ach h2{margin:0 0 6px;font-size:20px;display:flex;align-items:center;gap:10px}
+  #ach h2{margin:0 0 6px;font-size:20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
   #ach h2 .grow{flex:1}
+  @media (max-width:420px){#ach h2 #achFilter{order:5;flex:1 1 100%}}   /* 窄螢幕：篩選掉到標題下一行，關閉鈕留在標題列右邊 */
   #ach h2 small{font-size:13px;font-weight:normal}
   #achList{overflow:auto;display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}
   #achList{scrollbar-width:thin;scrollbar-color:var(--line) transparent;padding-right:6px}   /* 捲軸細一點，右側留空位，不蓋到卡片 */
@@ -159,6 +181,7 @@
   .ai .tx{flex:1;min-width:0}
   .ai .prog{font-size:12px;color:#a8552b;margin-top:2px}
   @media (prefers-color-scheme:dark){.ai .prog{color:#e0a070}}
+  .ach-rank .hr{display:block;margin-top:1px;opacity:.8}
   .ach-rank{margin:2px 0 8px;padding:8px 12px;border-radius:10px;background:rgba(217,165,33,.14);border:1px solid #d9a521;font-size:13px}
   .ach-rank b{font-size:16px;letter-spacing:2px}
   .ach-rank .rk-bar{height:6px;border-radius:3px;background:rgba(138,106,58,.2);margin:6px 0 4px;overflow:hidden}
@@ -176,11 +199,14 @@
   .tabs button{min-height:44px;flex:1;border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 10px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
   .tabs button b{font-variant-numeric:tabular-nums;margin-left:4px}
   .tabs button.on{background:var(--line);color:var(--panel)}
+  #achFilter{flex:0 1 150px;min-width:104px;min-height:36px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;font-weight:normal;cursor:pointer;text-overflow:ellipsis}   /* 篩選放在標題旁邊，小而不搶眼 */
+  .ai .tag.hard{background:var(--accent)}
   #next.urgent{border-color:#c4574f;color:#a63a32}   /* 倒數最後 10 秒轉紅 */
   .ach-note{font-size:12px;opacity:.65;margin:0 2px 4px}
-  .ach-clear{text-align:right;margin:0 0 2px}
-  .ach-clear button{border:0;background:none;font:inherit;font-size:12px;color:var(--ink);opacity:.55;text-decoration:underline;cursor:pointer;padding:4px 8px;min-height:44px}
-  .ach-clear button:hover{opacity:.9}
+  .ach-bar{display:flex;align-items:center;gap:8px;margin:0 2px 6px}   /* 說明文字與「清除累計紀錄」同一列 */
+  .ach-bar .ach-note{flex:1;margin:0;line-height:1.4}
+  .ach-bar button{flex:none;margin-left:auto;border:0;background:none;font:inherit;font-size:12px;color:var(--ink);opacity:.55;text-decoration:underline;cursor:pointer;padding:4px 6px;min-height:32px}
+  .ach-bar button:hover{opacity:.9}
   .ach-empty{text-align:center;opacity:.7;font-size:13px;padding:26px 10px;line-height:1.8}
   #toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-140%);z-index:20;background:#fff8dc;color:#3a2a18;border:2px solid #d9a521;border-radius:12px;padding:8px 16px;font-size:14px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;transition:transform .35s ease,opacity .35s ease;pointer-events:none;max-width:90vw}
   #toast.show{transform:translate(-50%,0);opacity:1}
@@ -305,8 +331,9 @@
   <div id="wrap">
     <canvas id="c"></canvas>
     <div id="alert" aria-live="polite"></div>
+    <div id="evt" aria-live="polite"></div>
     <div id="ach"><div class="card">
-      <h2><span>成就圖鑑</span><span class="grow"></span><button id="achClose" class="ib sm" title="關閉" aria-label="關閉"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+      <h2><span>成就圖鑑</span><select id="achFilter" aria-label="篩選成就"></select><span class="grow"></span><button id="achClose" class="ib sm" title="關閉" aria-label="關閉"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
       <div class="tabs" role="tablist"><button id="tabRun" role="tab">本局<b id="cntRun"></b></button><button id="tabAll" role="tab">累計圖鑑<b id="cntAll"></b></button></div>
       <div id="achList"></div>
     </div></div>
@@ -436,7 +463,8 @@ const zcol=s=>ZCOL[s.z]||ZNEUT;
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 const VX=34,VY=40,VW=532,VH=644;   // 可視範圍：只顯示箱子與預覽區，裁掉四周多餘留白，同樣的畫面裡整個遊戲區可以畫得更大（物理座標不變）
 let BOXL=50,BOXR=550;   // 箱子左右邊界（箱子置中，寬度可調；改寬度要連同 VX／VW 一起改）
-const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30,LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
+const W=600,H=700,SC=0.45,WALL=16,BOXB=H-30;
+let LINE=230,BOX_TOP=LINE-50;   // 去掉箱口上方多餘的留白（H 800→700），同樣的畫面高度下整個遊戲池可以畫得更大   // 溢出線貼近箱口（原版約在箱口下方 1 成）；箱口以上是落下前的預覽區
 let engine,tops,pending,pendingKeys,queue,cur,dropX,curY,score,placed,round,over,lastDrop;
 let bestAtStart=0,recShown=false,recVal=0,chipTitleFor=-1;   // 這一局開始時的歷史最高分；超過它時跳一次「新紀錄！」
 let roundState='play',lastDropStep=0,finalEndStep=0,shakeReadyStep=0;   // 單輪流程：play 落城中／final 最後一座落下後的倒數（要把全部連成一片）／won 已通關
@@ -558,25 +586,28 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='修正 320 寬標題與矮視窗對照表';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.69';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 69 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='難度選擇：多變的戰場與星級（原型）';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.70';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 70 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
 const pieceOf=new Map();                                           // 州 → 目前場上（或預覽中）的州物件，重建後永遠指向最新的
 
+const BOT_GAP=22;
 function resize(){
-  const w=cv.parentElement,aw=w.clientWidth,ah=w.clientHeight,k=Math.min(aw/VW,ah/VH),d=devicePixelRatio||1;
+  const w=cv.parentElement,aw=w.clientWidth,ah=w.clientHeight-BOT_GAP;if(!(aw>0&&ah>0))return;   // 底部多留一點空，棋盤不要貼著下一城那一列   // 容器還沒有尺寸（隱藏中）：先不排版，避免算出負的倍率
+  const k=Math.min(aw/VW,ah/VH),d=devicePixelRatio||1;
   cv.style.width=VW*k+'px';cv.style.height=VH*k+'px';cv.style.left=(aw-VW*k)/2+'px';cv.style.top=Math.max(0,(ah-VH*k)/2)+'px';   // 左右、上下都置中，上下留白才平均
   cv.width=VW*k*d;cv.height=VH*k*d;
   document.documentElement.style.setProperty('--bl',cv.getBoundingClientRect().left+'px');   // 棋盤左緣位置：左側州色欄不超過它
   {const r=cv.getBoundingClientRect(),room=innerWidth-r.right-24-16,de=document.documentElement;   // 棋盤右緣：右側成就欄貼在它外面，空位夠才顯示
-   de.style.setProperty('--br',r.right+'px');de.style.setProperty('--sw',Math.min(220,room)+'px');de.classList.toggle('sideok',room>=190&&innerWidth>=900&&innerHeight>=521);}
+   de.style.setProperty('--br',r.right+'px');{const g=document.getElementById('evt'),wr=document.getElementById('wrap').getBoundingClientRect();if(g){/* 標籤貼在箱口正上方（不占棋盤空間；手上的城在更上面） */const boxTopY=r.top-wr.top+(BOX_TOP-VY)*r.height/VH;g.style.left=Math.round(r.left-wr.left+8)+'px';g.style.right=Math.round(wr.right-r.right+8)+'px';g.style.top='auto';g.style.bottom=Math.round(wr.height-boxTopY+6)+'px';}}de.style.setProperty('--sw',Math.min(220,room)+'px');de.classList.toggle('sideok',room>=190&&innerWidth>=900&&innerHeight>=521);}
 }
 addEventListener('resize',resize);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 function init(){
+  pickField();fieldChipUntil=performance.now()+3500;setTimeout(()=>updateEvtUI(),3600);resize();
   document.getElementById('ach').style.display='none';document.getElementById('ov').style.display='none';   // 結算框開著時按外面的「重來」：新局不能被舊結算框蓋住
   engine=Engine.create({gravity:{y:1.1},positionIterations:10,velocityIterations:8});
   // 牆做得很厚，避免快速移動的大塊穿牆
@@ -587,10 +618,12 @@ function init(){
   bestAtStart=bestRead();recShown=false;recVal=0;hideAlert();
   tops=[];pending=[];pendingKeys=new Set();score=0;over=false;cur=null;dropX=W/2;lastDrop=0;fxToken++;resetFx();
   {const sb=document.getElementById('shake');sb.disabled=false;sb.classList.remove('cool','on');sb.style.removeProperty('--cd');sb.title='搖一搖';}
+  evtReset();shakeCount=0;gustUntil=0;
   achDone=new Set();achProg.clear();noRoomUntil.clear();resetToasts();document.querySelectorAll('.fly').forEach(e=>e.remove());   // 重來：上一局還在飛的「＋分數」一併清掉
  ptrDown=false;ptrId=null;peek=null;clearTimeout(peekTimer);peekStart=null;roundState='play';shakeReadyStep=0;labelFrame=0;   // 每一局重新開始：本局成就、冷卻表、提示、手勢、輪末狀態全部清空
   const onContact=e=>{
     for(const p of e.pairs){
+      const wa=p.bodyA.piece&&p.bodyA.piece.top,wb=p.bodyB.piece&&p.bodyB.piece.top;if(wa&&wa.windOn&&!wa.windHit)wa.windHit=simStep;if(wb&&wb.windOn&&!wb.windHit)wb.windHit=simStep;   // 第一次碰到東西（牆、底、別的城）：風力減半，只再推著滑一小段
       const a=p.bodyA.piece,b=p.bodyB.piece;
       if(a&&b&&a.dropped&&b.dropped&&a.top!==b.top&&isAdj(a.s,b.s)){
         const key=a.s.n+'|'+b.s.n;
@@ -865,6 +898,14 @@ function drawStar(x,y,r){
 
 // ================= 華麗特效（相連與成就）=================
 const GOLD='#ffd45a',GOLD2='#f5b82e';
+const PAL_GOLD={g0:'#ffe9a3',g1:GOLD,g2:GOLD2,edge:'#a8552b',head:'#7a4a10',name:'#3a2208',story:'#5a3a0c',halo:'255,225,120',shadow:'rgba(120,70,0,.45)',stroke:'rgba(255,248,220,.9)'};
+const PAL_EVT={   // 特殊事件的橫幅：預告＝橘紅、東南風＝藍、地鳴＝土褐（和金色的成就橫幅一眼分得出來）
+  warn:{g0:'#ffd9b0',g1:'#ff9a3c',g2:'#e8641c',edge:'#8f2d0a',head:'#7a2306',name:'#3a0f02',story:'#5a2208',halo:'255,150,70',shadow:'rgba(120,40,0,.5)',stroke:'rgba(255,236,220,.92)'},
+  wind:{g0:'#d6ecff',g1:'#7ab8f0',g2:'#3f8bd0',edge:'#1c5a96',head:'#15406e',name:'#0b2745',story:'#173a60',halo:'140,200,255',shadow:'rgba(20,60,110,.5)',stroke:'rgba(235,246,255,.92)'},
+  fog:{g0:'#f0f0f0',g1:'#c9ccd1',g2:'#9aa0a8',edge:'#5a6068',head:'#3d434a',name:'#22262b',story:'#3d434a',halo:'220,224,230',shadow:'rgba(50,55,62,.5)',stroke:'rgba(250,250,252,.92)'},
+  flood:{g0:'#c8f0f0',g1:'#4fc0c8',g2:'#1f8a96',edge:'#0c5560',head:'#0a4650',name:'#052a30',story:'#0c4650',halo:'110,210,220',shadow:'rgba(5,60,70,.5)',stroke:'rgba(235,252,252,.92)'},
+  quake:{g0:'#ead4b8',g1:'#b88958',g2:'#8b5a30',edge:'#4e2f16',head:'#3d230d',name:'#2a1606',story:'#3d230d',halo:'210,160,100',shadow:'rgba(60,30,10,.55)',stroke:'rgba(250,238,222,.92)'}
+};
 function addRing(x,y,t0,r1,color,w){fx.rings.push({x,y,t0,dur:620,r0:6,r1,color,w:w||4});}
 function addConfetti(x,y,t0,n,colors,power,up){
   for(let i=0;i<n;i++){
@@ -893,6 +934,7 @@ function mergeBurst(n,cx,cy,pts,T,go){
   if(tier>=4){fx.flashes.push({t0:go+120,dur:900,color:'255,240,180',alpha:.4});}
 }
 function drawFxBack(now){
+  drawWind(now);
   // 光環：由交界處向外擴散
   fx.rings=fx.rings.filter(r=>now-r.t0<r.dur);
   for(const r of fx.rings){
@@ -912,6 +954,7 @@ function drawFxBack(now){
   ctx.globalAlpha=1;
 }
 function drawFxFront(now){
+  drawFlood(now);drawFog(now);
   // 彩紙
   fx.confetti=fx.confetti.filter(c=>now-c.t0<c.life);
   for(const c of fx.confetti){
@@ -932,34 +975,39 @@ function drawFxFront(now){
   }
   // 成就橫幅：金色緞帶從左側滑入，後面有旋轉的光芒，停留後淡出
   fx.banners=fx.banners.filter(b=>now-b.t0<b.dur);
+  let bannerOn=false;
   for(const b of fx.banners){
     const u=(now-b.t0)/b.dur;if(u<0)continue;
-    const inT=Math.min(1,u/.18),outT=u>.82?(u-.82)/.18:0,e=1-Math.pow(1-inT,3);
+    if(b.head==='特殊事件'&&(over||roundState==='won'))continue;
+    bannerOn=true;   // 結束後，事件橫幅不再蓋在結算視窗上
+    const inT=RM.matches?1:Math.min(1,u/.18),outT=u>.82?(u-.82)/.18:0,e=1-Math.pow(1-inT,3);
     const bw=Math.min(W-60,380),cx=W/2,tf='"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif';
     if(!b.lines){ctx.font='13px '+tf;b.lines=[];let cur='';for(const ch of b.story||''){if(ctx.measureText(cur+ch).width>bw-76&&!/[，。、；：！？）」』]/.test(ch)){b.lines.push(cur);cur=ch;}else cur+=ch;}if(cur)b.lines.push(cur);}
     const bh=b.lines.length?68+b.lines.length*18+12:74,cy=b.y-37+bh/2;   // 上緣固定，劇情放在同一張橫幅裡（不再另外跳提示卡）
-    ctx.save();ctx.globalAlpha=1-outT;
+    ctx.save();ctx.globalAlpha=1-outT;const pal=b.pal||PAL_GOLD;
     // 光芒
-    ctx.save();ctx.translate(cx,cy);ctx.rotate(now*0.0006);
-    for(let i=0;i<14;i++){ctx.rotate(Math.PI*2/14);const gr=ctx.createLinearGradient(0,0,200,0);gr.addColorStop(0,'rgba(255,225,120,.55)');gr.addColorStop(1,'rgba(255,225,120,0)');
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(RM.matches?0:now*0.0006);
+    for(let i=0;i<14;i++){ctx.rotate(Math.PI*2/14);const gr=ctx.createLinearGradient(0,0,200,0);gr.addColorStop(0,'rgba('+pal.halo+',.55)');gr.addColorStop(1,'rgba('+pal.halo+',0)');
       ctx.fillStyle=gr;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(200,-14);ctx.lineTo(200,14);ctx.closePath();ctx.fill();}
     ctx.restore();
     // 緞帶（由左側滑入）
     const x0=cx-bw/2+(-bw*(1-e)),y0=cy-bh/2;
-    const g=ctx.createLinearGradient(0,y0,0,y0+bh);g.addColorStop(0,'#ffe9a3');g.addColorStop(.5,GOLD);g.addColorStop(1,GOLD2);
-    ctx.shadowColor='rgba(120,70,0,.45)';ctx.shadowBlur=14;ctx.shadowOffsetY=4;
+    const g=ctx.createLinearGradient(0,y0,0,y0+bh);g.addColorStop(0,pal.g0);g.addColorStop(.5,pal.g1);g.addColorStop(1,pal.g2);
+    ctx.shadowColor=pal.shadow;ctx.shadowBlur=14;ctx.shadowOffsetY=4;
     ctx.fillStyle=g;ctx.beginPath();ctx.roundRect?ctx.roundRect(x0,y0,bw,bh,14):ctx.rect(x0,y0,bw,bh);ctx.fill();
-    ctx.shadowColor='transparent';ctx.lineWidth=2.5;ctx.strokeStyle='#a8552b';ctx.stroke();
+    ctx.shadowColor='transparent';ctx.lineWidth=2.5;ctx.strokeStyle=pal.edge;ctx.stroke();
     ctx.lineWidth=1;ctx.strokeStyle='rgba(255,255,255,.7)';ctx.beginPath();ctx.roundRect?ctx.roundRect(x0+5,y0+5,bw-10,bh-10,10):ctx.rect(x0+5,y0+5,bw-10,bh-10);ctx.stroke();
     // 獎盃星
-    drawStar(x0+34,cy,17);
+    if(b.glyph){ctx.fillStyle=pal.edge;ctx.beginPath();ctx.arc(x0+34,cy,19,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff8e8';ctx.font='bold 22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(b.glyph,x0+34,cy+1);}
+    else drawStar(x0+34,cy,17);
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.font='bold 13px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif';ctx.fillStyle='#7a4a10';ctx.fillText('成就解鎖'+(b.sub?'　'+b.sub:''),x0+bw/2+14,y0+20);
-    ctx.font='bold 28px '+tf;{let fs=28;while(fs>16&&ctx.measureText(b.name).width>bw-96){fs-=2;ctx.font='bold '+fs+'px '+tf;}}ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,248,220,.9)';ctx.strokeText(b.name,x0+bw/2+14,y0+47);
-    ctx.fillStyle='#3a2208';ctx.fillText(b.name,x0+bw/2+14,y0+47);
-    ctx.font='13px '+tf;ctx.fillStyle='#5a3a0c';b.lines.forEach((ln,i)=>ctx.fillText(ln,x0+bw/2+14,y0+77+i*18));
+    ctx.font='bold 13px "Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",sans-serif';ctx.fillStyle=pal.head;ctx.fillText((b.head||'成就解鎖')+(b.sub?'　'+b.sub:''),x0+bw/2+14,y0+20);
+    ctx.font='bold 28px '+tf;{let fs=28;while(fs>16&&ctx.measureText(b.name).width>bw-96){fs-=2;ctx.font='bold '+fs+'px '+tf;}}ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle=pal.stroke;ctx.strokeText(b.name,x0+bw/2+14,y0+47);
+    ctx.fillStyle=pal.name;ctx.fillText(b.name,x0+bw/2+14,y0+47);
+    ctx.font='13px '+tf;ctx.fillStyle=pal.story;b.lines.forEach((ln,i)=>ctx.fillText(ln,x0+bw/2+14,y0+77+i*18));
     ctx.restore();
   }
+  {const el=document.getElementById('evt');if(el&&el._hid!==bannerOn){el._hid=bannerOn;el.style.visibility=bannerOn?'hidden':'';}}   // 任何橫幅（事件、成就）在箱口上方播放時，事件標籤先收起來，不跟橫幅疊在一起
   ctx.globalAlpha=1;
 }
 // 成就解鎖：橫幅 + 彩紙 + 閃光 + 相關的城發出金光
@@ -1070,6 +1118,18 @@ ZHOU.forEach(z=>{const ns=STATES.filter(s=>s.z===z).map(s=>s.n);if(ns.length<2)r
 Object.keys(FNAME).forEach(f=>{const ns=STATES.filter(s=>s.f===f).map(s=>s.n);ACH_DEF.push({id:'f:'+f,name:FNAME[f]+'國基業',need:ns,story:FNAME[f]+'國的疆域全部連在一起。',auto:true});});
 ACH_DEF.push({id:'tri',name:'三分天下',need:[],story:'魏、蜀、吳的城，連成了一整片。',hint:'讓魏、蜀、吳的城連在一起',auto:true});
 ACH_DEF.push({id:'all',name:'天下一統',need:STATES.map(s=>s.n),story:'三國歸一，天下重歸一統。',auto:true});
+const TRI_SHOW=['許昌','洛陽','鄴','成都','漢中','江州','建業','長沙','會稽'];   // 三分天下的小地圖：魏、蜀、吳各取三座代表城（條件本身沒有指定城）
+const readStars=()=>{try{const v=Math.floor(+localStorage.getItem('sg_star_hard'));return v>=1&&v<=3?v:0;}catch(e){return 0;}};   // 讀最佳星數：資料壞掉（負數、超過 3、不是數字）當作 0
+const STAR2=20,STAR3=40;   // 星級：通關 1 星；倒數剩餘 20 秒以上 2 星；40 秒以上 3 星
+// 困難限定成就（special：不靠連城判定，通關時依戰場與星級解鎖；map：圖鑑小地圖要顯示的城）
+[
+ {id:'h:shu',name:'蜀道不難',map:['成都','漢中','江州'],hint:'在困難的「劍閣棧道」通關',story:'李白嘆「蜀道之難，難於上青天」；你在劍閣天險之上，把山河拼回一統。'},
+ {id:'h:wu',name:'橫渡天塹',map:['廣陵','建業'],hint:'在困難的「長江天塹」通關',story:'曹丕臨江觀兵，嘆「固天所以隔南北也」；你卻讓兩岸連成一片。'},
+ {id:'h:zhong',name:'逐鹿中原',map:['洛陽','許昌','官渡'],hint:'在困難的「中原」通關',story:'「秦失其鹿，天下共逐之」；你在中原逐鹿，贏得天下。'},
+ {id:'h:all3',name:'三戰皆捷',map:TRI_SHOW,hint:'劍閣棧道、長江天塹、中原三個戰場都通關過',story:'棧道、天塹、中原，三處險地你都闖過，天下已在掌中。'},
+ {id:'h:s2',name:'運籌帷幄',map:['長安','漢中'],hint:'困難通關，且倒數剩餘 '+STAR2+' 秒以上',story:'劉邦稱張良「運籌策帷帳之中，決勝於千里之外」；你以從容的步調拼回天下。'},
+ {id:'h:s3',name:'神機妙算',map:['襄陽','宛','成都'],hint:'困難通關，且倒數剩餘 '+STAR3+' 秒以上',story:'世人稱諸葛亮神機妙算；你在變局之中仍然游刃有餘。'}
+].forEach(a=>ACH_DEF.push({...a,need:[],special:true,hardOnly:true}));
 const unknown=ACH_DEF.flatMap(a=>a.need).filter(n=>!STATES.some(s=>s.n===n));
 if(unknown.length)console.warn('成就裡有不存在的城：',unknown);
 const achProg=new Map();   // 本局每個成就目前最多連到幾座（顯示進度用，每局重新計算）
@@ -1100,7 +1160,7 @@ function checkAchievements(T){
   const names=new Set(T.pcs.map(p=>p.s.n)),facs=new Set(T.pcs.map(p=>p.s.f));
   const fresh=[];
   for(const a of ACH_DEF){
-    if(achDone.has(a.id))continue;
+    if(achDone.has(a.id)||a.special)continue;
     const have=a.id==='tri'?facs.size:a.need.filter(n=>names.has(n)).length,tot=a.id==='tri'?3:a.need.length;
     if(tot&&have>(achProg.get(a.id)||0))achProg.set(a.id,have);
     const ok=a.id==='tri'?facs.size===3:a.need.every(n=>names.has(n));
@@ -1117,20 +1177,32 @@ function checkAchievements(T){
   }
   renderAch();
 }
-let achTab='all';
+function grantSpecial(ids){   // 困難通關：依戰場與星級解鎖困難限定成就
+  const T=tops.reduce((m,t)=>!m||t.pcs.length>m.pcs.length?t:m,null),fresh=[];
+  const add=id=>{const a=ACH_DEF.find(x=>x.id===id);if(!a||achDone.has(id))return;achDone.add(id);a._first=!achEver.has(id);achEver.add(id);fresh.push(a);score+=ACH_BONUS;};
+  ids.forEach(add);
+  if(['h:shu','h:wu','h:zhong'].every(i=>achEver.has(i)))add('h:all3');
+  if(!fresh.length)return;
+  saveAch();hud();achievementBurst(fresh,T||{pcs:[]});renderAch();
+}
+let achTab='all',achFilter='all';
+const ACH_FILTERS=[['all','全部成就'],['todo','尚未解鎖'],['done','已解鎖'],['normal','普通成就'],['hard','困難成就'],['hist','歷史名場面'],['zone','各州平定'],['fac','勢力與天下一統'],['ro','含《三國演義》情節']];
+const achMatch=(f,a)=>f==='all'?true:f==='todo'?!achEver.has(a.id):f==='done'?achEver.has(a.id):f==='normal'?!a.hardOnly:f==='hard'?!!a.hardOnly:f==='hist'?!a.auto&&!a.hardOnly:f==='zone'?a.id.startsWith('z:'):f==='fac'?(a.id.startsWith('f:')||a.id==='tri'||a.id==='all'):f==='ro'?!!a.ro:true;
+{const sel=document.getElementById('achFilter');if(sel){sel.innerHTML=ACH_FILTERS.map(f=>`<option value="${f[0]}">${f[1]}</option>`).join('');sel.onchange=()=>{achFilter=sel.value;renderAch();};}}
 const RANKS=[[0,'布衣'],[5,'亭長'],[14,'縣令'],[26,'太守'],[40,'州牧'],[56,'丞相']];   // 依累計解鎖數給稱號；全部集滿是「天下一統」
-function rankHTML(){
-  const n=ACH_DEF.length,e=achEver.size;
+const achIsHard=a=>!!a.hardOnly;
+const achPool=kind=>kind?ACH_DEF.filter(a=>achIsHard(a)===(kind==='hard')):ACH_DEF;   // 不給參數＝全部；'normal'／'hard'＝只取該類
+function rankHTML(){   // 稱號只算普通成就；困難成就另外顯示在最後一行
+  const pool=achPool('normal'),n=pool.length,e=pool.filter(a=>achEver.has(a.id)).length,hp=achPool('hard'),hn=hp.length,he=hp.filter(a=>achEver.has(a.id)).length;
   const all=e>=n;let i=0;RANKS.forEach((r,j)=>{if(e>=r[0])i=j;});
   const name=all?'天下一統':RANKS[i][1];
   const next=all?null:(i+1<RANKS.length?RANKS[i+1]:[n,'天下一統']);
   const lo=all?n:RANKS[i][0],hi=next?next[0]:n,pct=all?100:Math.max(0,Math.min(100,Math.round((e-lo)/Math.max(1,hi-lo)*100)));
-  return `<div class="ach-rank"><b>稱號　${name}</b>　<span>累計 ${e} / ${n}</span><div class="rk-bar"><i style="width:${pct}%"></i></div><small>${next?`再解鎖 ${next[0]-e} 個成就，升為「${next[1]}」`:'已集滿全部成就'}</small></div>`;
+  return `<div class="ach-rank"><b>稱號　${name}</b>　<span>累計 ${e} / ${n}</span><div class="rk-bar"><i style="width:${pct}%"></i></div><small>${next?`再解鎖 ${next[0]-e} 個成就，升為「${next[1]}」`:'已集滿全部成就'}</small><small class="hr">困難成就　${he} / ${hn}</small></div>`;
 }
 const mmCache=new Map();
-const TRI_SHOW=['許昌','洛陽','鄴','成都','漢中','江州','建業','長沙','會稽'];   // 三分天下的小地圖：魏、蜀、吳各取三座代表城（條件本身沒有指定城）
 function miniMap(a,lit){   // 成就要連的城，畫成小地圖（未解鎖時是灰色剪影）
-  const sts=(a.id==='tri'?TRI_SHOW:a.need).map(n=>STATES.find(s=>s.n===n)).filter(Boolean);
+  const sts=(a.id==='tri'?TRI_SHOW:(a.map||a.need)).map(n=>STATES.find(s=>s.n===n)).filter(Boolean);
   if(!sts.length)return '';
   const key=a.id+(lit?'1':'0');
   if(mmCache.has(key))return mmCache.get(key);
@@ -1142,36 +1214,39 @@ function miniMap(a,lit){   // 成就要連的城，畫成小地圖（未解鎖�
   const out=`<div class="mm">${svg}</div>`;mmCache.set(key,out);return out;
 }
 function renderAch(){
-  const n=ACH_DEF.length;
-  document.getElementById('cntRun').textContent=achDone.size;
-  document.getElementById('cntAll').textContent=`${achEver.size} / ${n}`;
+  const pool=achPool(),n=pool.length,everN=pool.filter(a=>achEver.has(a.id)).length,doneN=pool.filter(a=>achDone.has(a.id)).length;
+  document.getElementById('cntRun').textContent=doneN;
+  document.getElementById('cntAll').textContent=`${everN} / ${n}`;
   document.getElementById('tabRun').classList.toggle('on',achTab==='run');
   document.getElementById('tabAll').classList.toggle('on',achTab==='all');
   
-  document.getElementById('achBtn').title=`成就圖鑑（本局 ${achDone.size}，累計 ${achEver.size} / ${n}）`;
+  document.getElementById('achBtn').title=`成就圖鑑（本局 ${doneN}，累計 ${everN} / ${n}）`;
   const rank=a=>achDone.has(a.id)?0:achEver.has(a.id)?1:2;     // 本局已解鎖 → 曾達成 → 未解鎖
   const needOf=a=>a.hint||('把 '+(a.need.length>12?'整個範圍內的 '+a.need.length+' 座城':a.need.join('、'))+' 連在一起');
-  const list=document.getElementById('achList'),note='<div class="ach-note">成就只要這幾座城連在同一片就算，中間夾著別的城也可以。</div>';
+  const list=document.getElementById('achList'),noteTxt='普通成就：這幾座城連在同一片就算，中間夾著別的城也可以；困難成就：依卡片所列的通關條件。',bar=(extra,clr)=>'<div class="ach-bar"><span class="ach-note">'+extra+noteTxt+'</span>'+(clr?'<button id="achClear">清除累計紀錄</button>':'')+'</div>';
   const progOf=a=>{const p=achProg.get(a.id),t=a.id==='tri'?3:a.need.length;return p&&t?`<div class="prog">本局最多連了 ${p} / ${t}${a.id==='tri'?' 個勢力':' 座'}</div>`:'';};
   const card=a=>{
-    const need=needOf(a),yr=a.y?` <span class="need">${a.yl||a.y} 年</span>`:'',ro=a.ro?'<span class="tag ro" title="含《三國演義》情節">演義</span>':'';
+    const need=needOf(a),yr=a.y?` <span class="need">${a.yl||a.y} 年</span>`:'',ro=(a.ro?'<span class="tag ro" title="含《三國演義》情節">演義</span>':'')+(a.hardOnly?'<span class="tag hard">困難</span>':'<span class="tag">普通</span>');
     if(achDone.has(a.id))return `<div class="ai now">${miniMap(a,true)}<div class="tx"><b>★ ${a.name}</b>${yr}${ro}<span class="tag now">本局</span><div>${a.story}</div><div class="need">${need}</div></div></div>`;
     if(achEver.has(a.id))return `<div class="ai ever">${miniMap(a,true)}<div class="tx"><b>☆ ${a.name}</b>${yr}${ro}<span class="tag">曾達成</span><div>${a.story}</div><div class="need">${need}</div>${progOf(a)}</div></div>`;
-    return `<div class="ai lock">${miniMap(a,false)}<div class="tx"><b>？？？${a.auto?'（'+a.name+'）':''}</b><div class="need">${need}</div>${progOf(a)}</div></div>`;
+    return `<div class="ai lock">${miniMap(a,false)}<div class="tx"><b>？？？${a.auto?'（'+a.name+'）':''}</b>${a.hardOnly?'<span class="tag hard">困難</span>':'<span class="tag">普通</span>'}<div class="need">${need}</div>${progOf(a)}</div></div>`;
   };
   {const sd=document.getElementById('side'),got=ACH_DEF.filter(a=>achDone.has(a.id));
    sd.innerHTML=rankHTML()+`<div class="hs"><span class="lb">歷史最高分</span><span class="nm" id="sideBest">${(v=>v?v.toLocaleString('en-US'):'—')(Math.max(bestAtStart||bestRead(),recVal))}</span></div><div class="sd-h">本局成就　${got.length}</div>`+(got.length?got.slice().reverse().map(a=>`<div class="sd-i"><b>★ ${a.name}</b>${a.y?`<small>${a.yl||a.y} 年</small>`:''}</div>`).join(''):'<div class="sd-empty">還沒有解鎖成就</div>');}
   if(achTab==='run'){
-    const got=ACH_DEF.filter(a=>achDone.has(a.id));
-    list.innerHTML=rankHTML()+(got.length?note:'')+(got.length?got.map(card).join(''):'<div class="ach-empty">這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。</div>');
-  }else list.innerHTML=rankHTML()+note+'<div class="ach-clear"><button id="achClear">清除累計紀錄</button></div>'+[...ACH_DEF].sort((a,b)=>rank(a)-rank(b)).map(card).join('');
+    const got=pool.filter(a=>achDone.has(a.id)&&achMatch(achFilter,a));
+    list.innerHTML=rankHTML()+(got.length?bar('',false):'')+(got.length?got.map(card).join(''):'<div class="ach-empty">'+(achFilter==='all'?'這一局還沒有解鎖成就。<br>切到「累計圖鑑」看看有哪些可以挑戰。':'這一局沒有符合篩選的成就。<br>把篩選換成「全部成就」看看。')+'</div>');
+  }else{const shown=[...pool].filter(a=>achMatch(achFilter,a)).sort((a,b)=>rank(a)-rank(b));
+    list.innerHTML=rankHTML()+bar(achFilter==='all'?'':'符合 '+shown.length+' 個・',true)+(shown.length?shown.map(card).join(''):'<div class="ach-empty">沒有符合篩選的成就。</div>');}
 }
 document.getElementById('achList').addEventListener('click',e=>{
   if(!e.target.closest||!e.target.closest('#achClear'))return;
   if(!confirm('清除後，累計圖鑑的歷史紀錄會全部消失，無法復原。\n（本局已解鎖的成就會保留。）\n確定要清除嗎？'))return;
   achEver=new Set(achDone);saveAch();renderAch();   // 只清歷史收藏；本局已解鎖的仍算累計，數字才不會比本局還少
 });
-document.getElementById('tabRun').onclick=function(){achTab='run';renderAch();this.blur();};
+{const sel=document.getElementById('achFilter');if(sel)sel.value=achFilter;}
+document.getElementById('tabRun').onclick=function(){achTab='run';if(achFilter==='todo'){achFilter='all';const sel=document.getElementById('achFilter');if(sel)sel.value='all';}   // 本局頁沒有「尚未解鎖」
+  renderAch();this.blur();};
 document.getElementById('tabAll').onclick=function(){achTab='all';renderAch();this.blur();};
 document.getElementById('achBtn').onclick=function(){if(document.getElementById('ov').style.display==='flex'){this.blur();return;}   // 結算／簡介框開著時不開圖鑑（兩個視窗不同時開）
   endPeek();ptrDown=false;ptrId=null;   // 開面板時，按住畫布的手勢一併作廢，放開時不會落城
@@ -1350,17 +1425,179 @@ function drop(){
   if(!cur||over||overlayOpen()||performance.now()-lastDrop<350)return;
   lastDrop=performance.now();
   const b=cur;Body.setStatic(b,false);
+  if(DIFF==='hard'&&evt.phase==='active'){
+    if(evt.kind==='quake')quakeAt=simStep+QUAKE.delay;
+    else if(evt.kind==='flood')floodAt=simStep+FLOOD.delay;
+    else if(evt.kind==='fog'){}   // 地鳴：這座城落下後一小段時間，整個池子往上彈
+    else if(evt.kind==='wind'){b.windOn=true;b.windDir=evt.dir||-1;b.windEnd=simStep+WIND.maxSteps;gustUntil=simStep+WIND.poolSteps;gustDir=evt.dir||-1;}
+  }   // 這座城在風裡落下：第一次碰到東西之前會被往西吹
   b.pcs.forEach(P=>{P.dropped=true;P.t0=lastDrop;});
   tops.push(b);Composite.add(engine.world,b);
   b.pcs.forEach(P=>{P.dropStep=simStep;});
   if(simStep<lastShakeStep+SHAKE_GRACE_STEPS)b.graceUntil=lastShakeStep+SHAKE_GRACE_STEPS;   // 搖動餘波中落下的城，也在那一次搖動的免死期內（同原版）
-  cur=null;placed++;score+=10;hud();SND.play('drop');
+  cur=null;placed++;score+=10;evtAdvance();hud();SND.play('drop');
   lastDropStep=simStep;
   const gid=gameId,rid=roundId;
   if(queue.length)setTimeout(()=>{if(gid===gameId&&rid===roundId&&!over)nextPiece();},450);
   else{roundState='final';finalEndStep=simStep+FINAL_STEPS;hud();bigAlert('倒數 60 秒','把全部的城連在一起！',2.2);}   // 最後一座落下：進入倒數，限時內把全部連成一片才算天下一統
 }
 const clusterMax=()=>Math.max(0,...tops.map(t=>t.pcs.length));
+// ---- 難度：普通（原始玩法）／困難（每局隨機戰場＋局中隨機刮東南風＋通關星級） ----
+// 風：以「落下的城數」推進（不是秒數，等待沒有用）：平靜 G 座 → 預告 1 座 → 連續 N 座城受風 → 平靜…；
+// 受風的城在落下途中被往西推（速度上限）；第一次碰到東西後風力減半、再推著滑一小段就停；最後一座城附近不再排新事件。
+const WIND={startCalm:8,len:3,gapMin:8,gapMax:13,a:0.3,vmax:2.2,maxSteps:240,slide:40,pool:1.0,poolSteps:60,minLeft:6};   // 風強（最強檔）：落下的城幾乎一落下就達到 2.2 px/步的側向速度；另外每座受風的城落下時會吹一陣陣風（poolSteps 步），池子裡所有的城都被往西推（pool＝推力加速度，px/步²）；落點輔助線依 a、vmax 畫彎線
+// 戰場：困難難度每局開始時隨機抽一種箱子形狀（只在 init() 時決定，局中不會動牆）；普通難度固定是平原
+const FIELDS=[
+  {id:'plain',name:'中原',note:'標準箱子',l:50,r:550,line:230},
+  {id:'gorge',name:'劍閣棧道',note:'蜀道險窄，箱子較窄',l:100,r:500,line:230},
+  {id:'river',name:'長江天塹',note:'江面遼闊，箱子較矮',l:50,r:550,line:360}
+];
+const DEVMODE=/[?&]dev=1(&|$)/.test(location.search);   // 測試用：網址加 ?dev=1 才顯示戰場選項
+let FIELD=FIELDS[0],FIELD_PICK='random';   // FIELD_PICK：選難度時指定的戰場（random 隨機）
+function pickField(){
+  const fixed=FIELDS.find(f=>f.id===FIELD_PICK);
+  FIELD=DIFF==='hard'?(fixed||FIELDS[Math.floor(Math.random()*FIELDS.length)]):FIELDS[0];
+  BOXL=FIELD.l;BOXR=FIELD.r;LINE=FIELD.line;BOX_TOP=LINE-50;
+}
+const WIND_NAME={'-1':'借東風','1':'西涼烈風'};   // 風向 -1＝往西吹（赤壁借東風）、1＝往東吹（馬超西涼鐵騎）
+let fieldChipUntil=0;   // 困難：開局先顯示戰場名稱 3.5 秒，之後標籤只在事件期間出現
+let DIFF='normal',evt={phase:'calm',left:WIND.startCalm,kind:'wind',dir:-1},shakeCount=0,gustUntil=0,gustDir=-1,quakeAt=0,floodAt=0,floodT0=0,fogA=0;
+function eventBanner(kind,name,story,glyph){
+  const now=performance.now(),dur=2200;   // 事件橫幅不排隊：玩家點很快時，正式通知也要立刻出現（舊的事件橫幅直接換掉，進行中的成就橫幅快速收掉，之後的成就橫幅排在它後面）
+  fx.banners=fx.banners.filter(x=>x.head==='特殊事件'?false:true);
+  fx.banners=fx.banners.filter(x=>now<x.t0+x.dur);   // 先清掉已經播完的
+  let ongoing=false;fx.banners.forEach(x=>{if(now>=x.t0){ongoing=true;x.dur=Math.min(x.dur,now-x.t0+250);}});
+  const t0=now+(ongoing?260:0);   // 進行中的成就橫幅收掉後，事件橫幅才出現（不重疊）
+  let cur=t0+dur+120;   // 還沒開始的成就橫幅，依原順序排到事件橫幅後面
+  fx.banners.filter(x=>now<x.t0).sort((a,b)=>a.t0-b.t0).forEach(x=>{x.t0=cur;cur+=x.dur+120;});
+  bannerFree=Math.max(cur,t0+dur+120);
+  fx.banners.push({t0,dur,name,story,head:'特殊事件',sub:'',y:BOX_TOP-8,pal:PAL_EVT[kind],glyph});
+  shakeScreen(now,2.5,350);
+}
+function evtReset(){evt={phase:'calm',left:WIND.startCalm,kind:'wind'};quakeAt=0;floodAt=0;floodT0=0;fogA=0;evtBag=[];updateEvtUI();}
+const FOG_LEN=5,EVT_LEN={quake:1,flood:1,fog:FOG_LEN};
+const EVT_BAG=['wind','wind','quake','flood','fog'];   // 抽事件用「籤袋」：袋子抽完才洗牌重裝，所以每種事件出現的頻率平均（不會一直遇不到某一種，但一局事件次數有限，不保證每種都遇到）；同一種不連續出現（袋裡只剩和上一個相同的，會提前補一袋）
+let evtBag=[];
+function pickKind(last){
+  const fill=()=>{const b=EVT_BAG.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}evtBag.push(...b);};
+  if(!evtBag.length)fill();
+  let i=evtBag.findIndex(k=>k!==last);
+  if(i<0){fill();i=evtBag.findIndex(k=>k!==last);}   // 袋裡只剩和上一個相同的：先補一袋新的，再抽不同的（剩下的留到之後）
+  return evtBag.splice(i,1)[0];
+}
+function evtAdvance(){
+  if(DIFF!=='hard')return;
+  evt.left--;if(evt.left>0){updateEvtUI();return;}
+  if(evt.phase==='calm'){
+    if(queue.length>=WIND.len+WIND.minLeft){const kind=pickKind(evt.lastKind);const dir=evt.lastDir?-evt.lastDir:(Math.random()<0.5?-1:1);evt={phase:'warn',lastDir:kind==='wind'?dir:evt.lastDir,left:1,kind,dir};   // 隨機抽風或地震（地震不連續出現）；風向也隨機：-1 往西（借東風）、1 往東（西涼烈風）
+      if(kind==='quake')eventBanner('warn','預告：洛陽地動','洛陽地動，山河震盪：放下這座城後，地動將至。','⚠');
+      else if(kind==='flood')eventBanner('warn','預告：水淹七軍','秋雨連綿，漢水暴漲：放下這座城後，水將漲起。','⚠');
+      else if(kind==='fog')eventBanner('warn','預告：大霧漫江','長江起了大霧：放下這座城後，濃霧將起。','⚠');
+      else eventBanner('warn','預告：'+WIND_NAME[dir],dir<0?'赤壁之夜，諸葛亮借來東風：放下這座城後，風就要起了。':'馬超西涼鐵騎，烈風捲地：放下這座城後，風就要起了。','⚠');}
+    else evt={phase:'calm',left:99,kind:'wind',lastDir:evt.lastDir,lastKind:evt.lastKind};
+  }
+  else if(evt.phase==='warn'){evt={phase:'active',left:EVT_LEN[evt.kind]||WIND.len,kind:evt.kind,dir:evt.dir,lastDir:evt.lastDir};if(evt.kind==='quake')eventBanner('quake','洛陽地動！','山河震盪：下一座城落下後，整個池子會往上彈。','▲');if(evt.kind==='fog')eventBanner('fog','大霧漫江！','濃霧遮住了池子，看不清裡面的城。','≋');if(evt.kind==='flood')eventBanner('flood','水淹七軍！','漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。','≈');if(evt.kind==='wind')eventBanner('wind',WIND_NAME[evt.dir]+'！',evt.dir<0?'東風大起：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往東吹。',evt.dir<0?'◀':'▶');}
+  else evt={phase:'calm',left:WIND.gapMin+Math.floor(Math.random()*(WIND.gapMax-WIND.gapMin+1)),kind:'wind',lastKind:evt.kind,lastDir:evt.lastDir};
+  updateEvtUI();
+}
+function updateEvtUI(){   // 標籤只放短短一行（窄螢幕也放得下），細節看橫幅
+  const e=document.getElementById('evt');if(!e)return;
+  if(DIFF!=='hard'){e.className='';e.textContent='';return;}
+  if(evt.phase==='warn'){e.className='show warn';e.textContent=evt.kind==='quake'?'⚠ 預告：洛陽地動':evt.kind==='flood'?'⚠ 預告：水淹七軍':evt.kind==='fog'?'⚠ 預告：大霧漫江':'⚠ 預告：'+WIND_NAME[evt.dir];}
+  else if(evt.phase==='active'){e.className='show active';e.textContent=evt.kind==='quake'?'▲ 洛陽地動　池子即將上彈':evt.kind==='flood'?'≈ 水淹七軍　水即將漲起':evt.kind==='fog'?'≋ 大霧漫江　還有 '+evt.left+' 座城在霧中':(evt.dir<0?'◀ ':'▶ ')+WIND_NAME[evt.dir]+'　還有 '+evt.left+' 座城受風';}
+  else if(FIELD.id!=='plain'&&performance.now()<fieldChipUntil){e.className='show';e.textContent='戰場：'+FIELD.name;}
+  else{e.className='';e.textContent='';}
+}
+const QUAKE={delay:25,vyMin:7,vyMax:12,vx:4,graceSteps:150};   // 地鳴：每塊城往上彈的速度（比搖一搖更大一些）；彈起後有 2.5 秒不計溢出
+function doQuake(){
+  if(over||roundState==='won'||!tops.length)return;
+  tops.forEach(t=>{
+    if(t.isStatic)return;
+    Body.setVelocity(t,{x:(Math.random()-.5)*QUAKE.vx,y:-(QUAKE.vyMin+Math.random()*(QUAKE.vyMax-QUAKE.vyMin))});
+    Body.setAngularVelocity(t,(Math.random()-.5)*.08);
+    if(!isHigh(t))t.graceUntil=Math.max(t.graceUntil||0,simStep+QUAKE.graceSteps);   // 彈起來的城不算溢出（和搖一搖一樣）
+  });
+  SND.play('shake');shakeScreen(performance.now(),5,700);
+}
+const FLOOD={delay:25,rise:80,hold:150,fall:90,peak:170,lift:1.6};   // 水淹七軍：水從箱底漲起（peak px），城浮起（浮力＝重力的 lift 倍）再退去
+const floodLen=()=>FLOOD.rise+FLOOD.hold+FLOOD.fall;
+function floodLevel(){   // 目前水面高度（px，箱底往上算）；沒有水淹時 0
+  if(!floodT0)return 0;const k=simStep-floodT0;if(k<0||k>=floodLen())return 0;
+  const u=k<FLOOD.rise?k/FLOOD.rise:k<FLOOD.rise+FLOOD.hold?1:1-(k-FLOOD.rise-FLOOD.hold)/FLOOD.fall;
+  return FLOOD.peak*(u*u*(3-2*u));
+}
+function applyFlood(){
+  if(floodAt&&simStep>=floodAt){floodAt=0;if(over||roundState==='won')return;floodT0=simStep;SND.play('shake');shakeScreen(performance.now(),3,500);}
+  const lv=floodLevel();if(!lv)return;
+  const wy=BOXB-lv-(FIELD.id==='river'?16:0);   // 長江天塹的畫面水面多了 16px 的常駐淺水，浮力的水面要一致
+  for(const t of tops){
+    if(t.isStatic||t.position.y<wy)continue;
+    Body.applyForce(t,t.position,{x:0,y:-t.mass*0.24*FLOOD.lift/277.8});
+    Body.setVelocity(t,{x:t.velocity.x*0.97,y:t.velocity.y*0.95});
+    if(!isHigh(t))t.graceUntil=Math.max(t.graceUntil||0,simStep+150);   // 浮起來的城不算溢出
+  }
+}
+function drawFlood(now){
+  if(RM.matches)now=0;   // 減少動態效果：水面、浪花、暗紋都靜止
+  const fl=floodLevel(),river=DIFF==='hard'&&FIELD.id==='river',lv=fl+(river?16:0);   // 長江天塹：箱底常駐一層淺水（只是畫面，不影響物理）
+  if(!lv)return;
+  const wy=BOXB-lv,d=DARK.matches,amp=fl?4+Math.min(5,fl/30):2.2,sp=RM.matches?0:(fl?0.007:0.002);
+  const surf=x=>wy+Math.sin(now*sp+x*0.05)*amp+Math.sin(now*sp*1.7+x*0.11)*amp*0.4;
+  ctx.save();ctx.beginPath();ctx.rect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);ctx.clip();
+  if(river&&fl){ctx.fillStyle=d?'rgba(40,110,140,.12)':'rgba(40,120,170,.10)';ctx.fillRect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);}   // 水淹七軍：整個江面泛起水色
+  ctx.beginPath();ctx.moveTo(BOXL,BOXB);
+  for(let x=BOXL;x<=BOXR;x+=8)ctx.lineTo(x,surf(x));
+  ctx.lineTo(BOXR,BOXB);ctx.closePath();
+  const g=ctx.createLinearGradient(0,wy,0,BOXB);
+  if(fl){g.addColorStop(0,d?'rgba(90,170,190,.42)':'rgba(60,160,190,.38)');g.addColorStop(1,d?'rgba(30,100,135,.62)':'rgba(25,100,155,.58)');}
+  else{g.addColorStop(0,d?'rgba(90,170,190,.28)':'rgba(90,180,200,.26)');g.addColorStop(1,d?'rgba(40,110,140,.4)':'rgba(50,130,170,.34)');}
+  ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle=d?'rgba(200,240,250,.45)':'rgba(255,255,255,.75)';ctx.lineWidth=fl?2.5:1.5;ctx.beginPath();   // 水面亮線
+  for(let x=BOXL;x<=BOXR;x+=8)x===BOXL?ctx.moveTo(x,surf(x)):ctx.lineTo(x,surf(x));ctx.stroke();
+  if(fl){   // 浪花：水面上跳動的白點，水位越高越多；下方再疊一層較慢的暗紋
+    ctx.fillStyle=d?'rgba(230,250,255,.7)':'rgba(255,255,255,.9)';
+    for(let x=BOXL+6,i=0;x<BOXR;x+=18,i++){const r=1.6+((i*7+Math.floor(now/120))%3)*0.9;ctx.beginPath();ctx.arc(x+((now*0.03+i*13)%12),surf(x)-1-((i+Math.floor(now/90))%3),r,0,Math.PI*2);ctx.fill();}
+    ctx.strokeStyle=d?'rgba(20,80,110,.4)':'rgba(20,90,130,.28)';ctx.lineWidth=1.5;
+    for(let k=1;k<=3;k++){ctx.beginPath();for(let x=BOXL;x<=BOXR;x+=10){const y=wy+k*22+Math.sin(now*0.003*k+x*0.04)*3;x===BOXL?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();}
+  }
+  ctx.restore();
+}
+function drawFog(now){
+  const on=DIFF==='hard'&&evt.phase==='active'&&evt.kind==='fog';
+  fogA+=((on?0.94:0)-fogA)*0.06;if(fogA<0.01)return;
+  ctx.save();ctx.beginPath();ctx.rect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);ctx.clip();
+  const base=DARK.matches?'150,158,172':'245,247,250';   // 深色模式的霧用灰色，不要比背景亮太多
+  ctx.fillStyle='rgba('+base+','+fogA+')';ctx.fillRect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);
+  if(!RM.matches)for(let i=0;i<5;i++){const x=BOXL+((now*0.02*(1+i*.3)+i*140)%(BOXR-BOXL+200))-100,y=BOX_TOP+60+i*90;const gr=ctx.createRadialGradient(x,y,0,x,y,110);gr.addColorStop(0,'rgba('+base+','+Math.min(1,fogA)+')');gr.addColorStop(1,'rgba('+base+',0)');ctx.fillStyle=gr;ctx.fillRect(x-110,y-110,220,220);}
+  ctx.restore();
+}
+function applyWind(){
+  if(simStep<gustUntil){   // 陣風：池子裡（不是剛落下受風的那幾座）所有的城都被往西推
+    for(const t of tops){if(t.isStatic||t.windOn)continue;Body.applyForce(t,t.position,{x:gustDir*WIND.pool*t.mass/277.8,y:0});}   // 277.8 = (1000/60)²：Matter 的力換成每步的加速度
+  }
+  for(const t of tops){
+    if(!t.windOn)continue;
+    if(simStep>=t.windEnd){t.windOn=false;continue;}
+    let cap=WIND.vmax;
+    if(t.windHit){   // 已經碰到東西：風力減半，只再推著滑一小段（時間到、或幾乎停住就收）
+      if(simStep-t.windHit>WIND.slide||Math.hypot(t.velocity.x,t.velocity.y)<0.35){t.windOn=false;continue;}
+      cap=WIND.vmax*0.5;
+    }
+    const dir=t.windDir||-1,sd=dir*t.velocity.x;if(sd<cap)Body.setVelocity(t,{x:dir*Math.min(sd+WIND.a,cap),y:t.velocity.y});
+  }
+}
+const RM=matchMedia('(prefers-reduced-motion:reduce)');
+function drawWind(now){
+  if(DIFF!=='hard'||evt.phase!=='active'||evt.kind!=='wind')return;
+  ctx.save();ctx.strokeStyle=DARK.matches?'rgba(160,200,240,.30)':'rgba(70,110,160,.28)';ctx.lineWidth=2;ctx.lineCap='round';
+  for(let i=0;i<7;i++){
+    const y=BOX_TOP+26+i*74,wd=evt.dir||-1,ph=(now*0.22+i*131)%(BOXR-BOXL+70),x=RM.matches?BOXR-60-i*37%300:(wd<0?BOXR-ph+35:BOXL+ph-81);
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+46,y);ctx.stroke();
+  }
+  ctx.restore();
+}
+const bestKey=()=>DIFF==='hard'?'sg_best_hard':'sg_best';   // 困難的最高分另外存；普通沿用舊的 sg_best
+
 // 電腦版左側各州進度：該州目前連成最大一片的城數 / 該州全部城數（整州連成一片＝完成，和縮小規則、「某某平定」成就同一標準）
 const ZSIZE=new Map();STATES.forEach(st=>ZSIZE.set(st.z,(ZSIZE.get(st.z)||0)+1));
 let zpKey='';
@@ -1389,7 +1626,7 @@ function hud(){
   if(chipTitleFor!==bestAtStart){chipTitleFor=bestAtStart;const sc=document.getElementById('score').closest('.chip');if(sc)sc.title=bestAtStart>0?'分數（歷史最高 '+bestAtStart+'）':'分數';}
   if(recShown&&shown>recVal){recVal=shown;const sb=document.getElementById('sideBest');if(sb)sb.textContent=shown.toLocaleString('en-US');}   // 破紀錄後，側欄的最高分跟著分數走
   if(!recShown&&bestAtStart>0&&shown>bestAtStart){recShown=true;recVal=shown;fx.pops.push({text:'新紀錄！',x:W/2,y:H/2-110,t0:performance.now(),size:30});renderAch();}   // 以畫面上看到的分數為準
-  const nx=cur?cur.unit:(queue.length?'…':'—');
+  const nx=(DIFF==='hard'&&evt.phase==='active'&&evt.kind==='fog')?'？':cur?cur.unit:(queue.length?'…':'—');
   const nextBox=document.getElementById('next'),cap=nextBox.querySelector('small');
   if(roundState==='final'){   // 最後一座落下後：這一格改成倒數
     const sec=Math.max(0,Math.ceil((finalEndStep-simStep)/60));
@@ -1401,9 +1638,9 @@ function hud(){
   document.getElementById('nextDot').style.background=cur&&cur.pcs[0]?zcol(cur.pcs[0].s):'#aaa';
   document.getElementById('nextDot').style.display=roundState==='final'?'none':'';   // 倒數時沒有「下一城」，灰色小圓點也不顯示
 }
-function bestRead(){try{const v=Number(localStorage.getItem('sg_best'));return Number.isFinite(v)&&v>0?v:0;}catch(e){return 0;}}   // 只讀不寫
+function bestRead(){try{const v=Number(localStorage.getItem(bestKey()));return Number.isFinite(v)&&v>0?v:0;}catch(e){return 0;}}   // 只讀不寫
 function best(){
-  const b=Math.max(score,bestRead());try{localStorage.setItem('sg_best',b);}catch(e){}return b;   // 存檔壞掉（非數字）時 bestRead 回 0，不會永遠顯示 NaN
+  const b=Math.max(score,bestRead());try{localStorage.setItem(bestKey(),b);}catch(e){}return b;   // 存檔壞掉（非數字）時 bestRead 回 0，不會永遠顯示 NaN
 }
 // 最後一州落下後：等整盤穩定（且沒有待處理的合併、不在停頓中）才結算，最多等 8 秒；重開時舊的等待會自動失效
 // 單輪流程（每個物理步呼叫一次）：最後一座落下後有 60 秒，全部連成一片就通關；時間到沒完成就結束。
@@ -1416,11 +1653,19 @@ function roundTick(){
 }
 function winRound(){
   roundState='won';SND.play('win');
+  let starText='';
+  if(DIFF==='hard'){
+    const sl=finalEndStep-simStep,left=Math.max(0,Math.round(sl/60)),stars=sl>=STAR3*60?3:sl>=STAR2*60?2:1;   // 星級用剩餘步數判定（不受顯示取整影響）
+    let prev=0;
+    grantSpecial([{gorge:'h:shu',river:'h:wu',plain:'h:zhong'}[FIELD.id]].concat(stars>=3?['h:s3','h:s2']:stars>=2?['h:s2']:[]));
+    try{prev=readStars();if(stars>prev)localStorage.setItem('sg_star_hard',stars);}catch(e){}
+    starText='評價：'+'★'.repeat(stars)+'☆'.repeat(3-stars)+(stars>prev?'（新紀錄）':'')+'\n倒數剩餘 '+left+' 秒・搖一搖 '+shakeCount+' 次'+(shakeCount===0?'・不搖一搖通關':'')+'\n';
+  }
   const win=200*round+1000;score+=win;hud();
   fx.pops.push({text:'天下一統！＋'+win,x:W/2,y:H/2-40,t0:performance.now(),size:30});
   const gid=gameId,rid=roundId;
   setTimeout(()=>{if(gid!==gameId||rid!==roundId||over)return;
-    show('天下一統',`諸城相連，山河重歸一統。\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>init());},Math.min(9000,Math.max(1300,bannerFree-performance.now()+250)));   // 最後一次相連解鎖的成就橫幅要播完，才跳結算框（上限 9 秒）
+    show('天下一統',`諸城相連，山河重歸一統。\n${starText}本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>init());},Math.min(9000,Math.max(1300,bannerFree-performance.now()+250)));   // 最後一次相連解鎖的成就橫幅要播完，才跳結算框（上限 9 秒）
 }
 function gameOver(kind){
   over=true;if(roundState!=='won')SND.play('lose');   // 剛通關還在收尾時，不播失敗的聲音
@@ -1446,7 +1691,7 @@ function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明�
   const ov=document.getElementById('ov'),rb=document.getElementById('ovR'),vl=document.getElementById('ovV');
   if(!intro)resetToasts();   // 結算框出現時，成就提示先收掉，不蓋在結算框上
   ov.classList.toggle('end',!intro);ov.classList.remove('showrules');
-  rb.style.display=intro?'':'none';rb.textContent='玩法說明';   // 玩法說明鈕與版本號只在開場簡介出現
+  rb.style.display='';rb.textContent=intro?'玩法說明':'換難度';rb.onclick=intro?toggleRules:openDiffPick;   // 玩法說明鈕與版本號只在開場簡介出現
   vl.style.display=intro?'block':'none';vl.textContent='版本 '+VERSION+'（'+VERSION_NOTE+'）';
   {const sl=document.getElementById('ovS'),bs=intro?bestRead():0;sl.style.display=bs>0?'block':'none';sl.innerHTML=bs>0?'<span class="lb">歷史最高分</span><span class="nm">'+bs.toLocaleString('en-US')+'</span>':'';}
   document.getElementById('ov').style.display='flex';
@@ -1484,7 +1729,7 @@ function shakeAssist(){
 }
 function shake(){
   if(over||overlayOpen()||!tops.length||simStep<shakeReadyStep||roundState==='won')return;
-  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;SND.play('shake');   // 冷卻 0.5 秒
+  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;shakeCount++;SND.play('shake');   // 冷卻 0.5 秒
   const btn=document.getElementById('shake');btn.disabled=true;btn.classList.remove('on');void btn.offsetWidth;btn.classList.add('on');clearTimeout(shakeAnimT);{const gid=gameId;shakeAnimT=setTimeout(()=>{if(gid===gameId)btn.classList.remove('on');},950);}   // 冷卻只有 0.5 秒：連搖時動畫要重新開始
   lastShakeStep=simStep;
   const assist=roundState==='final'?shakeAssist():null;   // 倒數階段：沒連上的單獨城，搖一搖時會朝它的鄰居翻過去（避免被大片擋住的死局）
@@ -1631,6 +1876,7 @@ function placeLabels(items,now){
   }
 }
 function paintLabel(P,plate,pos){
+  if(DIFF==='hard'&&((evt.phase==='active'&&evt.kind==='fog')||fogA>0.2))return;   // 大霧中（含霧淡出的那一小段）：所有城的名字都看不見（包含手上這座，點一下／滑鼠移上去的查名也不顯示）
   if(!P.shown&&!plate)return;
   const L=P._lbl,{x,y}=pos||P._pos;
   ctx.font=LABEL_FONT(L.fs);ctx.textAlign='center';ctx.textBaseline='middle';
@@ -1652,14 +1898,56 @@ function polyDist(pt,wp){   // 點到多邊形輪廓的最短距離（在形狀�
 let hoverPt=null;   // 滑鼠目前在畫布上的位置（畫布座標）
 const inPoly=(pt,pts)=>{let c=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++)if((pts[i].y>pt.y)!==(pts[j].y>pt.y)&&pt.x<(pts[j].x-pts[i].x)*(pt.y-pts[i].y)/(pts[j].y-pts[i].y)+pts[i].x)c=!c;return c;};
 const DARK=matchMedia('(prefers-color-scheme:dark)');
+// 箱子的戰場主題（只在困難；中原維持原本的米白箱子）：劍閣＝石壁加木樁，長江＝深色木板加水色
+function boxTheme(){
+  const d=DARK.matches,id=DIFF==='hard'?FIELD.id:'plain';
+  if(id==='gorge')return{bg:d?'rgba(214,176,118,.09)':'#f8eed9',frame:d?'#b89560':'#6b5238'};
+  if(id==='river')return{bg:d?'rgba(120,190,210,.09)':'#eff7f7',frame:d?'#7fa9b4':'#4f5f66'};
+  return{bg:d?'rgba(255,248,232,.07)':'#fffdf6',frame:d?'#a98550':'#7a634e'};
+}
+function drawBoxDecor(now){
+  if(DIFF!=='hard')return;const d=DARK.matches,h=BOXB-BOX_TOP+4;
+  if(FIELD.id==='gorge'){
+    ctx.save();
+    for(const [x,dir] of [[BOXL-6-14,-1],[BOXR+6,1]]){   // 兩側石壁（畫在框外）：深淺不一的岩塊和裂縫
+      ctx.fillStyle=d?'#5d5042':'#9b8b76';ctx.fillRect(x,BOX_TOP-4,14,h+4);
+      ctx.strokeStyle=d?'rgba(20,14,8,.55)':'rgba(70,52,34,.5)';ctx.lineWidth=1.5;ctx.beginPath();
+      for(let y=BOX_TOP+14,i=0;y<BOXB;y+=34+(i++%3)*9){ctx.moveTo(x,y);ctx.lineTo(x+7+(i%2)*4,y+4);ctx.lineTo(x+14,y-1);}
+      ctx.stroke();
+      ctx.fillStyle=d?'rgba(255,240,210,.12)':'rgba(255,248,230,.35)';ctx.fillRect(dir<0?x+1:x+10,BOX_TOP-4,3,h+4);
+    }
+    // 木樁：沿著兩側框每隔一段釘一根，棧道的感覺
+    ctx.fillStyle=d?'#8a6a3c':'#8b5e34';
+    for(let y=BOX_TOP+30;y<BOXB-10;y+=70){ctx.fillRect(BOXL-9,y,9,6);ctx.fillRect(BOXR,y,9,6);}
+    // 底部：棧道木板（接著兩側石壁），板縫、橫梁、木釘
+    const dx=BOXL-20,dw=BOXR-BOXL+40,dy=BOXB+4,dh=15;
+    ctx.fillStyle=d?'#6e5230':'#9a6a3a';ctx.fillRect(dx,dy,dw,dh);
+    ctx.fillStyle=d?'rgba(255,230,180,.16)':'rgba(255,240,200,.4)';ctx.fillRect(dx,dy,dw,2.5);
+    ctx.fillStyle=d?'rgba(0,0,0,.3)':'rgba(70,40,15,.3)';ctx.fillRect(dx,dy+dh-3,dw,3);
+    ctx.strokeStyle=d?'rgba(15,8,2,.6)':'rgba(70,42,16,.55)';ctx.lineWidth=1.3;ctx.beginPath();
+    for(let x=dx+34;x<dx+dw-10;x+=34){ctx.moveTo(x,dy);ctx.lineTo(x,dy+dh);}ctx.stroke();
+    ctx.fillStyle=d?'#c9a46a':'#5a3a1a';
+    for(let x=dx+17;x<dx+dw;x+=34){ctx.beginPath();ctx.arc(x,dy+dh/2+1,1.6,0,Math.PI*2);ctx.fill();}
+    ctx.restore();
+  }else if(FIELD.id==='river'){
+    ctx.save();
+    ctx.strokeStyle=d?'rgba(10,20,26,.5)':'rgba(40,30,22,.35)';ctx.lineWidth=1.2;ctx.beginPath();   // 外框像船板：細橫紋
+    for(let y=BOX_TOP+24;y<BOXB;y+=24){ctx.moveTo(BOXL-6,y);ctx.lineTo(BOXL,y);ctx.moveTo(BOXR,y);ctx.lineTo(BOXR+6,y);}
+    ctx.stroke();ctx.restore();
+  }
+}
 function draw(){
   const sx=cv.width/VW,sy=cv.height/VH;ctx.setTransform(sx,0,0,sy,-VX*sx,-VY*sy);
   ctx.clearRect(0,0,W,H);
-  const _sh=shakeOffset(performance.now());ctx.save();ctx.translate(_sh.x,_sh.y);
-  ctx.fillStyle=DARK.matches?'rgba(255,248,232,.07)':'#fffdf6';ctx.fillRect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);
-  ctx.strokeStyle=DARK.matches?'#a98550':'#7a634e';ctx.lineWidth=6;ctx.lineJoin='miter';ctx.beginPath();ctx.moveTo(BOXL-3,BOX_TOP);ctx.lineTo(BOXL-3,BOXB+4);ctx.lineTo(BOXR+3,BOXB+4);ctx.lineTo(BOXR+3,BOX_TOP);ctx.stroke();   // 外框整條畫在碰撞邊界『外側』：城的輪廓（含細尖角）不會壓在框線上，底部不再被切到
+  const now0=performance.now(),_sh=shakeOffset(now0);ctx.save();ctx.translate(_sh.x,_sh.y);
+  const TH=boxTheme();
+  ctx.fillStyle=TH.bg;ctx.fillRect(BOXL,BOX_TOP,BOXR-BOXL,BOXB-BOX_TOP);
+  ctx.strokeStyle=TH.frame;ctx.lineWidth=6;ctx.lineJoin='miter';ctx.beginPath();ctx.moveTo(BOXL-3,BOX_TOP);ctx.lineTo(BOXL-3,BOXB+4);ctx.lineTo(BOXR+3,BOXB+4);ctx.lineTo(BOXR+3,BOX_TOP);ctx.stroke();drawBoxDecor(now0);   // 外框整條畫在碰撞邊界『外側』：城的輪廓（含細尖角）不會壓在框線上，底部不再被切到
   ctx.setLineDash([10,8]);ctx.strokeStyle='#c4574f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(BOXL,LINE);ctx.lineTo(BOXR,LINE);ctx.stroke();ctx.setLineDash([]);
-  if(cur){ctx.strokeStyle='rgba(138,106,58,.4)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(dropX,curY+60);ctx.lineTo(dropX,BOXB);ctx.stroke();ctx.setLineDash([]);}   // 落點輔助線先畫，溢出線標籤畫在它上面，兩者不會互相切到
+  if(cur){const windy=DIFF==='hard'&&evt.phase==='active'&&evt.kind==='wind';ctx.strokeStyle=windy?'rgba(70,110,160,.6)':'rgba(138,106,58,.4)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(dropX,curY+60);
+    if(windy){const t0=WIND.vmax/WIND.a;for(let y=curY+80;y<=BOXB;y+=16){const t=Math.sqrt(2*(y-curY)/0.24),d=t<t0?0.5*WIND.a*t*t:0.5*WIND.vmax*t0+WIND.vmax*(t-t0);ctx.lineTo(Math.min(BOXR-4,Math.max(BOXL+4,dropX+(evt.dir||-1)*d)),y);}}   // 彎線：城往下掉的同時被往西吹（0.24 是實測的下落加速度）
+    else ctx.lineTo(dropX,BOXB);
+    ctx.stroke();ctx.setLineDash([]);}   // 受風時，輔助線改成斜的（預估會往西偏）   // 落點輔助線先畫，溢出線標籤畫在它上面，兩者不會互相切到
   {
     // 溢出線標籤：實心小標牌 + 較大的粗體字，座標取整數避免字邊緣糊掉
     const txt='溢出線',fs=15;
@@ -1715,7 +2003,7 @@ function checkOverflow(){
   }
 }
 function step(){
-  simStep++;Engine.update(engine,1000/60);magnetScan();mergePending();keepInside();
+  simStep++;if(DIFF==='hard'){if(quakeAt&&simStep>=quakeAt){quakeAt=0;doQuake();}applyWind();applyFlood();}Engine.update(engine,1000/60);magnetScan();mergePending();keepInside();
   if(roundState==='final')roundTick();   // 先判通關／時限，再判溢出：最後一次合併剛好完成全圖時，同一步就算越線也算通關
   if(!over&&roundState!=='won')checkOverflow();   // 已通關就不再改判失敗（收尾 1.3 秒內地圖越線也一樣）
   const sb=document.getElementById('shake');
@@ -1760,10 +2048,32 @@ function frame(ts){
     if(under&&btnAt(under)===b){if(e.cancelable)e.preventDefault();b.click();}
   },{passive:false});
 }
-resize();init();
-show('山河輿圖','<div class="sub">天下大勢，分久必合，合久必分</div><div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……<br>烽火連年，山河破碎，有人據城而守，有人火燒赤壁。<br>這一回，你不必披甲上陣，<br>只需讓每座名城各歸其位。</div><div class="rules"><div>◆ 移動滑鼠（或手指）選落點，點擊放下<span class="kb">；鍵盤可用 ← → 移動、空白鍵放下</span>。</div><div>◆ 相鄰的城在交界處相接或被磁吸，就會拼回真實地圖；整個州連成一片還會縮小，騰出空間。</div><div>◆ 連出官渡、赤壁、夷陵等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過溢出線 1.2 秒，國土便會崩裂；搖一搖可以讓城池鬆開。</div><div>◆ 城池依西元 240 年前後的疆域擺放，底色是漢末十三州。</div></div>','開始遊戲',()=>{document.body.classList.remove('intro');},true);
-document.body.classList.add('intro');
-{const ov=document.getElementById('ov'),r=document.getElementById('ovR');r.onclick=()=>{const on=ov.classList.toggle('showrules');r.textContent=on?'返回簡介':'玩法說明';};}   // 簡介：玩法說明 ⇄ 返回簡介
+function introHTML(){
+  const hard=DIFF==='hard';
+  return '<div class="sub">天下大勢，分久必合，合久必分</div>'+'<div class="story">漢室傾頹，群雄並起。<br>洛陽、許昌、成都、建業……<br>烽火連年，山河破碎，有人據城而守，有人火燒赤壁。<br>這一回，你不必披甲上陣，<br>只需讓每座名城各歸其位。</div><div class="rules"><div class="rt">玩　法</div><div>◆ 點一下放下城池；電腦可用 ← → 移動、空白鍵放下。</div><div>◆ 相鄰的城相接，就會拼回真實地圖；整個州連成一片，還會縮小、騰出空間。</div><div>◆ 連出官渡、赤壁等名場面，可解鎖歷史成就。</div><div>◆ 最後一座城落下後有 60 秒，全部連成一片才算天下一統。</div><div>◆ 城池堆過紅線太久，國土便會崩裂；搖一搖可以讓城池鬆開。</div>'+(hard?'<div>◆ 困難：局勢多變，見機行事。</div>':'')+'</div>';
+}
+function diffHTML(){
+  const bs=readStars();
+  const card=(id,t,sub)=>'<button type="button" class="dcard'+(DIFF===id?' on':'')+'" data-d="'+id+'" role="radio" aria-checked="'+(DIFF===id)+'"><b>'+t+'</b><span>'+sub+'</span></button>';
+  return '<div class="difflabel">選　擇　難　度</div><div class="dcards" role="radiogroup" aria-label="難度">'
+    +card('normal','普通','原始玩法，經典的拼圖體驗')
+    +card('hard','困難（Beta測試版）','局勢多變，未知的挑戰'+(bs?'・最佳 '+'★'.repeat(bs)+'☆'.repeat(3-bs):''))
+    +'</div>'
+    +(DIFF==='hard'&&DEVMODE?'<div class="fieldrow" role="radiogroup" aria-label="戰場"><span>戰　場</span>'+[['random','隨機'],...FIELDS.map(f=>[f.id,f.name])].map(f=>'<button type="button" class="fchip'+(FIELD_PICK===f[0]?' on':'')+'" data-f="'+f[0]+'" role="radio" aria-checked="'+(FIELD_PICK===f[0])+'">'+f[1]+'</button>').join('')+'</div>':'');
+}
+function toggleRules(){const ov=document.getElementById('ov'),r=document.getElementById('ovR');const on=ov.classList.toggle('showrules');r.textContent=on?'返回簡介':'玩法說明';}   // 簡介：玩法說明 ⇄ 返回簡介
+function showIntro(){show('山河輿圖',introHTML(),'開始遊戲',()=>{showDiffPick();},true);document.body.classList.add('intro');}   // 第一步：故事＋開始遊戲／玩法說明
+function showDiffPick(){   // 第二步：選難度，按「出戰」才真正開始；「返回」回到第一步
+  show('山河輿圖',diffHTML(),'出戰',()=>{document.body.classList.remove('intro');},true);
+  const rb=document.getElementById('ovR');rb.textContent='返回';rb.onclick=()=>showIntro();
+  document.body.classList.add('intro');
+}
+function openDiffPick(){init();showDiffPick();}   // 結算框的「換難度」：先清掉上一局，直接到第二步選難度
+document.getElementById('ovP').addEventListener('click',e=>{const fc=e.target.closest&&e.target.closest('.fchip');if(fc){FIELD_PICK=fc.dataset.f;try{localStorage.setItem('sg_field',FIELD_PICK);}catch(e2){}init();showDiffPick();return;}   // 指定戰場：重畫這一步並重開一局
+  const b=e.target.closest&&e.target.closest('.dcard');if(!b)return;DIFF=b.dataset.d==='hard'?'hard':'normal';try{localStorage.setItem('sg_diff',DIFF);}catch(e2){}init();showDiffPick();});   // 選難度：整局重來並重畫這一步
+{try{DIFF=localStorage.getItem('sg_diff')==='hard'?'hard':'normal';const f=localStorage.getItem('sg_field');if(FIELDS.some(x=>x.id===f))FIELD_PICK=f;}catch(e){}}
+{const u=new URLSearchParams(location.search).get('field');if(FIELDS.some(x=>x.id===u))FIELD_PICK=u;}   // 網址指定戰場（測試用）
+resize();init();showIntro();
 requestAnimationFrame(frame);
 </script>
 <div id="toast"></div>
