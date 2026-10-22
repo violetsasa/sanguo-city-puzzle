@@ -598,8 +598,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='火燒事件不只洛陽，新增赤壁、連營等地點';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.82';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 82 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='修正火燒的免死期與地點公告';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.83';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 83 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1513,7 +1513,7 @@ function eventBanner(kind,name,story,glyph,head){
   fx.banners.push({t0,dur,name,story,head:head||'特殊事件',sub:'',y:BOX_TOP-8,pal:PAL_EVT[kind],glyph});
   shakeScreen(now,2.5,350);
 }
-function evtReset(){evt={phase:'calm',left:WIND.startCalm,kind:'wind'};quakeAt=0;fireAt=0;burnedSt.clear();floodAt=0;floodT0=0;fogA=0;evtBag=[];updateEvtUI();}
+function evtReset(){evt={phase:'calm',left:WIND.startCalm,kind:'wind'};quakeAt=0;fireAt=0;fireCity='';burnedSt.clear();floodAt=0;floodT0=0;fogA=0;evtBag=[];updateEvtUI();}
 const FOG_LEN=5,EVT_LEN={quake:1,flood:1,fog:FOG_LEN,fire:1};
 const EVT_BAG=['wind','wind','quake','flood','fog','fire'];   // 抽事件用「籤袋」：袋子抽完才洗牌重裝，所以每種事件出現的頻率平均（不會一直遇不到某一種，但一局事件次數有限，不保證每種都遇到）；同一種不連續出現（袋裡只剩和上一個相同的，會提前補一袋）
 let evtBag=[];
@@ -1573,7 +1573,7 @@ function rebuildSubset(old,comp,siblings){
   const k=states.reduce((m,x)=>Math.min(m,x.sc),1e9)*Math.max(MIN_SHRINK,Math.pow(REGION_SHRINK,regionsDone(states)));
   const bs=states.map(s=>{const raw=s.p.map(q=>proj(q,k)),c=Vertices.centre(raw);return makePiece(s,c.x,c.y,k);});
   const T=fuse(bs);
-  T.graceUntil=Math.max(old.graceUntil||0,simStep+FIRE.graceSteps);T.overSteps=old.overSteps||0;   // 重建的那塊如果被上提到溢出線以上，給 2 秒落回去的時間（矮箱子的長江天塹實測會直接判溢出）
+  T.graceUntil=old.graceUntil||0;T.overSteps=old.overSteps||0;
   const t0=Math.max(...comp.map(p=>p.t0)),ds=Math.max(...comp.map(p=>p.dropStep||0));
   T.pcs.forEach(p=>{p.dropped=true;p.t0=t0;p.dropStep=ds;pieceOf.set(p.s,p);});
   Body.setAngle(T,old.angle);Body.setPosition(T,old.position);
@@ -1589,6 +1589,7 @@ function rebuildSubset(old,comp,siblings){
   // 找位置：先原地、再左右微移、往上抬；同一舊塊拆出的其他新塊（siblings）也要避開。找不到就再縮小一點重試（最多三次）
   const others=tops.filter(x=>x!==old).concat(siblings||[]);
   for(let tries=0;tries<4&&!placeFree(T,others);tries++){if(tries<3)scaleTop(T,0.94);}
+  if(!isHigh(old)&&isHigh(T)){T.graceUntil=Math.max(T.graceUntil,simStep+FIRE.graceSteps);T.overSteps=0;}   // 重建把這塊上提到溢出線以上（原本不在線上）：給 2 秒落回去；原本就超線的不延長，不能靠火燒拖延
   const now=performance.now();
   T.pcs.forEach(P=>{const b=before.get(P.s);if(b)P.anim={t0:now,w:b.w,r:b.k/P.k};});
   return T;
@@ -1599,9 +1600,10 @@ function doFire(){
   const sp=sp0.find(x=>x.n===fireCity)||sp0[Math.floor(Math.random()*sp0.length)];
   if(!sp)return;
   const P0=pieceOf.get(STATES.find(x=>x.n===sp.n));
+  if(fireCity&&sp.n!==fireCity)eventBanner('fire',sp.name+'！',sp.act,'火');   // 預告的地點已經不在池子裡、改燒另一處：當場公告實際的地點
   const c0=pieceWorld(P0).c,dist=p=>{const c=pieceWorld(p).c;return Math.hypot(c.x-c0.x,c.y-c0.y);};
   const all=tops.flatMap(t=>t.pcs.filter(p=>p.dropped));
-  const burn=all.sort((a,b)=>dist(a)-dist(b)).slice(0,Math.min(FIRE.count,all.length));
+  const burn=[P0].concat(all.filter(p=>p!==P0).sort((a,b)=>dist(a)-dist(b))).slice(0,Math.min(FIRE.count,all.length));   // 起火那座城一定被燒，再加上離它最近的
   const burnSet=new Set(burn.map(p=>p.s)),byTop=new Map(),now=performance.now();
   burn.forEach(p=>{if(!byTop.has(p.top))byTop.set(p.top,[]);byTop.get(p.top).push(p);});
   for(const p of burn){   // 起火的特效：每座被燒的城上冒火花
