@@ -596,8 +596,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='修正手機選難度被切到、連點放大';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.78';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 78 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='困難模式新增火燒洛陽';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.79';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 79 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -881,8 +881,9 @@ function startMergeFx(sa,sb,T){
   for(let i=0;i<10;i++){const q=pts[(r()*pts.length)|0];fx.stars.push({x:q.x,y:q.y,vx:(r()-.5)*30,vy:-(34+r()*44),s:3.2+r()*2.8,t0:go+r()*260});}
   const single=sa.length===1&&sb.length===1;
   fx.pops.push({text:single?`${sa[0].n}＋${sb[0].n}`:`${cnNum(n)}城相連`,x:Math.max(BOXL+60,Math.min(BOXR-60,cx)),y:cy-22,t0:go,size:n===2?17:n<6?19:21});
-  const pts2=n*n*10;score+=pts2;pendingFly+=pts2;   // 邏輯分數立刻入帳；畫面上的數字等飛分抵達才更新
-  flyScore(pts2,cx,cy,go);
+  const reborn=[...sa,...sb].filter(x=>burnedSt.has(x));reborn.forEach(x=>burnedSt.delete(x));   // 火燒後重新連回去的第一次：不加分（不能靠被燒來刷分）
+  const pts2=reborn.length?0:n*n*10;score+=pts2;pendingFly+=pts2;   // 邏輯分數立刻入帳；畫面上的數字等飛分抵達才更新
+  if(pts2>0)flyScore(pts2,cx,cy,go);
   mergeBurst(n,cx,cy,pts,T,go);if(n<STATES.length)SND.play('merge',n);   // 連成整張地圖那一下由通關的聲音負責，不疊兩個
   try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
 }
@@ -920,6 +921,7 @@ const PAL_EVT={   // 特殊事件的橫幅：預告＝橘紅、東南風＝藍�
   field:{g0:'#d8efe0',g1:'#7cc49a',g2:'#3f9a6a',edge:'#1f6b45',head:'#16543a',name:'#0b2f20',story:'#164a33',halo:'120,200,150',shadow:'rgba(10,60,35,.5)',stroke:'rgba(238,252,244,.92)'},
   fog:{g0:'#f0f0f0',g1:'#c9ccd1',g2:'#9aa0a8',edge:'#5a6068',head:'#3d434a',name:'#22262b',story:'#3d434a',halo:'220,224,230',shadow:'rgba(50,55,62,.5)',stroke:'rgba(250,250,252,.92)'},
   flood:{g0:'#c8f0f0',g1:'#4fc0c8',g2:'#1f8a96',edge:'#0c5560',head:'#0a4650',name:'#052a30',story:'#0c4650',halo:'110,210,220',shadow:'rgba(5,60,70,.5)',stroke:'rgba(235,252,252,.92)'},
+  fire:{g0:'#ffd2b4',g1:'#ff7a3a',g2:'#d6401c',edge:'#7a1c06',head:'#6a1805',name:'#300a00',story:'#521708',halo:'255,120,60',shadow:'rgba(110,25,0,.55)',stroke:'rgba(255,230,215,.92)'},
   quake:{g0:'#ead4b8',g1:'#b88958',g2:'#8b5a30',edge:'#4e2f16',head:'#3d230d',name:'#2a1606',story:'#3d230d',halo:'210,160,100',shadow:'rgba(60,30,10,.55)',stroke:'rgba(250,238,222,.92)'}
 };
 function addRing(x,y,t0,r1,color,w){fx.rings.push({x,y,t0,dur:620,r0:6,r1,color,w:w||4});}
@@ -1447,6 +1449,7 @@ function drop(){
   if(DIFF==='hard'&&evt.phase==='active'){
     if(evt.kind==='quake')quakeAt=simStep+QUAKE.delay;
     else if(evt.kind==='flood')floodAt=simStep+FLOOD.delay;
+    else if(evt.kind==='fire')fireAt=simStep+FIRE.delay;
     else if(evt.kind==='fog'){}   // 地鳴：這座城落下後一小段時間，整個池子往上彈
     else if(evt.kind==='wind'){b.windOn=true;b.windDir=evt.dir||-1;b.windEnd=simStep+WIND.maxSteps;gustUntil=simStep+WIND.poolSteps;gustDir=evt.dir||-1;}
   }   // 這座城在風裡落下：第一次碰到東西之前會被往西吹
@@ -1490,6 +1493,7 @@ function clipBoxUp(){ctx.beginPath();ctx.moveTo(wl(0),0);ctx.lineTo(wl(BOXB),BOX
 function boxPath(){ctx.beginPath();ctx.moveTo(BOXL,BOX_TOP);ctx.lineTo(wl(BOXB),BOXB);ctx.lineTo(wr(BOXB),BOXB);ctx.lineTo(BOXR,BOX_TOP);ctx.closePath();}
 const WIND_NAME={'-1':'借東風','1':'西涼烈風'};   // 風向 -1＝往西吹（赤壁借東風）、1＝往東吹（馬超西涼鐵騎）
 let fieldAnnounce=false;   // 困難：這一局開始、沒有視窗蓋著時，公告一次戰場名稱（用成就橫幅的樣式）
+let fireAt=0;const burnedSt=new Set();   // fireAt：火燒洛陽要發生的步數；burnedSt：被燒毀、還沒重新連回去的城（第一次重新連上不加分）
 let evt={phase:'calm',left:WIND.startCalm,kind:'wind',dir:-1},shakeCount=0,gustUntil=0,gustDir=-1,quakeAt=0,floodAt=0,floodT0=0,fogA=0;
 function eventBanner(kind,name,story,glyph,head){
   const now=performance.now(),dur=2200;   // 事件橫幅不排隊：玩家點很快時，正式通知也要立刻出現（舊的事件橫幅直接換掉，進行中的成就橫幅快速收掉，之後的成就橫幅排在它後面）
@@ -1503,15 +1507,17 @@ function eventBanner(kind,name,story,glyph,head){
   fx.banners.push({t0,dur,name,story,head:head||'特殊事件',sub:'',y:BOX_TOP-8,pal:PAL_EVT[kind],glyph});
   shakeScreen(now,2.5,350);
 }
-function evtReset(){evt={phase:'calm',left:WIND.startCalm,kind:'wind'};quakeAt=0;floodAt=0;floodT0=0;fogA=0;evtBag=[];updateEvtUI();}
-const FOG_LEN=5,EVT_LEN={quake:1,flood:1,fog:FOG_LEN};
-const EVT_BAG=['wind','wind','quake','flood','fog'];   // 抽事件用「籤袋」：袋子抽完才洗牌重裝，所以每種事件出現的頻率平均（不會一直遇不到某一種，但一局事件次數有限，不保證每種都遇到）；同一種不連續出現（袋裡只剩和上一個相同的，會提前補一袋）
+function evtReset(){evt={phase:'calm',left:WIND.startCalm,kind:'wind'};quakeAt=0;fireAt=0;burnedSt.clear();floodAt=0;floodT0=0;fogA=0;evtBag=[];updateEvtUI();}
+const FOG_LEN=5,EVT_LEN={quake:1,flood:1,fog:FOG_LEN,fire:1};
+const EVT_BAG=['wind','wind','quake','flood','fog','fire'];   // 抽事件用「籤袋」：袋子抽完才洗牌重裝，所以每種事件出現的頻率平均（不會一直遇不到某一種，但一局事件次數有限，不保證每種都遇到）；同一種不連續出現（袋裡只剩和上一個相同的，會提前補一袋）
 let evtBag=[];
 function pickKind(last){
   const fill=()=>{const b=EVT_BAG.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}evtBag.push(...b);};
   if(!evtBag.length)fill();
-  let i=evtBag.findIndex(k=>k!==last);
-  if(i<0){fill();i=evtBag.findIndex(k=>k!==last);}   // 袋裡只剩和上一個相同的：先補一袋新的，再抽不同的（剩下的留到之後）
+  const ok=k=>k!==last&&(k!=='fire'||fireEligible());   // 火燒洛陽：洛陽已經在池子裡才抽得到，不然留在袋子裡等下一次
+  let i=evtBag.findIndex(ok);
+  if(i<0){fill();i=evtBag.findIndex(ok);}
+  if(i<0)i=evtBag.findIndex(k=>k!=='fire');   // 袋裡只剩和上一個相同的：先補一袋新的，再抽不同的（剩下的留到之後）
   return evtBag.splice(i,1)[0];
 }
 function evtAdvance(){
@@ -1521,20 +1527,79 @@ function evtAdvance(){
     if(queue.length>=WIND.len+WIND.minLeft){const kind=pickKind(evt.lastKind);const dir=evt.lastDir?-evt.lastDir:(Math.random()<0.5?-1:1);evt={phase:'warn',lastDir:kind==='wind'?dir:evt.lastDir,left:1,kind,dir};   // 隨機抽風或地震（地震不連續出現）；風向也隨機：-1 往西（借東風）、1 往東（西涼烈風）
       if(kind==='quake')eventBanner('warn','預告：洛陽地動','洛陽地動，山河震盪：放下這座城後，地動將至。','⚠');
       else if(kind==='flood')eventBanner('warn','預告：水淹七軍','秋雨連綿，漢水暴漲：放下這座城後，水將漲起。','⚠');
+      else if(kind==='fire')eventBanner('warn','預告：火燒洛陽','董卓遷都長安，縱火焚燒洛陽：放下這座城後，洛陽一帶將起火。','⚠');
       else if(kind==='fog')eventBanner('warn','預告：大霧漫江','長江起了大霧：放下這座城後，濃霧將起。','⚠');
       else eventBanner('warn','預告：'+WIND_NAME[dir],dir<0?'赤壁之夜，諸葛亮借來東風：放下這座城後，風就要起了。':'馬超西涼鐵騎，烈風捲地：放下這座城後，風就要起了。','⚠');}
     else evt={phase:'calm',left:99,kind:'wind',lastDir:evt.lastDir,lastKind:evt.lastKind};
   }
-  else if(evt.phase==='warn'){evt={phase:'active',left:EVT_LEN[evt.kind]||WIND.len,kind:evt.kind,dir:evt.dir,lastDir:evt.lastDir};if(evt.kind==='quake')eventBanner('quake','洛陽地動！','山河震盪：下一座城落下後，整個池子會往上彈。','▲');if(evt.kind==='fog')eventBanner('fog','大霧漫江！','濃霧遮住了池子，看不清裡面的城。','≋');if(evt.kind==='flood')eventBanner('flood','水淹七軍！','漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。','≈');if(evt.kind==='wind')eventBanner('wind',WIND_NAME[evt.dir]+'！',evt.dir<0?'東風大起：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往東吹。',evt.dir<0?'◀':'▶');}
+  else if(evt.phase==='warn'){evt={phase:'active',left:EVT_LEN[evt.kind]||WIND.len,kind:evt.kind,dir:evt.dir,lastDir:evt.lastDir};if(evt.kind==='quake')eventBanner('quake','洛陽地動！','山河震盪：下一座城落下後，整個池子會往上彈。','▲');if(evt.kind==='fire')eventBanner('fire','火燒洛陽！','洛陽起火：下一座城落下後，洛陽和附近的幾座城會被燒毀，要重新放下。','火');if(evt.kind==='fog')eventBanner('fog','大霧漫江！','濃霧遮住了池子，看不清裡面的城。','≋');if(evt.kind==='flood')eventBanner('flood','水淹七軍！','漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。','≈');if(evt.kind==='wind')eventBanner('wind',WIND_NAME[evt.dir]+'！',evt.dir<0?'東風大起：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往東吹。',evt.dir<0?'◀':'▶');}
   else evt={phase:'calm',left:WIND.gapMin+Math.floor(Math.random()*(WIND.gapMax-WIND.gapMin+1)),kind:'wind',lastKind:evt.kind,lastDir:evt.lastDir};
   updateEvtUI();
 }
 function updateEvtUI(){   // 標籤只放短短一行（窄螢幕也放得下），細節看橫幅
   const e=document.getElementById('evt');if(!e)return;
   if(DIFF!=='hard'){e.className='';e.textContent='';return;}
-  if(evt.phase==='warn'){e.className='show warn';e.textContent=evt.kind==='quake'?'⚠ 預告：洛陽地動':evt.kind==='flood'?'⚠ 預告：水淹七軍':evt.kind==='fog'?'⚠ 預告：大霧漫江':'⚠ 預告：'+WIND_NAME[evt.dir];}
-  else if(evt.phase==='active'){e.className='show active';e.textContent=evt.kind==='quake'?'▲ 洛陽地動　池子即將上彈':evt.kind==='flood'?'≈ 水淹七軍　水即將漲起':evt.kind==='fog'?'≋ 大霧漫江　還有 '+evt.left+' 座城在霧中':(evt.dir<0?'◀ ':'▶ ')+WIND_NAME[evt.dir]+'　還有 '+evt.left+' 座城受風';}
+  if(evt.phase==='warn'){e.className='show warn';e.textContent=evt.kind==='quake'?'⚠ 預告：洛陽地動':evt.kind==='fire'?'⚠ 預告：火燒洛陽':evt.kind==='flood'?'⚠ 預告：水淹七軍':evt.kind==='fog'?'⚠ 預告：大霧漫江':'⚠ 預告：'+WIND_NAME[evt.dir];}
+  else if(evt.phase==='active'){e.className='show active';e.textContent=evt.kind==='quake'?'▲ 洛陽地動　池子即將上彈':evt.kind==='fire'?'🔥 火燒洛陽　幾座城即將被燒毀':evt.kind==='flood'?'≈ 水淹七軍　水即將漲起':evt.kind==='fog'?'≋ 大霧漫江　還有 '+evt.left+' 座城在霧中':(evt.dir<0?'◀ ':'▶ ')+WIND_NAME[evt.dir]+'　還有 '+evt.left+' 座城受風';}
   else{e.className='';e.textContent='';}
+}
+const FIRE={delay:25,count:3};   // 火燒洛陽：這座城落下後 25 步起火，燒掉洛陽和離它最近的共 3 座城（燒掉的城回到待落下的城池）
+function fireEligible(){
+  if(DIFF!=='hard'||over||roundState!=='play'||queue.length<4)return false;
+  const lo=STATES.find(x=>x.n==='洛陽'),P=lo&&pieceOf.get(lo);
+  return !!(P&&P.dropped&&P.top&&tops.includes(P.top));
+}
+// 把一組城（comp）依真實地理重新焊成新的一塊，位置接在原本那組上（某座參考城的世界座標不變）
+function rebuildSubset(old,comp){
+  const states=comp.map(p=>p.s);
+  const before=new Map(comp.map(p=>[p.s,{w:pieceWorld(p),k:p.k}]));
+  const k=states.reduce((m,x)=>Math.min(m,x.sc),1e9)*Math.max(MIN_SHRINK,Math.pow(REGION_SHRINK,regionsDone(states)));
+  const bs=states.map(s=>{const raw=s.p.map(q=>proj(q,k)),c=Vertices.centre(raw);return makePiece(s,c.x,c.y,k);});
+  const T=fuse(bs);
+  T.graceUntil=old.graceUntil||0;T.overSteps=old.overSteps||0;
+  const t0=Math.max(...comp.map(p=>p.t0)),ds=Math.max(...comp.map(p=>p.dropStep||0));
+  T.pcs.forEach(p=>{p.dropped=true;p.t0=t0;p.dropStep=ds;pieceOf.set(p.s,p);});
+  Body.setAngle(T,old.angle);Body.setPosition(T,old.position);
+  const ref=T.pcs[0],w0=before.get(ref.s).w,w1=pieceWorld(ref);
+  Body.translate(T,{x:w0.c.x-w1.c.x,y:w0.c.y-w1.c.y});
+  Body.setVelocity(T,old.velocity);Body.setAngularVelocity(T,old.angularVelocity);
+  shrinkToFit(T);
+  placeFree(T,tops.filter(x=>x!==old));   // 放不下就留在原地，交給物理推開
+  const now=performance.now();
+  T.pcs.forEach(P=>{const b=before.get(P.s);if(b)P.anim={t0:now,w:b.w,r:b.k/P.k};});
+  return T;
+}
+function doFire(){
+  if(over||roundState!=='play')return;
+  const lo=STATES.find(x=>x.n==='洛陽'),P0=lo&&pieceOf.get(lo);
+  if(!P0||!P0.dropped||!P0.top||!tops.includes(P0.top))return;
+  const c0=pieceWorld(P0).c,dist=p=>{const c=pieceWorld(p).c;return Math.hypot(c.x-c0.x,c.y-c0.y);};
+  const all=tops.flatMap(t=>t.pcs.filter(p=>p.dropped));
+  const burn=all.sort((a,b)=>dist(a)-dist(b)).slice(0,Math.min(FIRE.count,all.length));
+  const burnSet=new Set(burn.map(p=>p.s)),byTop=new Map(),now=performance.now();
+  burn.forEach(p=>{if(!byTop.has(p.top))byTop.set(p.top,[]);byTop.get(p.top).push(p);});
+  for(const p of burn){   // 起火的特效：每座被燒的城上冒火花
+    const w=pieceWorld(p).c;
+    addConfetti(w.x,w.y,now,14,['#ff9a3c','#ff6a1c','#ffd24a','#e8401c'],1.3,true);
+    addRing(w.x,w.y,now,60,'rgba(255,120,40,.85)',5);
+  }
+  fx.flashes.push({t0:now,dur:600,color:'255,110,40',alpha:.3});shakeScreen(now,3,450);SND.play('shake');
+  for(const [t,bp] of byTop){
+    const rest=t.pcs.filter(p=>!burnSet.has(p.s));
+    const seen=new Set(),comps=[];   // 剩下的城依相鄰關係分成幾塊（中間的城被燒掉，可能斷成兩塊以上）
+    for(const p of rest){
+      if(seen.has(p))continue;const comp=[p];seen.add(p);
+      for(let i=0;i<comp.length;i++)for(const q of rest)if(!seen.has(q)&&isAdj(comp[i].s,q.s)){seen.add(q);comp.push(q);}
+      comps.push(comp);
+    }
+    const news=comps.map(c=>rebuildSubset(t,c));
+    Composite.remove(engine.world,t);tops=tops.filter(x=>x!==t);
+    news.forEach(T=>{Composite.add(engine.world,T);tops.push(T);});
+  }
+  const idx=[];
+  for(const p of burn){pieceOf.delete(p.s);placed--;burnedSt.add(p.s);idx.push(STATES.indexOf(p.s));}
+  queue.unshift(...idx);   // 燒掉的城排到待落下的最前面，接著重新放下
+  refreshPairs();pending=[];pendingKeys=new Set();hud();
 }
 const QUAKE={delay:25,vyMin:7,vyMax:12,vx:4,graceSteps:150};   // 地鳴：每塊城往上彈的速度（比搖一搖更大一些）；彈起後有 2.5 秒不計溢出
 function doQuake(){
@@ -2048,7 +2113,7 @@ function checkOverflow(){
   }
 }
 function step(){
-  simStep++;if(DIFF==='hard'){if(quakeAt&&simStep>=quakeAt){quakeAt=0;doQuake();}applyWind();applyFlood();}Engine.update(engine,1000/60);magnetScan();mergePending();keepInside();
+  simStep++;if(DIFF==='hard'){if(quakeAt&&simStep>=quakeAt){quakeAt=0;doQuake();}if(fireAt&&simStep>=fireAt){fireAt=0;doFire();}applyWind();applyFlood();}Engine.update(engine,1000/60);magnetScan();mergePending();keepInside();
   if(roundState==='final')roundTick();   // 先判通關／時限，再判溢出：最後一次合併剛好完成全圖時，同一步就算越線也算通關
   if(!over&&roundState!=='won')checkOverflow();   // 已通關就不再改判失敗（收尾 1.3 秒內地圖越線也一樣）
   const sb=document.getElementById('shake');
