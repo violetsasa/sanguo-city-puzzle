@@ -169,7 +169,7 @@
   #ov .sub{font-size:13px;letter-spacing:3px;opacity:.7;margin-bottom:6px}
   #ov .story{text-align:center;font-size:15px;line-height:1.95;margin:6px 0 10px}
   @media (max-width:640px){#ov{position:fixed;inset:0;z-index:30;border-radius:0;padding:6px}}   /* 手機（連 iOS Safari 扣掉網址列與工具列後的可視高度也算）：簡介與選難度蓋滿整個畫面，內容才放得下；棋盤區太矮 */
-  @media (max-width:420px){#ov .story{font-size:14px;line-height:1.6;margin:2px 0 6px}#ov .sub{font-size:12px;letter-spacing:1px;margin-bottom:2px}}   /* 手機直立、棋盤區比較矮：簡介文字縮一點才放得下 */
+  @media (max-width:420px){#ov .story{font-size:14px;line-height:1.6;margin:2px 0 6px}#ov .sub{font-size:12px;letter-spacing:1px;margin-bottom:2px}}   /* 手機直立、棋盤區比較矮：簡介文字縮一點才放得下（高度夠的手機，簡介卡片會被下面那組規則蓋過） */
   /* 手機且高度夠（大多數直立手機，這組規則的優先權比上面高，會蓋過它）：簡介文字放大、上下加細線，空間用在文字上，不要留大片空白 */
   @media (max-width:640px) and (min-height:620px){
     #ov.intro-card .sub{font-size:14px;letter-spacing:3px;margin-bottom:0}
@@ -616,7 +616,7 @@ const SND=(()=>{
   };
 })();
 let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;   // 畫面更新頻率的狀態（frame() 用；hud() 也會標記 drawDirty，所以放在最前面）
-const VERSION_NOTE='簡介頁排版優化';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION_NOTE='簡介頁排版與火燒計分調整';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
 const VERSION='1.97';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 97 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
