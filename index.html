@@ -134,7 +134,7 @@
   #ov .dcard.on{border:2px solid var(--accent);background:rgba(168,85,43,.08);padding:9.5px 43.5px}
   #ov .dcard.on::after{content:"✓";border-color:var(--accent);background:var(--accent);color:#fff8e8;font-size:13px;line-height:19px;text-align:center}
   #evt{position:absolute;left:8px;right:8px;top:auto;bottom:auto;width:fit-content;margin:0 auto;z-index:4;max-width:calc(100% - 16px);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 12px;border-radius:12px;background:rgba(255,250,240,.96);border:2px solid var(--line);font-size:14px;font-weight:bold;line-height:1.35;color:var(--ink);pointer-events:none;display:none;box-shadow:0 2px 8px rgba(90,70,54,.25)}   /* 困難的事件／戰場標籤：棋盤左上角 */
-  #evt.show{display:block}
+  #evt.show{display:block;pointer-events:auto;cursor:pointer}   /* 事件標籤可以點：重看說明 */
   #evt.warn{border-color:#e8641c;background:#ffe3b8;color:#7a2306}
   #evt.active{border-color:#3f8bd0;background:#d9ecff;color:#15406e}
   @keyframes evtpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
@@ -598,8 +598,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='降低手機發熱';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.87';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 87 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='困難事件提示更清楚';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.88';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 88 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1565,7 +1565,7 @@ let fieldAnnounce=false;   // 困難：這一局開始、沒有視窗蓋著時�
 let fireAt=0;const burnedSt=new Set();   // fireAt：火燒洛陽要發生的步數；burnedSt：被燒毀、還沒重新連回去的城（第一次重新連上不加分）
 let evt={phase:'calm',left:WIND.startCalm,kind:'wind',dir:-1},shakeCount=0,gustUntil=0,gustDir=-1,quakeAt=0,floodAt=0,floodT0=0,fogA=0;
 function eventBanner(kind,name,story,glyph,head){
-  const now=performance.now(),dur=2200;   // 事件橫幅不排隊：玩家點很快時，正式通知也要立刻出現（舊的事件橫幅直接換掉，進行中的成就橫幅快速收掉，之後的成就橫幅排在它後面）
+  const now=performance.now(),dur=3600;   // 事件橫幅停 3.6 秒（原本 2.2 秒太快）；事件橫幅不排隊：玩家點很快時，正式通知也要立刻出現（舊的事件橫幅直接換掉，進行中的成就橫幅快速收掉，之後的成就橫幅排在它後面）
   fx.banners=fx.banners.filter(x=>x.head==='特殊事件'?false:true);
   fx.banners=fx.banners.filter(x=>now<x.t0+x.dur);   // 先清掉已經播完的
   let ongoing=false;fx.banners.forEach(x=>{if(now>=x.t0){ongoing=true;x.dur=Math.min(x.dur,now-x.t0+250);}});
@@ -1596,17 +1596,41 @@ function evtAdvance(){
   if(evt.phase==='calm'){
     if(queue.length>=WIND.len+WIND.minLeft){const kind=pickKind(evt.lastKind);const dir=evt.lastDir?-evt.lastDir:(Math.random()<0.5?-1:1);evt={phase:'warn',lastDir:kind==='wind'?dir:evt.lastDir,left:1,kind,dir};   // 隨機抽風或地震（地震不連續出現）；風向也隨機：-1 往西（借東風）、1 往東（西涼烈風）
       if(kind==='fire'){const ss=fireSpots();evt.spot=ss[Math.floor(Math.random()*ss.length)];}
-      if(kind==='quake')eventBanner('warn','預告：洛陽地動','洛陽地動，山河震盪：放下這座城後，地動將至。','⚠');
-      else if(kind==='flood')eventBanner('warn','預告：水淹七軍','秋雨連綿，漢水暴漲：放下這座城後，水將漲起。','⚠');
-      else if(kind==='fire'&&evt.spot)eventBanner('warn','預告：'+evt.spot.name,evt.spot.warn,'⚠');
-      else if(kind==='fog')eventBanner('warn','預告：大霧漫江','長江起了大霧：放下這座城後，濃霧將起。','⚠');
-      else eventBanner('warn','預告：'+WIND_NAME[dir],dir<0?'赤壁之夜，諸葛亮借來東風：放下這座城後，風就要起了。':'馬超西涼鐵騎，烈風捲地：放下這座城後，風就要起了。','⚠');}
+      evtNotice('warn');}
     else evt={phase:'calm',left:99,kind:'wind',lastDir:evt.lastDir,lastKind:evt.lastKind};
   }
-  else if(evt.phase==='warn'){evt={phase:'active',left:EVT_LEN[evt.kind]||WIND.len,kind:evt.kind,dir:evt.dir,lastDir:evt.lastDir,spot:evt.spot};if(evt.kind==='quake')eventBanner('quake','洛陽地動！','山河震盪：下一座城落下後，整個池子會往上彈。','▲');if(evt.kind==='fire'&&evt.spot)eventBanner('fire',evt.spot.name+'！',evt.spot.act,'火');if(evt.kind==='fog')eventBanner('fog','大霧漫江！','濃霧遮住了池子，看不清裡面的城。','≋');if(evt.kind==='flood')eventBanner('flood','水淹七軍！','漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。','≈');if(evt.kind==='wind')eventBanner('wind',WIND_NAME[evt.dir]+'！',evt.dir<0?'東風大起：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往東吹。',evt.dir<0?'◀':'▶');}
+  else if(evt.phase==='warn'){evt={phase:'active',left:EVT_LEN[evt.kind]||WIND.len,kind:evt.kind,dir:evt.dir,lastDir:evt.lastDir,spot:evt.spot};evtNotice('active');}
   else evt={phase:'calm',left:WIND.gapMin+Math.floor(Math.random()*(WIND.gapMax-WIND.gapMin+1)),kind:'wind',lastKind:evt.kind,lastDir:evt.lastDir};
   updateEvtUI();
 }
+// 事件的通知文字（預告／開始）集中在這裡：橫幅、第一次出現的說明卡片、點事件標籤重看說明，都用同一份
+function evtInfo(ph,e){
+  e=e||evt;const k=e.kind,warn=ph==='warn';
+  if(k==='quake')return warn?{bk:'warn',name:'預告：洛陽地動',story:'洛陽地動，山河震盪：放下這座城後，地動將至。',glyph:'⚠'}:{bk:'quake',name:'洛陽地動！',story:'山河震盪：下一座城落下後，整個池子會往上彈。',glyph:'▲'};
+  if(k==='flood')return warn?{bk:'warn',name:'預告：水淹七軍',story:'秋雨連綿，漢水暴漲：放下這座城後，水將漲起。',glyph:'⚠'}:{bk:'flood',name:'水淹七軍！',story:'漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。',glyph:'≈'};
+  if(k==='fog')return warn?{bk:'warn',name:'預告：大霧漫江',story:'長江起了大霧：放下這座城後，濃霧將起。',glyph:'⚠'}:{bk:'fog',name:'大霧漫江！',story:'濃霧遮住了池子，看不清裡面的城。',glyph:'≋'};
+  if(k==='fire'&&e.spot)return warn?{bk:'warn',name:'預告：'+e.spot.name,story:e.spot.warn,glyph:'⚠'}:{bk:'fire',name:e.spot.name+'！',story:e.spot.act,glyph:'火'};
+  const d=e.dir||-1;
+  return warn?{bk:'warn',name:'預告：'+WIND_NAME[d],story:d<0?'赤壁之夜，諸葛亮借來東風：放下這座城後，風就要起了。':'馬超西涼鐵騎，烈風捲地：放下這座城後，風就要起了。',glyph:'⚠'}
+    :{bk:'wind',name:WIND_NAME[d]+'！',story:d<0?'東風大起：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往東吹。',glyph:d<0?'◀':'▶'};
+}
+// 每種事件第一次出現（預告那一刻）：顯示需要點「知道了」的說明卡片，之後只用橫幅；看過的種類記在瀏覽器裡
+let evtSeen=new Set();
+try{evtSeen=new Set(JSON.parse(localStorage.getItem('sg_evt_seen')||'[]'));}catch(e){}
+function evtNotice(ph){
+  const i=evtInfo(ph);
+  if(ph==='warn'&&!evtSeen.has(evt.kind)&&!overlayOpen()){
+    evtSeen.add(evt.kind);try{localStorage.setItem('sg_evt_seen',JSON.stringify([...evtSeen]));}catch(e){}
+    show(i.name,i.story+'\n\n這種事件第一次出現，所以先停下來說明；之後只會用橫幅提醒，點箱口上方的事件標籤可以隨時再看說明。','知道了',()=>{},false,true);
+    return;
+  }
+  eventBanner(i.bk,i.name,i.story,i.glyph);
+}
+function showEvtInfo(){   // 點事件標籤：重新看目前這個事件的說明（遊戲暫停到按「知道了」）
+  if(DIFF!=='hard'||overlayOpen()||(evt.phase!=='warn'&&evt.phase!=='active'))return;
+  const i=evtInfo(evt.phase);show(i.name,i.story,'知道了',()=>{},false,true);
+}
+document.getElementById('evt').addEventListener('click',showEvtInfo);
 function updateEvtUI(){   // 標籤只放短短一行（窄螢幕也放得下），細節看橫幅
   const e=document.getElementById('evt');if(!e)return;
   if(DIFF!=='hard'){e.className='';e.textContent='';return;}
@@ -1871,7 +1895,7 @@ function fitIntro(){
   ov.classList.toggle('showrules',was);card.style.minHeight=Math.ceil(h)+'px';
 }
 window.addEventListener('resize',fitIntro);try{document.fonts.ready.then(fitIntro);}catch(e){}
-function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
+function show(t,p,b,fn,intro,single){   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
   document.getElementById('ach').style.display='none';   // 兩個視窗不同時開著：結算／簡介出現時先收掉圖鑑
   {const ot=document.getElementById('ovT');if(intro)ot.innerHTML='<span class="sr">'+t+'</span><span class="logo logo-h" aria-hidden="true"></span>';else ot.textContent=t;}   // 開場簡介用書法標題圖（文字留給讀屏）；結算框維持文字
   document.getElementById('ovP').innerHTML=p.replace(/\n/g,'<br>');
@@ -1879,7 +1903,8 @@ function show(t,p,b,fn,intro){   // intro=true：開場簡介（有玩法說明�
   const ov=document.getElementById('ov'),rb=document.getElementById('ovR'),vl=document.getElementById('ovV');
   if(!intro)resetToasts();   // 結算框出現時，成就提示先收掉，不蓋在結算框上
   ov.classList.toggle('end',!intro);ov.classList.remove('showrules');
-  rb.style.display='';rb.textContent=intro?'玩法說明':'換難度';rb.onclick=intro?toggleRules:openDiffPick;   // 玩法說明鈕與版本號只在開場簡介出現
+  rb.style.display=single?'none':'';rb.textContent=intro?'玩法說明':'換難度';   // single：只有一顆按鈕的提示卡（事件說明），不放「換難度」
+ rb.onclick=intro?toggleRules:openDiffPick;   // 玩法說明鈕與版本號只在開場簡介出現
   vl.style.display=intro?'block':'none';vl.textContent='版本 '+VERSION+'（'+VERSION_NOTE+'）';
   {const sl=document.getElementById('ovS'),rd=k=>{try{const v=Number(localStorage.getItem(k));return Number.isFinite(v)&&v>0?v:0;}catch(e){return 0;}},bn=intro?rd('sg_best'):0,bh=intro?rd('sg_best_hard'):0,any=bn>0||bh>0;   // 普通與困難的最高分分開記，簡介頁兩個都列出來
     const col=(t,v)=>'<span class="bc"><span class="bt">'+t+'</span><span class="nm">'+(v>0?v.toLocaleString('en-US'):'—')+'</span></span>';
@@ -2231,6 +2256,7 @@ let lastT=0,acc=0;
 function frame(ts){
   // 固定 60Hz 物理步長 + 累加器，120Hz 螢幕也不會加速；切回分頁時限制追趕步數
   const dt=lastT?Math.min(ts-lastT,100):0;lastT=ts;acc+=dt;
+  if(ptrDown&&!overlayOpen()){fx.banners.forEach(b=>{b.t0+=dt;});bannerFree+=dt;}   // 手指按著畫面（瞄準中）：橫幅的時間先停住，讓人讀完
   if(overlayOpen()){acc=0;fx.banners.forEach(b=>{b.t0+=dt;});bannerFree+=dt;}   // 面板開著時不累積補算時間，關閉後才不會一口氣補跑；成就橫幅的時鐘也一起暫停，不會在面板後面播完
   if(engine&&!over&&!overlayOpen()){
     if(performance.now()<hitstopUntil)acc=0;      // 相連瞬間的短暫停頓
