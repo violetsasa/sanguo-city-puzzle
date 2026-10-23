@@ -607,7 +607,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='困難事件提示更清楚';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.90';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 90 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.91';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 91 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1617,7 +1617,8 @@ function evtInfo(ph,e){
   if(k==='quake')return warn?{bk:'warn',name:'預告：洛陽地動',story:'洛陽地動，山河震盪：放下這座城後，地動將至。',glyph:'⚠'}:{bk:'quake',name:'洛陽地動！',story:'山河震盪：下一座城落下後，整個池子會往上彈。',glyph:'▲'};
   if(k==='flood')return warn?{bk:'warn',name:'預告：水淹七軍',story:'秋雨連綿，漢水暴漲：放下這座城後，水將漲起。',glyph:'⚠'}:{bk:'flood',name:'水淹七軍！',story:'漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。',glyph:'≈'};
   if(k==='fog')return warn?{bk:'warn',name:'預告：大霧漫江',story:'長江起了大霧：放下這座城後，濃霧將起。',glyph:'⚠'}:{bk:'fog',name:'大霧漫江！',story:'濃霧遮住了池子，看不清裡面的城。',glyph:'≋'};
-  if(k==='fire'&&e.spot)return warn?{bk:'warn',name:'預告：'+e.spot.name,story:e.spot.warn,glyph:'⚠'}:{bk:'fire',name:e.spot.name+'！',story:e.spot.act,glyph:'火'};
+  if(k==='fire'&&!e.spot)return null;   // 抽到火燒卻沒有地點（池子裡沒有可燒的城）：不通知
+  if(k==='fire')return warn?{bk:'warn',name:'預告：'+e.spot.name,story:e.spot.warn,glyph:'⚠'}:{bk:'fire',name:e.spot.name+'！',story:e.spot.act,glyph:'火'};
   const d=e.dir||-1;
   return warn?{bk:'warn',name:'預告：'+WIND_NAME[d],story:d<0?'赤壁之夜，諸葛亮借來東風：放下這座城後，風就要起了。':'馬超西涼鐵騎，烈風捲地：放下這座城後，風就要起了。',glyph:'⚠'}
     :{bk:'wind',name:WIND_NAME[d]+'！',story:d<0?'東風大起：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往東吹。',glyph:d<0?'◀':'▶'};
@@ -1626,7 +1627,7 @@ function evtInfo(ph,e){
 let evtSeen=new Set();
 try{evtSeen=new Set(JSON.parse(localStorage.getItem('sg_evt_seen')||'[]'));}catch(e){}
 function evtNotice(ph){
-  const i=evtInfo(ph);
+  const i=evtInfo(ph);if(!i)return;
   if(ph==='warn'&&!evtSeen.has(evt.kind)&&!overlayOpen()){
     const k=evt.kind;
     show(i.name,i.story+'\n\n這種事件第一次出現，所以先停下來說明；之後只會用橫幅提醒，點箱口上方的事件標籤可以隨時再看說明。','知道了',()=>{evtSeen.add(k);try{localStorage.setItem('sg_evt_seen',JSON.stringify([...evtSeen]));}catch(e){}},false,{pal:k,glyph:i.glyph});   // 按了「知道了」才算看過；中途被別的視窗（例如結算）蓋掉，下次還會再說明
@@ -1635,8 +1636,8 @@ function evtNotice(ph){
   eventBanner(i.bk,i.name,i.story,i.glyph);
 }
 function showEvtInfo(){   // 點事件標籤：重新看目前這個事件的說明（遊戲暫停到按「知道了」）
-  if(DIFF!=='hard'||over||roundState!=='play'||overlayOpen()||(evt.phase!=='warn'&&evt.phase!=='active'))return;
-  const i=evtInfo(evt.phase);show(i.name,i.story,'知道了',()=>{},false,{pal:evt.kind,glyph:i.glyph});
+  if(DIFF!=='hard'||over||roundState!=='play'||overlayOpen()||ptrDown||(evt.phase!=='warn'&&evt.phase!=='active'))return;
+  const i=evtInfo(evt.phase);if(!i)return;show(i.name,i.story,'知道了',()=>{},false,{pal:evt.kind,glyph:i.glyph});
 }
 document.getElementById('evt').addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.evi'))showEvtInfo();});
 function updateEvtUI(){   // 標籤只放短短一行（窄螢幕也放得下），細節看橫幅
@@ -1904,7 +1905,10 @@ function fitIntro(){
   ov.classList.toggle('showrules',was);card.style.minHeight=Math.ceil(h)+'px';
 }
 window.addEventListener('resize',fitIntro);try{document.fonts.ready.then(fitIntro);}catch(e){}
-function show(t,p,b,fn,intro,single){   // single：只有一顆按鈕的提示卡；若是 {pal,glyph}，就套用該事件的顏色與圖示（事件說明卡片）   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
+// intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框。
+// card（第 6 個參數）：只有一顆按鈕的提示卡（不放「換難度」）；若是 {pal,glyph}，就套用該事件的顏色與圖示（事件說明卡片）
+function show(t,p,b,fn,intro,card){
+  const single=card;
   document.getElementById('ach').style.display='none';   // 兩個視窗不同時開著：結算／簡介出現時先收掉圖鑑
   const ec=single&&single.pal?PAL_EVT[single.pal]:null;
   {const ot=document.getElementById('ovT');if(intro)ot.innerHTML='<span class="sr">'+t+'</span><span class="logo logo-h" aria-hidden="true"></span>';else if(ec){ot.innerHTML='';const g=document.createElement('span');g.className='evg';g.textContent=single.glyph||'';g.setAttribute('aria-hidden','true');const n=document.createElement('span');n.textContent=t;ot.append(g,n);}else ot.textContent=t;}   // 開場簡介用書法標題圖（文字留給讀屏）；結算框維持文字
@@ -1916,7 +1920,6 @@ function show(t,p,b,fn,intro,single){   // single：只有一顆按鈕的提示�
   ['e0','e1','e2','eedge','ehead','ename','eshadow'].forEach(k=>ov.style.removeProperty('--'+k));
   if(ec){ov.style.setProperty('--e0',ec.g0);ov.style.setProperty('--e1',ec.g1);ov.style.setProperty('--e2',ec.g2);ov.style.setProperty('--eedge',ec.edge);ov.style.setProperty('--ehead',ec.head);ov.style.setProperty('--ename',ec.name);ov.style.setProperty('--eshadow',ec.shadow);}
   rb.style.display=single?'none':'';rb.textContent=intro?'玩法說明':'換難度';rb.onclick=single?null:(intro?toggleRules:openDiffPick);   // single：只有一顆按鈕的提示卡（事件說明），不放「換難度」，也不能被觸發
-   // 玩法說明鈕與版本號只在開場簡介出現
   vl.style.display=intro?'block':'none';vl.textContent='版本 '+VERSION+'（'+VERSION_NOTE+'）';
   {const sl=document.getElementById('ovS'),rd=k=>{try{const v=Number(localStorage.getItem(k));return Number.isFinite(v)&&v>0?v:0;}catch(e){return 0;}},bn=intro?rd('sg_best'):0,bh=intro?rd('sg_best_hard'):0,any=bn>0||bh>0;   // 普通與困難的最高分分開記，簡介頁兩個都列出來
     const col=(t,v)=>'<span class="bc"><span class="bt">'+t+'</span><span class="nm">'+(v>0?v.toLocaleString('en-US'):'—')+'</span></span>';
@@ -2268,7 +2271,7 @@ let lastT=0,acc=0;
 function frame(ts){
   // 固定 60Hz 物理步長 + 累加器，120Hz 螢幕也不會加速；切回分頁時限制追趕步數
   const dt=lastT?Math.min(ts-lastT,100):0;lastT=ts;acc+=dt;
-  if(ptrDown&&!overlayOpen()){heldMs+=dt;if(heldMs<5000){fx.banners.forEach(b=>{b.t0+=dt;});bannerFree+=dt;}}else heldMs=0;   // 手指按著畫面（瞄準中）：橫幅的時間先停住讓人讀完，最多停 5 秒，不會一直擋著棋盤
+  if(ptrDown&&!overlayOpen()&&fx.banners.length){let any=false;fx.banners.forEach(b=>{if((b.frz||0)<5000){b.t0+=dt;b.frz=(b.frz||0)+dt;any=true;}});if(any)bannerFree+=dt;}   // 手指按著畫面（瞄準中）：橫幅的時間先停住讓人讀完；每張橫幅累計最多停 5 秒，反覆按放也不會一直擋著棋盤
   if(overlayOpen()){acc=0;fx.banners.forEach(b=>{b.t0+=dt;});bannerFree+=dt;}   // 面板開著時不累積補算時間，關閉後才不會一口氣補跑；成就橫幅的時鐘也一起暫停，不會在面板後面播完
   if(engine&&!over&&!overlayOpen()){
     if(performance.now()<hitstopUntil)acc=0;      // 相連瞬間的短暫停頓
@@ -2284,7 +2287,7 @@ function frame(ts){
   if(drawDirty||ts-lastDrawTs>=gap){draw();lastDrawTs=ts;drawDirty=false;}
   requestAnimationFrame(frame);
 }
-let heldMs=0,lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;
+let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;
 ['pointerdown','pointermove','pointerup','keydown','touchstart','touchmove','wheel'].forEach(ev=>addEventListener(ev,()=>{lastInputTs=performance.now();drawDirty=true;},{passive:true,capture:true}));
 addEventListener('resize',()=>{drawDirty=true;});document.addEventListener('visibilitychange',()=>{drawDirty=true;});
 // iPhone 的雙擊／連點放大：touch-action 在部分內嵌瀏覽器（例如 Discord、LINE）擋不住，所以按鈕上的觸控在 touchstart 就取消瀏覽器的預設手勢。
