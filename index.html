@@ -617,7 +617,7 @@ const SND=(()=>{
 })();
 let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;   // 畫面更新頻率的狀態（frame() 用；hud() 也會標記 drawDirty，所以放在最前面）
 const VERSION_NOTE='簡介頁排版優化';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.95';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 95 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.96';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 96 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -902,8 +902,9 @@ function startMergeFx(sa,sb,T){
   const single=sa.length===1&&sb.length===1;
   fx.pops.push({text:single?`${sa[0].n}＋${sb[0].n}`:`${cnNum(n)}城相連`,x:Math.max(BOXL+60,Math.min(BOXR-60,cx)),y:cy-22,t0:go,size:n===2?17:n<6?19:21});
   const all=[...sa,...sb],reborn=all.filter(x=>burnedSt.has(x));
-  if(all.some(x=>!burnedSt.has(x)))reborn.forEach(x=>burnedSt.delete(x));   // 火燒後重新連回去的第一次：不加分（不能靠被燒來刷分）；被燒的城先彼此相連時標記保留，接回沒被燒的城才清除
-  const pts2=reborn.length?0:n*n*10;score+=pts2;pendingFly+=pts2;   // 邏輯分數立刻入帳；畫面上的數字等飛分抵達才更新
+  if(all.some(x=>!burnedSt.has(x)))reborn.forEach(x=>burnedSt.delete(x));   // 被燒的城先彼此相連時標記保留，接回沒被燒的城才清除
+  const pts2=Math.max(0,n-reborn.length)**2*10;   // 火燒後重新連回去的第一次：被燒的城那部分不算分（照「沒有它們」的 n−r 座城計分），沒被燒的部分照算；不能靠被燒來刷分，也不會整次合併白白損失
+ score+=pts2;pendingFly+=pts2;   // 邏輯分數立刻入帳；畫面上的數字等飛分抵達才更新
   if(pts2>0)flyScore(pts2,cx,cy,go);
   mergeBurst(n,cx,cy,pts,T,go);if(n<STATES.length)SND.play('merge',n);   // 連成整張地圖那一下由通關的聲音負責，不疊兩個
   try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
@@ -1372,9 +1373,21 @@ renderAch();
 // 依原版做法：相鄰的州相連後，整組重建成「真實地理相對位置」的一張地圖，
 // 大小依合併後的總面積重新計算（連得越多、整張越小），並沿用較大一塊的角度與合併重心。
 const SHRINK_MS=250;
-function rebuildGroup(olds){
-  const pcs=olds.flatMap(o=>o.pcs),states=pcs.map(p=>p.s);
+// 依真實地理把一批城（pcs：目前各自的物件）重新焊成新的一塊：算比例尺（組內最小的 sc；整州連齊才再縮小）、
+// 重建每座城、焊成複合體、沿用最晚的落下時間。rebuildGroup（合併）與 rebuildSubset（火燒拆開）共用；
+// 兩者只在「新的一塊放在哪裡」不同：合併取各塊質量加權的平均位置，拆開則讓一座參考城的世界座標不變。
+function weldPieces(pcs){
+  const states=pcs.map(p=>p.s);
   const before=new Map(pcs.map(p=>[p.s,{w:pieceWorld(p),k:p.k}]));   // 供縮小動畫：每州原本的姿態與大小
+  const k=states.reduce((m,x)=>Math.min(m,x.sc),1e9)*Math.max(MIN_SHRINK,Math.pow(REGION_SHRINK,regionsDone(states)));   // 組內最大的城決定比例尺（小城配合它）；整個州連齊才再縮小
+  const bs=states.map(s=>{const raw=s.p.map(q=>proj(q,k)),c=Vertices.centre(raw);return makePiece(s,c.x,c.y,k);});
+  const T=fuse(bs);
+  const t0=Math.max(...pcs.map(p=>p.t0)),ds=Math.max(...pcs.map(p=>p.dropStep||0));
+  T.pcs.forEach(p=>{p.dropped=true;p.t0=t0;p.dropStep=ds;pieceOf.set(p.s,p);});
+  return {T,before};
+}
+function rebuildGroup(olds){
+  const pcs=olds.flatMap(o=>o.pcs);
   const mt=olds.reduce((s,o)=>s+o.mass,0);
   const wavg=f=>olds.reduce((s,o)=>s+f(o)*o.mass,0)/mt;
   const pos={x:wavg(o=>o.position.x),y:wavg(o=>o.position.y)};
@@ -1382,13 +1395,9 @@ function rebuildGroup(olds){
   const av=wavg(o=>o.angularVelocity);
   const big=olds.reduce((m,o)=>o.mass>m.mass?o:m);
   const ang=Math.atan2(Math.sin(big.angle),Math.cos(big.angle));
-  const k=states.reduce((m,x)=>Math.min(m,x.sc),1e9)*Math.max(MIN_SHRINK,Math.pow(REGION_SHRINK,regionsDone(states)));   // 組內最大的城決定比例尺（小城配合它）；整個州連齊才再縮小
-  const bs=states.map(s=>{const raw=s.p.map(q=>proj(q,k)),c=Vertices.centre(raw);return makePiece(s,c.x,c.y,k);});
-  const T=fuse(bs);
+  const {T,before}=weldPieces(pcs);
   T.graceUntil=Math.max(0,...olds.map(o=>o.graceUntil||0));   // 新組沿用舊各塊的搖動免死期與越線累計（合併不能靠重建來重設）
   T.overSteps=Math.max(0,...olds.map(o=>o.overSteps||0));
-  const t0=Math.max(...pcs.map(p=>p.t0)),ds=Math.max(...pcs.map(p=>p.dropStep||0));
-  T.pcs.forEach(p=>{p.dropped=true;p.t0=t0;p.dropStep=ds;pieceOf.set(p.s,p);});
   Body.setAngle(T,ang);Body.setPosition(T,pos);
   Body.setVelocity(T,vel);Body.setAngularVelocity(T,av);
   shrinkToFit(T);
@@ -1624,15 +1633,16 @@ function evtAdvance(){
 // 事件的通知文字（預告／開始）集中在這裡：橫幅、第一次出現的說明卡片、點事件標籤重看說明，都用同一份
 function evtInfo(ph,e){
   e=e||evt;const k=e.kind,warn=ph==='warn';
-  if(k==='quake'){const o=warn?{bk:'warn',name:'預告：洛陽地動',story:'洛陽地動，山河震盪：放下這座城後，地動將至。',glyph:'⚠'}:{bk:'quake',name:'洛陽地動！',story:'山河震盪：下一座城落下後，整個池子會往上彈。',glyph:'▲'};o.impact='下一座城落下後，池子裡所有的城會被彈起來、位置被打亂；彈起的城約 2.5 秒內不計算溢出（原本就高過溢出線的除外）。';return o;}
+  const remain=full=>warn?full:(e.left||full);   // 事件進行中重看說明：座數顯示「還剩幾座」，預告時顯示全部
+  if(k==='quake'){const o=warn?{bk:'warn',name:'預告：洛陽地動',story:'洛陽地動，山河震盪：放下這座城後，地動將至。',glyph:'⚠'}:{bk:'quake',name:'洛陽地動！',story:'山河震盪：下一座城落下後，整個池子會往上彈。',glyph:'▲'};o.impact='下一座城落下後，池子裡所有的城會被彈起來、位置被打亂；彈起的城約 2.5 秒內不計算溢出（原本就高過溢出線的城不受保護，仍會計入溢出）。';return o;}
   if(k==='flood'){const o=warn?{bk:'warn',name:'預告：水淹七軍',story:'秋雨連綿，漢水暴漲：放下這座城後，水將漲起。',glyph:'⚠'}:{bk:'flood',name:'水淹七軍！',story:'漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。',glyph:'≈'};o.impact='下一座城落下後，水從箱底漲起，池子裡的城會浮起來、跟著漂移，約 5 秒後水退去，城再落下，位置會和原來不同。';return o;}
-  if(k==='fog'){const o=warn?{bk:'warn',name:'預告：大霧漫江',story:'長江起了大霧：放下這座城後，濃霧將起。',glyph:'⚠'}:{bk:'fog',name:'大霧漫江！',story:'濃霧遮住了池子，看不清裡面的城。',glyph:'≋'};o.impact='接下來 '+(warn?FOG_LEN:(e.left||FOG_LEN))+' 座城，所有城的名字都看不見（連手上這座也是「？」），只能憑形狀和位置判斷。';return o;}
+  if(k==='fog'){const o=warn?{bk:'warn',name:'預告：大霧漫江',story:'長江起了大霧：放下這座城後，濃霧將起。',glyph:'⚠'}:{bk:'fog',name:'大霧漫江！',story:'濃霧遮住了池子，看不清裡面的城。',glyph:'≋'};o.impact='接下來 '+remain(FOG_LEN)+' 座城，所有城的名字都看不見（連手上這座也是「？」），只能憑形狀和位置判斷。';return o;}
   if(k==='fire'&&!e.spot)return null;   // 抽到火燒卻沒有地點（池子裡沒有可燒的城）：不通知
   if(k==='fire'){const o=warn?{bk:'warn',name:'預告：'+e.spot.name,story:e.spot.warn,glyph:'⚠'}:{bk:'fire',name:e.spot.name+'！',story:e.spot.act,glyph:'火'};o.impact='下一座城落下後，起火處和附近最多 '+FIRE.count+' 座城會被燒毀，回到待落下的城池、排在最前面重新放下；連在一起的組可能被拆開，被燒的城第一次重新連回去不加分。';return o;}
   const d=e.dir||-1,dn=d<0?'西':'東';
   const o=warn?{bk:'warn',name:'預告：'+WIND_NAME[d],story:d<0?'赤壁之夜，諸葛亮借來東風：放下這座城後，風就要起了。':'馬超西涼鐵騎，烈風捲地：放下這座城後，風就要起了。',glyph:'⚠'}
-    :{bk:'wind',name:WIND_NAME[d]+'！',story:d<0?'東風大起：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往東吹。',glyph:d<0?'◀':'▶'};
-  o.impact='接下來 '+(warn?WIND.len:(e.left||WIND.len))+' 座城落下時會被往'+dn+'吹偏（落點輔助線會變斜，標出預估落點），池子裡的城也會被推向'+dn+'邊。';
+    :{bk:'wind',name:WIND_NAME[d]+'！',story:d<0?'東風大起：接下來 '+remain(WIND.len)+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+remain(WIND.len)+' 座城，連同池子裡的城，都會被往東吹。',glyph:d<0?'◀':'▶'};
+  o.impact='接下來 '+remain(WIND.len)+' 座城落下時會被往'+dn+'吹偏（落點輔助線會變斜，標出預估落點），池子裡的城也會被推向'+dn+'邊。';
   return o;
 }
 const evtCardBody=i=>i.story+'\n\n<b>實際影響</b>　'+i.impact;   // 說明卡片內文：史事小句＋對這一局的實際影響
@@ -1678,14 +1688,8 @@ function fireEligible(){
 }
 // 把一組城（comp）依真實地理重新焊成新的一塊，位置接在原本那組上（某座參考城的世界座標不變）
 function rebuildSubset(old,comp,siblings){
-  const states=comp.map(p=>p.s);
-  const before=new Map(comp.map(p=>[p.s,{w:pieceWorld(p),k:p.k}]));
-  const k=states.reduce((m,x)=>Math.min(m,x.sc),1e9)*Math.max(MIN_SHRINK,Math.pow(REGION_SHRINK,regionsDone(states)));
-  const bs=states.map(s=>{const raw=s.p.map(q=>proj(q,k)),c=Vertices.centre(raw);return makePiece(s,c.x,c.y,k);});
-  const T=fuse(bs);
+  const {T,before}=weldPieces(comp);
   T.graceUntil=old.graceUntil||0;T.overSteps=old.overSteps||0;
-  const t0=Math.max(...comp.map(p=>p.t0)),ds=Math.max(...comp.map(p=>p.dropStep||0));
-  T.pcs.forEach(p=>{p.dropped=true;p.t0=t0;p.dropStep=ds;pieceOf.set(p.s,p);});
   Body.setAngle(T,old.angle);Body.setPosition(T,old.position);
   shrinkToFit(T);   // 先縮放，再用參考城對齊（縮放會以質心為中心，放在對齊之後會把參考城又推動）
   const ref=T.pcs[0],w0=before.get(ref.s).w,w1=pieceWorld(ref);
