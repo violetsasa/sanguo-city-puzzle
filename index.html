@@ -107,6 +107,13 @@
   #ov{z-index:8;position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(246,237,220,.78);backdrop-filter:blur(3px);border-radius:10px;text-align:center;padding:20px}
   #ov .card{background:var(--panel);border:2px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(90,70,54,.22);padding:18px 22px;max-width:min(94%,480px);max-height:96%;display:flex;flex-direction:column}
   #ov h2{margin:0 0 2px;font-size:26px;letter-spacing:6px}
+  /* 事件說明卡片：和橫幅一樣依事件換顏色（頂部漸層標題列＋圓形圖示＋同色按鈕），所有事件同一種版型 */
+  #ov.evcard .card{border-color:var(--eedge);padding-top:0;overflow:hidden}
+  #ov.evcard h2{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 -22px 12px;padding:14px 18px;font-size:21px;letter-spacing:2px;color:var(--ehead);background:linear-gradient(180deg,var(--e0),var(--e1) 55%,var(--e2));border-bottom:2px solid var(--eedge)}
+  #ov.evcard h2 .evg{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--eedge);color:#fff8e8;font-size:19px;letter-spacing:0;line-height:1}
+  #ov.evcard p{color:var(--ename)}
+  #ov.evcard #ovB{background:var(--e2);border-color:var(--eedge);color:#fff8e8;box-shadow:0 3px 10px var(--eshadow)}
+  @media (prefers-color-scheme:dark){#ov.evcard p{color:var(--ink)}}
   #ovT .logo-h{width:min(300px,70%);margin:2px auto 8px}   /* 開場簡介：橫式書法標題取代文字標題 */
   #ov p{margin:4px 0 10px;font-size:14px;line-height:1.75;overflow:auto;flex:1 1 auto;min-height:0}
   #ov p{scrollbar-width:thin;scrollbar-color:var(--line) transparent;scrollbar-gutter:stable both-edges;padding:0 12px}   /* 捲軸細一點，並預留左右空位，不蓋到文字 */
@@ -600,7 +607,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='困難事件提示更清楚';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.89';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 89 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.90';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 90 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1542,7 +1549,7 @@ const WIND={startCalm:8,len:3,gapMin:8,gapMax:13,a:0.3,vmax:2.2,maxSteps:240,sli
 const FIELDS=[
   {id:'plain',name:'官渡平原',note:'標準箱子',l:50,r:550,line:230,w:0.2,glyph:'渡',tale:'官渡相持，火燒烏巢，一戰定北方。'},   // w：隨機抽戰場的權重（中原是普通地圖，少抽一點）
   {id:'gorge',name:'劍閣棧道',note:'蜀道險窄，箱子較窄',l:100,r:500,line:230,glyph:'險',tale:'劍閣崢嶸，一夫當關，萬夫莫開。'},
-  {id:'river',name:'長江天塹',note:'江面遼闊，箱子較矮',l:50,r:550,line:360,glyph:'江',tale:'長江浩蕩，天塹橫陳，隔開南北。'},
+  {id:'river',name:'長江天塹',note:'江面遼闊，箱子較矮',l:50,r:550,line:320,glyph:'江',tale:'長江浩蕩，天塹橫陳，隔開南北。'},
   {id:'ship',name:'連環樓船',note:'船身口寬底窄',l:50,r:550,line:230,sl:75,sr:-75,glyph:'船',tale:'鐵鎖連舟，首尾相接，樓船列陣江上。'}   // sl／sr：左右牆到箱底往內（正）或往外（負）移的距離＝箱子不是方的
 ];
 const DEVMODE=/[?&]dev=1(&|$)/.test(location.search);   // 測試用：網址加 ?dev=1 才顯示戰場選項
@@ -1622,14 +1629,14 @@ function evtNotice(ph){
   const i=evtInfo(ph);
   if(ph==='warn'&&!evtSeen.has(evt.kind)&&!overlayOpen()){
     const k=evt.kind;
-    show(i.name,i.story+'\n\n這種事件第一次出現，所以先停下來說明；之後只會用橫幅提醒，點箱口上方的事件標籤可以隨時再看說明。','知道了',()=>{evtSeen.add(k);try{localStorage.setItem('sg_evt_seen',JSON.stringify([...evtSeen]));}catch(e){}},false,true);   // 按了「知道了」才算看過；中途被別的視窗（例如結算）蓋掉，下次還會再說明
+    show(i.name,i.story+'\n\n這種事件第一次出現，所以先停下來說明；之後只會用橫幅提醒，點箱口上方的事件標籤可以隨時再看說明。','知道了',()=>{evtSeen.add(k);try{localStorage.setItem('sg_evt_seen',JSON.stringify([...evtSeen]));}catch(e){}},false,{pal:k,glyph:i.glyph});   // 按了「知道了」才算看過；中途被別的視窗（例如結算）蓋掉，下次還會再說明
     return;
   }
   eventBanner(i.bk,i.name,i.story,i.glyph);
 }
 function showEvtInfo(){   // 點事件標籤：重新看目前這個事件的說明（遊戲暫停到按「知道了」）
   if(DIFF!=='hard'||over||roundState!=='play'||overlayOpen()||(evt.phase!=='warn'&&evt.phase!=='active'))return;
-  const i=evtInfo(evt.phase);show(i.name,i.story,'知道了',()=>{},false,true);
+  const i=evtInfo(evt.phase);show(i.name,i.story,'知道了',()=>{},false,{pal:evt.kind,glyph:i.glyph});
 }
 document.getElementById('evt').addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.evi'))showEvtInfo();});
 function updateEvtUI(){   // 標籤只放短短一行（窄螢幕也放得下），細節看橫幅
@@ -1897,14 +1904,17 @@ function fitIntro(){
   ov.classList.toggle('showrules',was);card.style.minHeight=Math.ceil(h)+'px';
 }
 window.addEventListener('resize',fitIntro);try{document.fonts.ready.then(fitIntro);}catch(e){}
-function show(t,p,b,fn,intro,single){   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
+function show(t,p,b,fn,intro,single){   // single：只有一顆按鈕的提示卡；若是 {pal,glyph}，就套用該事件的顏色與圖示（事件說明卡片）   // intro=true：開場簡介（有玩法說明鈕與版本號、遮罩較深）；其餘都是結算類對話框
   document.getElementById('ach').style.display='none';   // 兩個視窗不同時開著：結算／簡介出現時先收掉圖鑑
-  {const ot=document.getElementById('ovT');if(intro)ot.innerHTML='<span class="sr">'+t+'</span><span class="logo logo-h" aria-hidden="true"></span>';else ot.textContent=t;}   // 開場簡介用書法標題圖（文字留給讀屏）；結算框維持文字
+  const ec=single&&single.pal?PAL_EVT[single.pal]:null;
+  {const ot=document.getElementById('ovT');if(intro)ot.innerHTML='<span class="sr">'+t+'</span><span class="logo logo-h" aria-hidden="true"></span>';else if(ec){ot.innerHTML='';const g=document.createElement('span');g.className='evg';g.textContent=single.glyph||'';g.setAttribute('aria-hidden','true');const n=document.createElement('span');n.textContent=t;ot.append(g,n);}else ot.textContent=t;}   // 開場簡介用書法標題圖（文字留給讀屏）；結算框維持文字
   document.getElementById('ovP').innerHTML=p.replace(/\n/g,'<br>');
   const btn=document.getElementById('ovB');btn.textContent=b;
   const ov=document.getElementById('ov'),rb=document.getElementById('ovR'),vl=document.getElementById('ovV');
   if(!intro)resetToasts();   // 結算框出現時，成就提示先收掉，不蓋在結算框上
-  ov.classList.toggle('end',!intro);ov.classList.remove('showrules');
+  ov.classList.toggle('end',!intro);ov.classList.remove('showrules');ov.classList.toggle('evcard',!!ec);
+  ['e0','e1','e2','eedge','ehead','ename','eshadow'].forEach(k=>ov.style.removeProperty('--'+k));
+  if(ec){ov.style.setProperty('--e0',ec.g0);ov.style.setProperty('--e1',ec.g1);ov.style.setProperty('--e2',ec.g2);ov.style.setProperty('--eedge',ec.edge);ov.style.setProperty('--ehead',ec.head);ov.style.setProperty('--ename',ec.name);ov.style.setProperty('--eshadow',ec.shadow);}
   rb.style.display=single?'none':'';rb.textContent=intro?'玩法說明':'換難度';rb.onclick=single?null:(intro?toggleRules:openDiffPick);   // single：只有一顆按鈕的提示卡（事件說明），不放「換難度」，也不能被觸發
    // 玩法說明鈕與版本號只在開場簡介出現
   vl.style.display=intro?'block':'none';vl.textContent='版本 '+VERSION+'（'+VERSION_NOTE+'）';
