@@ -173,7 +173,7 @@
   /* 手機且高度夠（大多數直立手機）：簡介文字放大、上下加細線，空間用在文字上，不要留大片空白 */
   @media (max-width:640px) and (min-height:620px){
     #ov.intro-card .sub{font-size:14px;letter-spacing:3px;margin-bottom:0}
-    #ov.intro-card .story{font-size:clamp(16px,2.5vh,19px);line-height:2;margin:auto 0}
+    #ov.intro-card .story{font-size:16px;line-height:2;margin:auto 0}   /* 固定 16px：不隨螢幕變高而放大（高手機放大後板子會變得鬆散）*/
     #ov.intro-card .story::before,#ov.intro-card .story::after{content:"";display:block;width:44px;height:1px;background:var(--line);opacity:.55;margin:0 auto 14px}
     #ov.intro-card .story::after{margin:14px auto 0}
   }   /* 手機直立：棋盤區比較矮，簡介文字縮一點才放得下 */
@@ -617,7 +617,7 @@ const SND=(()=>{
 })();
 let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;   // 畫面更新頻率的狀態（frame() 用；hud() 也會標記 drawDirty，所以放在最前面）
 const VERSION_NOTE='簡介頁排版優化';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.94';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 94 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.95';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 95 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
