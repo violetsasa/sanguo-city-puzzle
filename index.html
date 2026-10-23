@@ -111,9 +111,11 @@
   #ov.evcard .card{border-color:var(--eedge);padding-top:0;overflow:hidden}
   #ov.evcard h2{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 -22px 12px;padding:14px 18px;font-size:21px;letter-spacing:2px;color:var(--ehead);background:linear-gradient(180deg,var(--e0),var(--e1) 55%,var(--e2));border-bottom:2px solid var(--eedge)}
   #ov.evcard h2 .evg{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--eedge);color:#fff8e8;font-size:19px;letter-spacing:0;line-height:1}
-  #ov.evcard p{color:var(--ename)}
+  #ov.evcard p{color:var(--ename);text-align:left}
+  #ov.evcard p b{color:var(--ehead)}
+  #ov.evcard .evfoot{display:block;font-size:12px;opacity:.7;text-align:center}
   #ov.evcard #ovB{background:var(--e2);border-color:var(--eedge);color:#fff8e8;box-shadow:0 3px 10px var(--eshadow)}
-  @media (prefers-color-scheme:dark){#ov.evcard p{color:var(--ink)}}
+  @media (prefers-color-scheme:dark){#ov.evcard p{color:var(--ink)}#ov.evcard p b{color:var(--e1)}}
   #ovT .logo-h{width:min(300px,70%);margin:2px auto 8px}   /* 開場簡介：橫式書法標題取代文字標題 */
   #ov p{margin:4px 0 10px;font-size:14px;line-height:1.75;overflow:auto;flex:1 1 auto;min-height:0}
   #ov p{scrollbar-width:thin;scrollbar-color:var(--line) transparent;scrollbar-gutter:stable both-edges;padding:0 12px}   /* 捲軸細一點，並預留左右空位，不蓋到文字 */
@@ -607,7 +609,7 @@ const SND=(()=>{
   };
 })();
 const VERSION_NOTE='困難事件提示更清楚';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.91';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 91 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION='1.92';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 92 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1614,15 +1616,18 @@ function evtAdvance(){
 // 事件的通知文字（預告／開始）集中在這裡：橫幅、第一次出現的說明卡片、點事件標籤重看說明，都用同一份
 function evtInfo(ph,e){
   e=e||evt;const k=e.kind,warn=ph==='warn';
-  if(k==='quake')return warn?{bk:'warn',name:'預告：洛陽地動',story:'洛陽地動，山河震盪：放下這座城後，地動將至。',glyph:'⚠'}:{bk:'quake',name:'洛陽地動！',story:'山河震盪：下一座城落下後，整個池子會往上彈。',glyph:'▲'};
-  if(k==='flood')return warn?{bk:'warn',name:'預告：水淹七軍',story:'秋雨連綿，漢水暴漲：放下這座城後，水將漲起。',glyph:'⚠'}:{bk:'flood',name:'水淹七軍！',story:'漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。',glyph:'≈'};
-  if(k==='fog')return warn?{bk:'warn',name:'預告：大霧漫江',story:'長江起了大霧：放下這座城後，濃霧將起。',glyph:'⚠'}:{bk:'fog',name:'大霧漫江！',story:'濃霧遮住了池子，看不清裡面的城。',glyph:'≋'};
+  if(k==='quake'){const o=warn?{bk:'warn',name:'預告：洛陽地動',story:'洛陽地動，山河震盪：放下這座城後，地動將至。',glyph:'⚠'}:{bk:'quake',name:'洛陽地動！',story:'山河震盪：下一座城落下後，整個池子會往上彈。',glyph:'▲'};o.impact='下一座城落下後，池子裡所有的城會被彈起來、位置被打亂；彈起後約 2.5 秒內不計算溢出。';return o;}
+  if(k==='flood'){const o=warn?{bk:'warn',name:'預告：水淹七軍',story:'秋雨連綿，漢水暴漲：放下這座城後，水將漲起。',glyph:'⚠'}:{bk:'flood',name:'水淹七軍！',story:'漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。',glyph:'≈'};o.impact='下一座城落下後，水從箱底漲起，池子裡的城會浮起來、跟著漂移，約 5 秒後水退去，城再落下，位置會和原來不同。';return o;}
+  if(k==='fog'){const o=warn?{bk:'warn',name:'預告：大霧漫江',story:'長江起了大霧：放下這座城後，濃霧將起。',glyph:'⚠'}:{bk:'fog',name:'大霧漫江！',story:'濃霧遮住了池子，看不清裡面的城。',glyph:'≋'};o.impact='接下來 '+FOG_LEN+' 座城，所有城的名字都看不見（連手上這座也是「？」），只能憑形狀和位置判斷。';return o;}
   if(k==='fire'&&!e.spot)return null;   // 抽到火燒卻沒有地點（池子裡沒有可燒的城）：不通知
-  if(k==='fire')return warn?{bk:'warn',name:'預告：'+e.spot.name,story:e.spot.warn,glyph:'⚠'}:{bk:'fire',name:e.spot.name+'！',story:e.spot.act,glyph:'火'};
-  const d=e.dir||-1;
-  return warn?{bk:'warn',name:'預告：'+WIND_NAME[d],story:d<0?'赤壁之夜，諸葛亮借來東風：放下這座城後，風就要起了。':'馬超西涼鐵騎，烈風捲地：放下這座城後，風就要起了。',glyph:'⚠'}
+  if(k==='fire'){const o=warn?{bk:'warn',name:'預告：'+e.spot.name,story:e.spot.warn,glyph:'⚠'}:{bk:'fire',name:e.spot.name+'！',story:e.spot.act,glyph:'火'};o.impact='下一座城落下後，起火處和附近共 '+FIRE.count+' 座城會被燒毀，回到待落下的城池、排在最前面重新放下；連在一起的組可能被拆開，被燒的城第一次重新連回去不加分。';return o;}
+  const d=e.dir||-1,dn=d<0?'西':'東';
+  const o=warn?{bk:'warn',name:'預告：'+WIND_NAME[d],story:d<0?'赤壁之夜，諸葛亮借來東風：放下這座城後，風就要起了。':'馬超西涼鐵騎，烈風捲地：放下這座城後，風就要起了。',glyph:'⚠'}
     :{bk:'wind',name:WIND_NAME[d]+'！',story:d<0?'東風大起：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往東吹。',glyph:d<0?'◀':'▶'};
+  o.impact='接下來 '+WIND.len+' 座城落下時會被往'+dn+'吹偏（落點輔助線會變斜，標出預估落點），池子裡的城也會被推向'+dn+'邊。';
+  return o;
 }
+const evtCardBody=i=>i.story+'\n\n<b>實際影響</b>　'+i.impact;   // 說明卡片內文：史事小句＋對這一局的實際影響
 // 每種事件第一次出現（預告那一刻）：顯示需要點「知道了」的說明卡片，之後只用橫幅；看過的種類記在瀏覽器裡
 let evtSeen=new Set();
 try{evtSeen=new Set(JSON.parse(localStorage.getItem('sg_evt_seen')||'[]'));}catch(e){}
@@ -1630,14 +1635,14 @@ function evtNotice(ph){
   const i=evtInfo(ph);if(!i)return;
   if(ph==='warn'&&!evtSeen.has(evt.kind)&&!overlayOpen()){
     const k=evt.kind;
-    show(i.name,i.story+'\n\n這種事件第一次出現，所以先停下來說明；之後只會用橫幅提醒，點箱口上方的事件標籤可以隨時再看說明。','知道了',()=>{evtSeen.add(k);try{localStorage.setItem('sg_evt_seen',JSON.stringify([...evtSeen]));}catch(e){}},false,{pal:k,glyph:i.glyph});   // 按了「知道了」才算看過；中途被別的視窗（例如結算）蓋掉，下次還會再說明
+    show(i.name,evtCardBody(i)+'\n\n<small class="evfoot">※ 只說明這一次，之後點事件標籤旁的 ⓘ 可再看。</small>','知道了',()=>{evtSeen.add(k);try{localStorage.setItem('sg_evt_seen',JSON.stringify([...evtSeen]));}catch(e){}},false,{pal:k,glyph:i.glyph});   // 按了「知道了」才算看過；中途被別的視窗（例如結算）蓋掉，下次還會再說明
     return;
   }
   eventBanner(i.bk,i.name,i.story,i.glyph);
 }
 function showEvtInfo(){   // 點事件標籤：重新看目前這個事件的說明（遊戲暫停到按「知道了」）
   if(DIFF!=='hard'||over||roundState!=='play'||overlayOpen()||ptrDown||(evt.phase!=='warn'&&evt.phase!=='active'))return;
-  const i=evtInfo(evt.phase);if(!i)return;show(i.name,i.story,'知道了',()=>{},false,{pal:evt.kind,glyph:i.glyph});
+  const i=evtInfo(evt.phase);if(!i)return;show(i.name,evtCardBody(i),'知道了',()=>{},false,{pal:evt.kind,glyph:i.glyph});
 }
 document.getElementById('evt').addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.evi'))showEvtInfo();});
 function updateEvtUI(){   // 標籤只放短短一行（窄螢幕也放得下），細節看橫幅
