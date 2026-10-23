@@ -608,8 +608,8 @@ const SND=(()=>{
     }
   };
 })();
-const VERSION_NOTE='困難事件提示更清楚';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.92';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 92 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='事件說明加上實際影響';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.93';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 93 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1616,15 +1616,15 @@ function evtAdvance(){
 // 事件的通知文字（預告／開始）集中在這裡：橫幅、第一次出現的說明卡片、點事件標籤重看說明，都用同一份
 function evtInfo(ph,e){
   e=e||evt;const k=e.kind,warn=ph==='warn';
-  if(k==='quake'){const o=warn?{bk:'warn',name:'預告：洛陽地動',story:'洛陽地動，山河震盪：放下這座城後，地動將至。',glyph:'⚠'}:{bk:'quake',name:'洛陽地動！',story:'山河震盪：下一座城落下後，整個池子會往上彈。',glyph:'▲'};o.impact='下一座城落下後，池子裡所有的城會被彈起來、位置被打亂；彈起後約 2.5 秒內不計算溢出。';return o;}
+  if(k==='quake'){const o=warn?{bk:'warn',name:'預告：洛陽地動',story:'洛陽地動，山河震盪：放下這座城後，地動將至。',glyph:'⚠'}:{bk:'quake',name:'洛陽地動！',story:'山河震盪：下一座城落下後，整個池子會往上彈。',glyph:'▲'};o.impact='下一座城落下後，池子裡所有的城會被彈起來、位置被打亂；彈起的城約 2.5 秒內不計算溢出（原本就高過溢出線的除外）。';return o;}
   if(k==='flood'){const o=warn?{bk:'warn',name:'預告：水淹七軍',story:'秋雨連綿，漢水暴漲：放下這座城後，水將漲起。',glyph:'⚠'}:{bk:'flood',name:'水淹七軍！',story:'漢水暴漲：下一座城落下後，水會從箱底漲起，把城都浮起來。',glyph:'≈'};o.impact='下一座城落下後，水從箱底漲起，池子裡的城會浮起來、跟著漂移，約 5 秒後水退去，城再落下，位置會和原來不同。';return o;}
-  if(k==='fog'){const o=warn?{bk:'warn',name:'預告：大霧漫江',story:'長江起了大霧：放下這座城後，濃霧將起。',glyph:'⚠'}:{bk:'fog',name:'大霧漫江！',story:'濃霧遮住了池子，看不清裡面的城。',glyph:'≋'};o.impact='接下來 '+FOG_LEN+' 座城，所有城的名字都看不見（連手上這座也是「？」），只能憑形狀和位置判斷。';return o;}
+  if(k==='fog'){const o=warn?{bk:'warn',name:'預告：大霧漫江',story:'長江起了大霧：放下這座城後，濃霧將起。',glyph:'⚠'}:{bk:'fog',name:'大霧漫江！',story:'濃霧遮住了池子，看不清裡面的城。',glyph:'≋'};o.impact='接下來 '+(warn?FOG_LEN:(e.left||FOG_LEN))+' 座城，所有城的名字都看不見（連手上這座也是「？」），只能憑形狀和位置判斷。';return o;}
   if(k==='fire'&&!e.spot)return null;   // 抽到火燒卻沒有地點（池子裡沒有可燒的城）：不通知
-  if(k==='fire'){const o=warn?{bk:'warn',name:'預告：'+e.spot.name,story:e.spot.warn,glyph:'⚠'}:{bk:'fire',name:e.spot.name+'！',story:e.spot.act,glyph:'火'};o.impact='下一座城落下後，起火處和附近共 '+FIRE.count+' 座城會被燒毀，回到待落下的城池、排在最前面重新放下；連在一起的組可能被拆開，被燒的城第一次重新連回去不加分。';return o;}
+  if(k==='fire'){const o=warn?{bk:'warn',name:'預告：'+e.spot.name,story:e.spot.warn,glyph:'⚠'}:{bk:'fire',name:e.spot.name+'！',story:e.spot.act,glyph:'火'};o.impact='下一座城落下後，起火處和附近最多 '+FIRE.count+' 座城會被燒毀，回到待落下的城池、排在最前面重新放下；連在一起的組可能被拆開，被燒的城第一次重新連回去不加分。';return o;}
   const d=e.dir||-1,dn=d<0?'西':'東';
   const o=warn?{bk:'warn',name:'預告：'+WIND_NAME[d],story:d<0?'赤壁之夜，諸葛亮借來東風：放下這座城後，風就要起了。':'馬超西涼鐵騎，烈風捲地：放下這座城後，風就要起了。',glyph:'⚠'}
     :{bk:'wind',name:WIND_NAME[d]+'！',story:d<0?'東風大起：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往西吹。':'西風捲地：接下來 '+WIND.len+' 座城，連同池子裡的城，都會被往東吹。',glyph:d<0?'◀':'▶'};
-  o.impact='接下來 '+WIND.len+' 座城落下時會被往'+dn+'吹偏（落點輔助線會變斜，標出預估落點），池子裡的城也會被推向'+dn+'邊。';
+  o.impact='接下來 '+(warn?WIND.len:(e.left||WIND.len))+' 座城落下時會被往'+dn+'吹偏（落點輔助線會變斜，標出預估落點），池子裡的城也會被推向'+dn+'邊。';
   return o;
 }
 const evtCardBody=i=>i.story+'\n\n<b>實際影響</b>　'+i.impact;   // 說明卡片內文：史事小句＋對這一局的實際影響
