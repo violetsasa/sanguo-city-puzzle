@@ -616,8 +616,8 @@ const SND=(()=>{
   };
 })();
 let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;   // 畫面更新頻率的狀態（frame() 用；hud() 也會標記 drawDirty，所以放在最前面）
-const VERSION_NOTE='事件說明文字精簡';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.99';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 99 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='放寬困難戰場地圖';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.100';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 100 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1567,9 +1567,9 @@ const WIND={startCalm:8,len:3,gapMin:8,gapMax:13,a:0.3,vmax:2.2,maxSteps:240,sli
 // 戰場：困難難度每局開始時隨機抽一種箱子形狀（只在 init() 時決定，局中不會動牆）；普通難度固定是平原
 const FIELDS=[
   {id:'plain',name:'官渡平原',note:'標準箱子',l:50,r:550,line:230,w:0.2,glyph:'渡',tale:'官渡相持，火燒烏巢，一戰定北方。'},   // w：隨機抽戰場的權重（中原是普通地圖，少抽一點）
-  {id:'gorge',name:'劍閣棧道',note:'蜀道險窄，箱子較窄',l:100,r:500,line:230,glyph:'險',tale:'劍閣崢嶸，一夫當關，萬夫莫開。'},
-  {id:'river',name:'長江天塹',note:'江面遼闊，箱子較矮',l:50,r:550,line:320,glyph:'江',tale:'長江浩蕩，天塹橫陳，隔開南北。'},
-  {id:'ship',name:'連環樓船',note:'船身口寬底窄',l:50,r:550,line:230,sl:75,sr:-75,glyph:'船',tale:'鐵鎖連舟，首尾相接，樓船列陣江上。'}   // sl／sr：左右牆到箱底往內（正）或往外（負）移的距離＝箱子不是方的
+  {id:'gorge',name:'劍閣棧道',note:'蜀道險窄，箱子較窄',l:75,r:525,line:230,glyph:'險',tale:'劍閣崢嶸，一夫當關，萬夫莫開。'},
+  {id:'river',name:'長江天塹',note:'江面遼闊，箱子較矮',l:50,r:550,line:260,glyph:'江',tale:'長江浩蕩，天塹橫陳，隔開南北。'},
+  {id:'ship',name:'連環樓船',note:'船身口寬底窄',l:50,r:550,line:230,sl:40,sr:-40,glyph:'船',tale:'鐵鎖連舟，首尾相接，樓船列陣江上。'}   // sl／sr：左右牆到箱底往內（正）或往外（負）移的距離＝箱子不是方的
 ];
 const DEVMODE=/[?&]dev=1(&|$)/.test(location.search);   // 測試用：網址加 ?dev=1 才顯示戰場選項
 let FIELD=FIELDS[0],FIELD_PICK='random';   // FIELD_PICK：選難度時指定的戰場（random 隨機）
