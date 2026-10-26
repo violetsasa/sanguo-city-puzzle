@@ -616,8 +616,8 @@ const SND=(()=>{
   };
 })();
 let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;   // 畫面更新頻率的狀態（frame() 用；hud() 也會標記 drawDirty，所以放在最前面）
-const VERSION_NOTE='調整太相近的州色';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.103';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 103 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='修正遊玩紀錄的小問題';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.104';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 104 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -637,6 +637,7 @@ addEventListener('resize',resize);
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 function init(){
+  PLOG.end('quit');   // 上一局還沒結束就重來：趁狀態還沒清掉先記下
   pickField();fieldAnnounce=DIFF==='hard';resize();
   document.getElementById('ach').style.display='none';document.getElementById('ov').style.display='none';   // 結算框開著時按外面的「重來」：新局不能被舊結算框蓋住
   engine=Engine.create({gravity:{y:1.1},positionIterations:10,velocityIterations:8});
@@ -1579,7 +1580,7 @@ const LOGMODE=DEVMODE||/[?&]log=1(&|$)/.test(location.search);
 const PLOG={cur:null,key:'sg_plog',max:40,
   gap(ex){let m=BOXB;for(const t of tops){if(t===ex)continue;t.parts.forEach((p,i)=>{if(t.parts.length>1&&i===0)return;for(const v of p.vertices)if(v.y<m)m=v.y;});}return Math.round(m-LINE);},   // 池子最高點離溢出線多遠（負數＝已在線上）
   start(){
-    if(!LOGMODE)return;PLOG.end('quit');
+    if(!LOGMODE)return;
     PLOG.cur={v:VERSION,t:new Date().toISOString(),diff:DIFF,field:DIFF==='hard'?FIELD.id:'',vw:innerWidth,vh:innerHeight,touch:matchMedia('(pointer:coarse)').matches,ev:[]};
   },
   add(a){if(PLOG.cur)PLOG.cur.ev.push(a);},
@@ -1593,14 +1594,13 @@ const PLOG={cur:null,key:'sg_plog',max:40,
   load(){try{return JSON.parse(localStorage.getItem(PLOG.key)||'[]');}catch(e){return [];}},
   // 結算視窗裡的「傳送紀錄」：手機會跳出系統的分享選單（可選 LINE、Discord、郵件…），電腦或不支援時改成複製到剪貼簿；只傳還沒傳過的局
   dlg(on){
-    const old=document.getElementById('plogSend');if(old)old.remove();
+    for(const id of ['plogSend','plogTa']){const o=document.getElementById(id);if(o)o.remove();}
     if(!on||!LOGMODE)return;
-    const all=PLOG.load();let sent=0;try{sent=Math.min(all.length,Number(localStorage.getItem(PLOG.key+'_sent'))||0);}catch(e){}
-    const fresh=all.slice(sent);if(!fresh.length)return;
+    const fresh=PLOG.load().filter(g=>!g.sent);if(!fresh.length)return;
     const b=document.createElement('button');b.id='plogSend';b.type='button';b.textContent='傳送遊玩紀錄（'+fresh.length+' 局）';
     b.style.cssText='display:block;margin:12px auto 0;min-height:44px;padding:8px 18px;font:15px sans-serif;border-radius:12px;border:1px dashed #8a6a3a;background:transparent;color:#6a4a1a';
-    const mark=()=>{try{localStorage.setItem(PLOG.key+'_sent',String(all.length));}catch(e){}};
-    const copy=()=>{const txt=JSON.stringify(fresh),ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;left:0;top:0;width:80vw;height:30vh;z-index:99';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}
+    const mark=()=>{const ids=new Set(fresh.map(g=>g.t));try{localStorage.setItem(PLOG.key,JSON.stringify(PLOG.load().map(g=>ids.has(g.t)?Object.assign(g,{sent:1}):g)));}catch(e){}};
+    const copy=()=>{const old=document.getElementById('plogTa');if(old)old.remove();const txt=JSON.stringify(fresh),ta=document.createElement('textarea');ta.id='plogTa';ta.value=txt;ta.style.cssText='position:fixed;left:0;top:0;width:80vw;height:30vh;z-index:99';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}
       if(ok){ta.remove();mark();b.textContent='✓ 已複製，請貼給開發者';}else b.textContent='複製失敗，請長按文字框全選後複製';};
     b.onclick=()=>{const txt=JSON.stringify(fresh);
       if(navigator.share)navigator.share({title:'山河輿圖遊玩紀錄',text:txt}).then(()=>{mark();b.textContent='✓ 已傳送';},e=>{if(!e||e.name!=='AbortError')copy();});
