@@ -616,8 +616,8 @@ const SND=(()=>{
   };
 })();
 let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;   // 畫面更新頻率的狀態（frame() 用；hud() 也會標記 drawDirty，所以放在最前面）
-const VERSION_NOTE='荊州換色、加真人遊玩紀錄';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.101';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 101 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='遊玩紀錄改在結算視窗傳送';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.102';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 102 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1574,7 +1574,7 @@ const FIELDS=[
 ];
 const DEVMODE=/[?&]dev=1(&|$)/.test(location.search);   // 測試用：網址加 ?dev=1 才顯示戰場選項
 // 真人遊玩紀錄：網址加 ?log=1（或 ?dev=1）才啟用，一般玩家完全看不到、也不影響遊戲。每一局記下落點、搖晃、事件與結局，存在這支瀏覽器的 localStorage，
-// 玩完按右上角「📋 紀錄」複製成文字貼給開發者，用來判斷困難模式到底卡在哪裡（地圖、風、還是操作）
+// 玩完在結算視窗按「傳送遊玩紀錄」（手機是系統分享選單，電腦是複製）給開發者，用來判斷困難模式到底卡在哪裡（地圖、風、還是操作）
 const LOGMODE=DEVMODE||/[?&]log=1(&|$)/.test(location.search);
 const PLOG={cur:null,key:'sg_plog',max:40,
   gap(ex){let m=BOXB;for(const t of tops){if(t===ex)continue;t.parts.forEach((p,i)=>{if(t.parts.length>1&&i===0)return;for(const v of p.vertices)if(v.y<m)m=v.y;});}return Math.round(m-LINE);},   // 池子最高點離溢出線多遠（負數＝已在線上）
@@ -1589,18 +1589,24 @@ const PLOG={cur:null,key:'sg_plog',max:40,
     const over=[];if(res==='over')for(const t of tops)if((t.overSteps||0)>0)over.push(t.pcs.map(p=>p.s.n).slice(0,6).join('')+(t.pcs.length>6?'…':''));
     g.res=res;g.end={step:simStep,placed,maxGroup:clusterMax(),score,shakes:shakeCount,gap:PLOG.gap(),over,evt:evt.phase+':'+evt.kind,left:roundState==='final'||res==='won'?Math.max(0,Math.round((finalEndStep-simStep)/60)):null};
     try{const a=JSON.parse(localStorage.getItem(PLOG.key)||'[]');a.push(g);while(a.length>PLOG.max)a.shift();localStorage.setItem(PLOG.key,JSON.stringify(a));}catch(e){}
-    PLOG.btn();
   },
-  btn(){
-    if(!LOGMODE)return;let b=document.getElementById('plogBtn');
-    if(!b){b=document.createElement('button');b.id='plogBtn';b.type='button';b.style.cssText='position:fixed;right:8px;top:64px;z-index:50;font:12px sans-serif;padding:4px 8px;border-radius:8px;border:1px solid #b9a88a;background:#fff8e8;color:#5a4a2a;opacity:.85';
-      b.onclick=()=>{let a=[];try{a=JSON.parse(localStorage.getItem(PLOG.key)||'[]');}catch(e){}const txt=JSON.stringify(a);
-        const done=ok=>{b.textContent=ok?'✓ 已複製 '+a.length+' 局':'複製失敗，請長按文字全選';};
-        const fb=()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;left:0;top:0;width:80vw;height:30vh;z-index:99';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}if(ok)ta.remove();done(ok);};
-        if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>done(true),fb);else fb();};
-      document.body.appendChild(b);}
-    let n=0;try{n=JSON.parse(localStorage.getItem(PLOG.key)||'[]').length;}catch(e){}
-    b.textContent='📋 紀錄 '+n+' 局';
+  load(){try{return JSON.parse(localStorage.getItem(PLOG.key)||'[]');}catch(e){return [];}},
+  // 結算視窗裡的「傳送紀錄」：手機會跳出系統的分享選單（可選 LINE、Discord、郵件…），電腦或不支援時改成複製到剪貼簿；只傳還沒傳過的局
+  dlg(on){
+    const old=document.getElementById('plogSend');if(old)old.remove();
+    if(!on||!LOGMODE)return;
+    const all=PLOG.load();let sent=0;try{sent=Math.min(all.length,Number(localStorage.getItem(PLOG.key+'_sent'))||0);}catch(e){}
+    const fresh=all.slice(sent);if(!fresh.length)return;
+    const b=document.createElement('button');b.id='plogSend';b.type='button';b.textContent='傳送遊玩紀錄（'+fresh.length+' 局）';
+    b.style.cssText='display:block;margin:12px auto 0;min-height:44px;padding:8px 18px;font:15px sans-serif;border-radius:12px;border:1px dashed #8a6a3a;background:transparent;color:#6a4a1a';
+    const mark=()=>{try{localStorage.setItem(PLOG.key+'_sent',String(all.length));}catch(e){}};
+    const copy=()=>{const txt=JSON.stringify(fresh),ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;left:0;top:0;width:80vw;height:30vh;z-index:99';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}
+      if(ok){ta.remove();mark();b.textContent='✓ 已複製，請貼給開發者';}else b.textContent='複製失敗，請長按文字框全選後複製';};
+    b.onclick=()=>{const txt=JSON.stringify(fresh);
+      if(navigator.share)navigator.share({title:'山河輿圖遊玩紀錄',text:txt}).then(()=>{mark();b.textContent='✓ 已傳送';},e=>{if(!e||e.name!=='AbortError')copy();});
+      else if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>{mark();b.textContent='✓ 已複製，請貼給開發者';},copy);
+      else copy();};
+    const row=document.querySelector('#ov .ovbtns');if(row)row.insertAdjacentElement('afterend',b);
   }};
 let FIELD=FIELDS[0],FIELD_PICK='random';   // FIELD_PICK：選難度時指定的戰場（random 隨機）
 function pickField(){
@@ -1974,6 +1980,7 @@ function show(t,p,b,fn,intro,card){
     const col=(t,v)=>'<span class="bc"><span class="bt">'+t+'</span><span class="nm">'+(v>0?v.toLocaleString('en-US'):'—')+'</span></span>';
     sl.style.display=any?'block':'none';sl.innerHTML=any?'<span class="lb">歷史最高分</span><span class="bcs">'+col('普通',bn)+col('困難',bh)+'</span>':'';}
   document.getElementById('ov').style.display='flex';
+  PLOG.dlg(!intro&&!single);
   ov.classList.toggle('intro-card',!!intro);fitIntro();
   btn.onclick=()=>{document.getElementById('ov').style.display='none';fn();};
 }
@@ -2398,7 +2405,6 @@ document.getElementById('ovP').addEventListener('click',e=>{const fc=e.target.cl
 {try{DIFF=localStorage.getItem('sg_diff')==='hard'?'hard':'normal';const f=localStorage.getItem('sg_field');if(DEVMODE&&FIELDS.some(x=>x.id===f))FIELD_PICK=f;}catch(e){}}   // 指定戰場只在 ?dev=1 有效：一般玩家沒有選項可以取消，不能被舊的測試設定卡住
 {const u=new URLSearchParams(location.search).get('field');if(FIELDS.some(x=>x.id===u))FIELD_PICK=u;}   // 網址指定戰場（測試用）
 resize();init();showIntro();
-PLOG.btn();
 requestAnimationFrame(frame);
 </script>
 <div id="toast"></div>
