@@ -616,8 +616,8 @@ const SND=(()=>{
   };
 })();
 let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;   // 畫面更新頻率的狀態（frame() 用；hud() 也會標記 drawDirty，所以放在最前面）
-const VERSION_NOTE='修正遊玩紀錄的小問題';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.104';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 104 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='遊玩紀錄加池子快照';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.105';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 105 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -1554,7 +1554,7 @@ function drop(){
   tops.push(b);Composite.add(engine.world,b);
   b.pcs.forEach(P=>{P.dropStep=simStep;});
   if(simStep<lastShakeStep+SHAKE_GRACE_STEPS)b.graceUntil=lastShakeStep+SHAKE_GRACE_STEPS;   // 搖動餘波中落下的城，也在那一次搖動的免死期內（同原版）
-  if(LOGMODE)PLOG.add(['d',simStep,b.pcs[0].s.n,Math.round(b.position.x),placed+1,tops.length,clusterMax(),PLOG.gap(b),DIFF==='hard'&&evt.phase==='active'?evt.kind:'']);   // 落下：步數、城名、落點 x、第幾座、目前幾組、最大相連、池高離線距離、進行中的事件
+  if(LOGMODE)PLOG.add(['d',simStep,b.pcs[0].s.n,Math.round(b.position.x),placed+1,tops.length,clusterMax(),PLOG.gap(b),DIFF==='hard'&&evt.phase==='active'?evt.kind:'',PLOG.sk,PLOG.mg===null?PLOG.gap(b):Math.min(PLOG.mg,PLOG.gap(b))]);PLOG.sk=0;PLOG.mg=null;   // 落下：步數、城名、落點 x、第幾座、目前幾組、最大相連、池高離線距離、進行中的事件、上次落下以來搖幾次、這段期間離線最近多少 px
   cur=null;placed++;if(!burnedSt.has(b.pcs[0].s))score+=10;evtAdvance();hud();SND.play('drop');
   lastDropStep=simStep;
   const gid=gameId,rid=roundId;
@@ -1577,18 +1577,22 @@ const DEVMODE=/[?&]dev=1(&|$)/.test(location.search);   // 測試用：網址加
 // 真人遊玩紀錄：網址加 ?log=1（或 ?dev=1）才啟用，一般玩家完全看不到、也不影響遊戲。每一局記下落點、搖晃、事件與結局，存在這支瀏覽器的 localStorage，
 // 玩完在結算視窗按「傳送遊玩紀錄」（手機是系統分享選單，電腦是複製）給開發者，用來判斷困難模式到底卡在哪裡（地圖、風、還是操作）
 const LOGMODE=DEVMODE||/[?&]log=1(&|$)/.test(location.search);
-const PLOG={cur:null,key:'sg_plog',max:40,
-  gap(ex){let m=BOXB;for(const t of tops){if(t===ex)continue;t.parts.forEach((p,i)=>{if(t.parts.length>1&&i===0)return;for(const v of p.vertices)if(v.y<m)m=v.y;});}return Math.round(m-LINE);},   // 池子最高點離溢出線多遠（負數＝已在線上）
+const PLOG={cur:null,key:'sg_plog',max:40,sk:0,mg:null,rec:[],   // sk／mg：上次落下以來搖了幾次、池子離線最近多少 px；rec：最近幾次取樣（每 20 步一次）的離線距離
+  gap(ex,settled){let m=BOXB;for(const t of tops){if(t===ex)continue;if(settled&&simStep-Math.max(...t.pcs.map(p=>p.dropStep||0))<OVER_STEPS)continue;   // settled：剛落下還在半空的城不算進池高
+      t.parts.forEach((p,i)=>{if(t.parts.length>1&&i===0)return;for(const v of p.vertices)if(v.y<m)m=v.y;});}return Math.round(m-LINE);},   // 池子最高點離溢出線多遠（負數＝已在線上）
   start(){
     if(!LOGMODE)return;
+    PLOG.sk=0;PLOG.mg=null;PLOG.rec=[];
     PLOG.cur={v:VERSION,t:new Date().toISOString(),diff:DIFF,field:DIFF==='hard'?FIELD.id:'',vw:innerWidth,vh:innerHeight,touch:matchMedia('(pointer:coarse)').matches,ev:[]};
   },
   add(a){if(PLOG.cur)PLOG.cur.ev.push(a);},
+  sample(){const g=PLOG.gap(null,true);if(PLOG.mg===null||g<PLOG.mg)PLOG.mg=g;PLOG.rec.push(g);if(PLOG.rec.length>8)PLOG.rec.shift();},
   end(res){
     const g=PLOG.cur;if(!g)return;PLOG.cur=null;
     if(res==='quit'&&!g.ev.length)return;   // 一開局就重來：不算
     const over=[];if(res==='over')for(const t of tops)if((t.overSteps||0)>0)over.push(t.pcs.map(p=>p.s.n).slice(0,6).join('')+(t.pcs.length>6?'…':''));
-    g.res=res;g.end={step:simStep,placed,maxGroup:clusterMax(),score,shakes:shakeCount,gap:PLOG.gap(),over,evt:evt.phase+':'+evt.kind,left:roundState==='final'||res==='won'?Math.max(0,Math.round((finalEndStep-simStep)/60)):null};
+    g.res=res;g.end={step:simStep,placed,maxGroup:clusterMax(),score,shakes:shakeCount,gap:PLOG.gap(),over,evt:evt.phase+':'+evt.kind,left:roundState==='final'||res==='won'?Math.max(0,Math.round((finalEndStep-simStep)/60)):null,sinceShake:shakeCount?simStep-lastShakeStep:null,rec:PLOG.rec.slice()};
+    if(res==='over'||res==='timeup'){const gi=new Map(tops.map((t,i)=>[t,i]));g.snap=tops.flatMap(t=>t.pcs.filter(p=>p.dropped).map(p=>{const w=pieceWorld(p);return [p.s.n,Math.round(w.c.x),Math.round(w.c.y),((Math.round(w.a*57.296)%360)+540)%360-180,gi.get(t)];}));}   // 結局快照：每座城的名字、位置、角度（度）、所屬組別
     try{const a=JSON.parse(localStorage.getItem(PLOG.key)||'[]');a.push(g);while(a.length>PLOG.max)a.shift();localStorage.setItem(PLOG.key,JSON.stringify(a));}catch(e){}
   },
   load(){try{return JSON.parse(localStorage.getItem(PLOG.key)||'[]');}catch(e){return [];}},
@@ -2015,7 +2019,7 @@ function shakeAssist(){
 }
 function shake(){
   if(over||overlayOpen()||!tops.length||simStep<shakeReadyStep||roundState==='won')return;
-  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;shakeCount++;if(LOGMODE)PLOG.add(['k',simStep,PLOG.gap()]);SND.play('shake');   // 冷卻 0.5 秒
+  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;shakeCount++;if(LOGMODE)PLOG.sk++;SND.play('shake');   // 冷卻 0.5 秒
   const btn=document.getElementById('shake');btn.disabled=true;btn.classList.remove('on');void btn.offsetWidth;btn.classList.add('on');clearTimeout(shakeAnimT);{const gid=gameId;shakeAnimT=setTimeout(()=>{if(gid===gameId)btn.classList.remove('on');},950);}   // 冷卻只有 0.5 秒：連搖時動畫要重新開始
   lastShakeStep=simStep;
   const assist=roundState==='final'?shakeAssist():null;   // 倒數階段：沒連上的單獨城，搖一搖時會朝它的鄰居翻過去（避免被大片擋住的死局）
@@ -2316,6 +2320,7 @@ function engineStep(){
 function step(){
   simStep++;if(DIFF==='hard'){if(quakeAt&&simStep>=quakeAt){quakeAt=0;doQuake();}if(fireAt&&simStep>=fireAt){fireAt=0;doFire();}applyWind();applyFlood();}engineStep();magnetScan();mergePending();keepInside();
   if(roundState==='final')roundTick();   // 先判通關／時限，再判溢出：最後一次合併剛好完成全圖時，同一步就算越線也算通關
+  if(LOGMODE&&PLOG.cur&&simStep%20===0)PLOG.sample();
   if(!over&&roundState!=='won')checkOverflow();   // 已通關就不再改判失敗（收尾 1.3 秒內地圖越線也一樣）
   const sb=document.getElementById('shake');
   if(shakeReadyStep){
