@@ -470,7 +470,7 @@ STATES.forEach(s=>{const f=t=>t.split(";").map(q=>q.split(",").map(Number));s.v=
 const ADJ_PAIRS="上庸|夷陵 上庸|房陵 上庸|武關 上庸|涪陵 上庸|漢中 下邳|廣陵 下邳|東海 九原|朔方 五丈原|陳倉 交趾|合浦 北平|昌黎 北平|漁陽 北平|雁門 北平|雲中 北海|東海 北海|泰山 南海|合浦 南海|布山 南海|廬陵 南海|建安 南海|桂林 合浦|布山 壽春|下邳 壽春|合肥 壽春|徐州 壽春|汝南 壽春|江夏 壽春|陳留 大和|邪馬台 天水|武都 天水|祁山 天水|街亭 天水|陳倉 夷州|建安 安定|五丈原 安定|朔方 安定|潼關 安定|街亭 安定|陳倉 官渡|虎牢關 宛|房陵 宛|武關 宛|汝南 宛|許昌 平原|北平 平原|北海 平原|泰山 平原|濮陽 平原|雁門 廣陵|曲阿 廣陵|東海 廬江|合肥 廬江|壽春 廬江|會稽 廬江|江夏 廬陵|建安 建寧|布山 建寧|桂林 建寧|興古 建寧|越雋 建寧|雲南 建業|下邳 建業|合肥 建業|壽春 建業|廣陵 建業|廬江 建業|曲阿 建業|會稽 徐州|下邳 徐州|東海 徐州|泰山 徐州|濮陽 徐州|陳留 成都|江州 成都|綿竹 成都|越雋 房陵|夷陵 新野|夏口 新野|宛 新野|房陵 新野|武關 新野|汝南 新野|襄陽 晉陽|九原 晉陽|安定 晉陽|朔方 晉陽|潼關 晉陽|虎牢關 晉陽|雁門 會稽|建安 會稽|曲阿 柴桑|夏口 柴桑|廬江 柴桑|建安 柴桑|會稽 柴桑|江夏 柴桑|豫章 柴桑|赤壁 桂林|布山 桂林|涪陵 桂陽|南海 桂陽|廬陵 武關|房陵 武陵|夷陵 武陵|涪陵 武陵|赤壁 武陵|長坂坡 武陵|長沙 武陵|零陵 汝南|夏口 汝南|徐州 汝南|陳留 江夏|夏口 江夏|汝南 江州|建寧 江州|桂林 江州|涪陵 江州|漢中 江州|綿竹 江州|越雋 泰山|東海 洛陽|宛 洛陽|武關 洛陽|潼關 洛陽|虎牢關 洛陽|許昌 涪陵|夷陵 涼州|朔方 涼州|祁山 涼州|街亭 涼州|酒泉 漁陽|昌黎 漢中|武都 漢中|涪陵 漢中|綿竹 漢中|陳倉 潼關|武關 濮陽|泰山 祁山|武都 綿竹|武都 興古|合浦 興古|布山 興古|桂林 虎牢關|潼關 街亭|朔方 街亭|祁山 街亭|陳倉 襄陽|夏口 襄陽|夷陵 襄陽|房陵 襄陽|汝南 襄陽|長坂坡 許昌|官渡 許昌|汝南 許昌|虎牢關 許昌|陳留 豫章|廬陵 豫章|建安 豫章|赤壁 赤壁|夏口 遼東|昌黎 邪馬台|大和 邪馬台|會稽 鄴|平原 鄴|晉陽 鄴|濮陽 鄴|虎牢關 鄴|陳留 鄴|雁門 長坂坡|夏口 長坂坡|夷陵 長坂坡|赤壁 長安|上庸 長安|五丈原 長安|安定 長安|武關 長安|漢中 長安|潼關 長安|陳倉 長沙|廬陵 長沙|桂陽 長沙|豫章 長沙|赤壁 陳倉|武都 陳留|官渡 陳留|濮陽 陳留|虎牢關 雁門|九原 雁門|雲中 雲中|九原 雲中|漁陽 雲南|興古 雲南|越雋 零陵|南海 零陵|桂林 零陵|桂陽 零陵|涪陵 零陵|長沙".split(" ");
 const adj=new Set(ADJ_PAIRS.flatMap(t=>{const [x,y]=t.split('|');return [x+'|'+y,y+'|'+x];}));
 const isAdj=(a,b)=>adj.has(a.n+'|'+b.n);
-const ZCOL={司隸:'#e8cdb0',冀州:'#d7c6f3',荊州:'#f4b2d6',并州:'#b9e3e8',豫州:'#b3daf5',青州:'#fbeba0',幽州:'#f8b9c5',涼州:'#cbe8b0',益州:'#bfc8f5',揚州:'#fbcdaa',徐州:'#ebc0ec',兗州:'#b0ebd3',交州:'#d9e6a8'};   // 漢末十三州各一種馬卡龍色（相鄰州已排成色差最大）；海外三城用中性色
+const ZCOL={司隸:'#e8cdb0',冀州:'#d7c6f3',荊州:'#f29688',并州:'#b9e3e8',豫州:'#b3daf5',青州:'#fbeba0',幽州:'#f8b9c5',涼州:'#cbe8b0',益州:'#bfc8f5',揚州:'#fbcdaa',徐州:'#ebc0ec',兗州:'#b0ebd3',交州:'#d9e6a8'};   // 漢末十三州各一種馬卡龍色（相鄰州已排成色差最大）；海外三城用中性色
 const ZNEUT='#d9d2c0';
 const zcol=s=>ZCOL[s.z]||ZNEUT;
 (function(){
@@ -616,8 +616,8 @@ const SND=(()=>{
   };
 })();
 let lastDrawTs=0,lastInputTs=0,drawDirty=true,prevOv=false;   // 畫面更新頻率的狀態（frame() 用；hud() 也會標記 drawDirty，所以放在最前面）
-const VERSION_NOTE='放寬困難戰場地圖';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
-const VERSION='1.100';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 100 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
+const VERSION_NOTE='荊州換色、加真人遊玩紀錄';   // 版本號下方的一句話：本次發佈最大的更新，每次發佈一起改
+const VERSION='1.101';   // 版本號：主版.次版。每次發佈前次版 +1（目前是第 101 次發佈）；玩法或畫面有大改動才進主版（例如 2.0）。開場簡介會顯示，方便確認有沒有拿到新版
 const FINAL_STEPS=3600;   // 倒數 60 秒（同原版：最後一塊落下後的限時）
 const SHAKE_COOLDOWN_STEPS=30;   // 搖一搖冷卻 0.5 秒（搖完 2.5 秒內不計溢出；搖一搖不扣分）
 let gameId=0,roundId=0,simStep=0,pendingFly=0,shakeLockUntil=0;   // 局／輪的代號：所有延遲工作排程時捕捉，重開後就會失效
@@ -653,7 +653,7 @@ function init(){
   bestAtStart=bestRead();recShown=false;recVal=0;hideAlert();
   tops=[];pending=[];pendingKeys=new Set();score=0;over=false;cur=null;dropX=W/2;lastDrop=0;fxToken++;resetFx();
   {const sb=document.getElementById('shake');sb.disabled=false;sb.classList.remove('cool','on');sb.style.removeProperty('--cd');sb.title='搖一搖';}
-  evtReset();shakeCount=0;gustUntil=0;
+  evtReset();shakeCount=0;gustUntil=0;PLOG.start();
   achDone=new Set();achProg.clear();noRoomUntil.clear();resetToasts();document.querySelectorAll('.fly').forEach(e=>e.remove());   // 重來：上一局還在飛的「＋分數」一併清掉
  ptrDown=false;ptrId=null;peek=null;clearTimeout(peekTimer);peekStart=null;roundState='play';shakeReadyStep=0;labelFrame=0;   // 每一局重新開始：本局成就、冷卻表、提示、手勢、輪末狀態全部清空
   const onContact=e=>{
@@ -1553,6 +1553,7 @@ function drop(){
   tops.push(b);Composite.add(engine.world,b);
   b.pcs.forEach(P=>{P.dropStep=simStep;});
   if(simStep<lastShakeStep+SHAKE_GRACE_STEPS)b.graceUntil=lastShakeStep+SHAKE_GRACE_STEPS;   // 搖動餘波中落下的城，也在那一次搖動的免死期內（同原版）
+  if(LOGMODE)PLOG.add(['d',simStep,b.pcs[0].s.n,Math.round(b.position.x),placed+1,tops.length,clusterMax(),PLOG.gap(b),DIFF==='hard'&&evt.phase==='active'?evt.kind:'']);   // 落下：步數、城名、落點 x、第幾座、目前幾組、最大相連、池高離線距離、進行中的事件
   cur=null;placed++;if(!burnedSt.has(b.pcs[0].s))score+=10;evtAdvance();hud();SND.play('drop');
   lastDropStep=simStep;
   const gid=gameId,rid=roundId;
@@ -1572,6 +1573,35 @@ const FIELDS=[
   {id:'ship',name:'連環樓船',note:'船身口寬底窄',l:50,r:550,line:230,sl:40,sr:-40,glyph:'船',tale:'鐵鎖連舟，首尾相接，樓船列陣江上。'}   // sl／sr：左右牆到箱底往內（正）或往外（負）移的距離＝箱子不是方的
 ];
 const DEVMODE=/[?&]dev=1(&|$)/.test(location.search);   // 測試用：網址加 ?dev=1 才顯示戰場選項
+// 真人遊玩紀錄：網址加 ?log=1（或 ?dev=1）才啟用，一般玩家完全看不到、也不影響遊戲。每一局記下落點、搖晃、事件與結局，存在這支瀏覽器的 localStorage，
+// 玩完按右上角「📋 紀錄」複製成文字貼給開發者，用來判斷困難模式到底卡在哪裡（地圖、風、還是操作）
+const LOGMODE=DEVMODE||/[?&]log=1(&|$)/.test(location.search);
+const PLOG={cur:null,key:'sg_plog',max:40,
+  gap(ex){let m=BOXB;for(const t of tops){if(t===ex)continue;t.parts.forEach((p,i)=>{if(t.parts.length>1&&i===0)return;for(const v of p.vertices)if(v.y<m)m=v.y;});}return Math.round(m-LINE);},   // 池子最高點離溢出線多遠（負數＝已在線上）
+  start(){
+    if(!LOGMODE)return;PLOG.end('quit');
+    PLOG.cur={v:VERSION,t:new Date().toISOString(),diff:DIFF,field:DIFF==='hard'?FIELD.id:'',vw:innerWidth,vh:innerHeight,touch:matchMedia('(pointer:coarse)').matches,ev:[]};
+  },
+  add(a){if(PLOG.cur)PLOG.cur.ev.push(a);},
+  end(res){
+    const g=PLOG.cur;if(!g)return;PLOG.cur=null;
+    if(res==='quit'&&!g.ev.length)return;   // 一開局就重來：不算
+    const over=[];if(res==='over')for(const t of tops)if((t.overSteps||0)>0)over.push(t.pcs.map(p=>p.s.n).slice(0,6).join('')+(t.pcs.length>6?'…':''));
+    g.res=res;g.end={step:simStep,placed,maxGroup:clusterMax(),score,shakes:shakeCount,gap:PLOG.gap(),over,evt:evt.phase+':'+evt.kind,left:roundState==='final'||res==='won'?Math.max(0,Math.round((finalEndStep-simStep)/60)):null};
+    try{const a=JSON.parse(localStorage.getItem(PLOG.key)||'[]');a.push(g);while(a.length>PLOG.max)a.shift();localStorage.setItem(PLOG.key,JSON.stringify(a));}catch(e){}
+    PLOG.btn();
+  },
+  btn(){
+    if(!LOGMODE)return;let b=document.getElementById('plogBtn');
+    if(!b){b=document.createElement('button');b.id='plogBtn';b.type='button';b.style.cssText='position:fixed;right:8px;top:64px;z-index:50;font:12px sans-serif;padding:4px 8px;border-radius:8px;border:1px solid #b9a88a;background:#fff8e8;color:#5a4a2a;opacity:.85';
+      b.onclick=()=>{let a=[];try{a=JSON.parse(localStorage.getItem(PLOG.key)||'[]');}catch(e){}const txt=JSON.stringify(a);
+        const done=ok=>{b.textContent=ok?'✓ 已複製 '+a.length+' 局':'複製失敗，請長按文字全選';};
+        const fb=()=>{const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;left:0;top:0;width:80vw;height:30vh;z-index:99';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}if(ok)ta.remove();done(ok);};
+        if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>done(true),fb);else fb();};
+      document.body.appendChild(b);}
+    let n=0;try{n=JSON.parse(localStorage.getItem(PLOG.key)||'[]').length;}catch(e){}
+    b.textContent='📋 紀錄 '+n+' 局';
+  }};
 let FIELD=FIELDS[0],FIELD_PICK='random';   // FIELD_PICK：選難度時指定的戰場（random 隨機）
 function pickField(){
   const fixed=FIELDS.find(f=>f.id===FIELD_PICK);
@@ -1628,6 +1658,7 @@ function evtAdvance(){
   }
   else if(evt.phase==='warn'){evt={phase:'active',left:EVT_LEN[evt.kind]||WIND.len,kind:evt.kind,dir:evt.dir,lastDir:evt.lastDir,spot:evt.spot};evtNotice('active');}
   else evt={phase:'calm',left:WIND.gapMin+Math.floor(Math.random()*(WIND.gapMax-WIND.gapMin+1)),kind:'wind',lastKind:evt.kind,lastDir:evt.lastDir};
+  if(LOGMODE)PLOG.add(['e',simStep,evt.kind,evt.phase]);
   updateEvtUI();
 }
 // 事件的通知文字（預告／開始）集中在這裡：橫幅、第一次出現的說明卡片、點事件標籤重看說明，都用同一份
@@ -1892,7 +1923,7 @@ function roundTick(){
   if(simStep%15===0)hud();   // 倒數顯示
 }
 function winRound(){
-  roundState='won';SND.play('win');
+  PLOG.end('won');roundState='won';SND.play('win');
   let starText='';
   if(DIFF==='hard'){
     const sl=finalEndStep-simStep,left=Math.max(0,Math.round(sl/60)),stars=sl>=STAR3*60?3:sl>=STAR2*60?2:1;   // 星級用剩餘步數判定（不受顯示取整影響）
@@ -1908,7 +1939,7 @@ function winRound(){
     show('天下一統',`諸城相連，山河重歸一統。\n${starText}本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'再次挑戰',()=>init());},Math.min(9000,Math.max(1300,bannerFree-performance.now()+250)));   // 最後一次相連解鎖的成就橫幅要播完，才跳結算框（上限 9 秒）
 }
 function gameOver(kind){
-  over=true;if(roundState!=='won')SND.play('lose');   // 剛通關還在收尾時，不播失敗的聲音
+  PLOG.end(kind==='timeup'?'timeup':'over');over=true;if(roundState!=='won')SND.play('lose');   // 剛通關還在收尾時，不播失敗的聲音
   if(kind==='timeup')show('時限已到',`倒數結束，山河仍未一統。\n連成最大的一片有 ${clusterMax()} 座城\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
   else show('國土崩裂',`疆域崩裂，群雄再起，天下重陷戰火。\n連成最大的一片有 ${clusterMax()} 座城\n本局解鎖 ${achDone.size} 個成就\n本次分數 ${score}\n最高紀錄 ${best()}`,'捲土重來',()=>init());
 }
@@ -1977,7 +2008,7 @@ function shakeAssist(){
 }
 function shake(){
   if(over||overlayOpen()||!tops.length||simStep<shakeReadyStep||roundState==='won')return;
-  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;shakeCount++;SND.play('shake');   // 冷卻 0.5 秒
+  shakeReadyStep=simStep+SHAKE_COOLDOWN_STEPS;shakeCount++;if(LOGMODE)PLOG.add(['k',simStep,PLOG.gap()]);SND.play('shake');   // 冷卻 0.5 秒
   const btn=document.getElementById('shake');btn.disabled=true;btn.classList.remove('on');void btn.offsetWidth;btn.classList.add('on');clearTimeout(shakeAnimT);{const gid=gameId;shakeAnimT=setTimeout(()=>{if(gid===gameId)btn.classList.remove('on');},950);}   // 冷卻只有 0.5 秒：連搖時動畫要重新開始
   lastShakeStep=simStep;
   const assist=roundState==='final'?shakeAssist():null;   // 倒數階段：沒連上的單獨城，搖一搖時會朝它的鄰居翻過去（避免被大片擋住的死局）
@@ -2367,6 +2398,7 @@ document.getElementById('ovP').addEventListener('click',e=>{const fc=e.target.cl
 {try{DIFF=localStorage.getItem('sg_diff')==='hard'?'hard':'normal';const f=localStorage.getItem('sg_field');if(DEVMODE&&FIELDS.some(x=>x.id===f))FIELD_PICK=f;}catch(e){}}   // 指定戰場只在 ?dev=1 有效：一般玩家沒有選項可以取消，不能被舊的測試設定卡住
 {const u=new URLSearchParams(location.search).get('field');if(FIELDS.some(x=>x.id===u))FIELD_PICK=u;}   // 網址指定戰場（測試用）
 resize();init();showIntro();
+PLOG.btn();
 requestAnimationFrame(frame);
 </script>
 <div id="toast"></div>
